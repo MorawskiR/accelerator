@@ -127,6 +127,9 @@ publiczny, nie nasze autorstwo.
   swojego kryterium „Gotowe, gdy". Rafał wyraźnie o to poprosił.
 - **Język:** polski, w rozmowie i w dokumentacji projektu.
 - **Commity:** jeden na ukończony punkt z `task.md`, po polsku, wypychane na bieżąco.
+- **Gałęzie:** `feature/*` → `uat` (regresja na `qekbnopwvk.cfolks.pl`) → `main` (produkcja na
+  `ftf.dobo.com.pl`). Po zamknięciu fazy gałąź feature kasujemy i otwieramy nową.
+  Pełny proces i definicja regresji: **[`git-workflow.md`](git-workflow.md)**.
 - **Podział ról:** 🔵 panel hostingu, Salesforce, konta i klucze — po stronie Rafała.
   🟢 kod, skrypty, deploy, dokumentacja — po stronie Claude (przez FTPS ma dostęp do serwera).
 - **Hasła nigdy nie trafiają do rozmowy** — zawsze przez plik poza repozytorium albo wpisywane
