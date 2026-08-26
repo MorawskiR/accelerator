@@ -1,0 +1,42 @@
+# ── SEKRETY — nigdy do repo ─────────────────────────────────────
+# .env zawiera ANTHROPIC_API_KEY, SF_CLIENT_SECRET, APP_KEY, dane bazy.
+# Wyciek klucza API = obciążenie Twojego konta przez obcych.
+.env
+.env.local
+.env.production
+*.key
+*.pem
+!.env.example
+
+# ── Zależności (odtwarzalne z composer.json / package.json) ──────
+/app/vendor/
+/vendor/
+node_modules/
+composer.lock.bak
+
+# ── Generowane przez aplikację ──────────────────────────────────
+/app/storage/logs/
+/app/storage/cache/
+/app/storage/exports/
+*.log
+
+# ── Pliki tymczasowe LibreOffice / MS Office ────────────────────
+# Blokady tworzone gdy dokument jest otwarty (np. ~$Plan projektu.odt)
+~$*
+.~lock.*#
+
+# ── Windows / IDE ───────────────────────────────────────────────
+Thumbs.db
+Desktop.ini
+desktop.ini
+.vscode/
+.idea/
+
+# ── Claude Code ─────────────────────────────────────────────────
+# settings.json (współdzielone) commitujemy, settings.local.json nie
+.claude/settings.local.json
+
+# ── Duże materiały referencyjne ─────────────────────────────────
+# Publiczny ebook Salesforce (9,8 MB) — nie nasze autorstwo,
+# do pobrania z sf.com. Usuń tę linię, jeśli ma być w repo.
+Salesforce Go with the Flow Ebook*.pdf
