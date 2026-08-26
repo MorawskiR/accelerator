@@ -12,7 +12,7 @@
 
 | Faza | Zakres | Status |
 |---|---|---|
-| 0 | Fundament i weryfikacja hostingu | ⬜ Nie rozpoczęta |
+| 0 | Fundament i weryfikacja hostingu | 🟡 W trakcie — punkt 1 ✅ |
 | 1 | Szkielet aplikacji + deploy na produkcję | ⬜ Nie rozpoczęta |
 | 2 | OAuth do Salesforce + automatyczny inwentarz Flow | ⬜ Nie rozpoczęta |
 | 3 | Metadane Flow + Flow Digest + RiskScanner | ⬜ Nie rozpoczęta |
@@ -120,10 +120,31 @@ i `artisan`, a nie potrzebujemy niczego, co daje w zamian.
 
 **Cel:** usunąć niewiadome, zanim powstanie linijka kodu. Ta faza jest w całości poza kodem.
 
-- [ ] **Zweryfikuj pakiet cyberfolks** (panel klienta): wersja PHP (potrzebne **8.1+**), czy jest **SSH**,
-      czy jest dostęp do **Composera** na serwerze, czy można ustawić subdomenę z własnym document rootem
-  - Brak Composera na serwerze **nie blokuje niczego** — `vendor/` budujemy lokalnie i wgrywamy FTP-em.
-    Trzeba to tylko wiedzieć z góry, bo zmienia procedurę deployu z Fazy 1.
+- [x] **Zweryfikuj pakiet cyberfolks** — ✅ **ZROBIONE 2026-08-26**, wyniki poniżej
+
+### Ustalenia z punktu 1 (środowisko produkcyjne)
+
+Konto: `qekbnopwvk` na `s65.cyber-folks.pl` (185.208.164.165), pakiet **cyber_SPRINT**, panel **DirectAdmin**.
+Katalog domowy: `/home/qekbnopwvk`, domeny w `domains/dobo.com.pl` i `domains/qekbnopwvk.cfolks.pl`.
+
+| Co | Wynik | Konsekwencja |
+|---|---|---|
+| PHP | **8.4.21**, LiteSpeed, Linux | z zapasem ponad wymagane 8.1 |
+| `zip`, `xml`, `dom`, `simplexml`, `fileinfo`, `iconv`, `gd` | **wszystkie OK** | **Faza 5 odblokowana** — PhpSpreadsheet zadziała |
+| `curl`, `openssl`, `pdo_mysql`, `mbstring` | OK | Fazy 2–4 bez przeszkód |
+| `memory_limit` | `128M` | wystarczy; pilnować przy dużych .xlsx |
+| **`max_execution_time`** | **`180` s** | ⚠️ **twarde ograniczenie dla Fazy 3** — patrz niżej |
+| `disable_functions` | `exec, shell_exec, system, proc_open, popen, symlink, link`… | **brak powłoki** → Composer tylko lokalnie |
+| `date.timezone` | `Europe/Warsaw` | bez zmian |
+
+**Dostęp do serwera — SSH nie działa z tego komputera.** SSH jest włączone na koncie (port 222),
+ale połączenie z laptopa firmowego przerywa się błędem `Corrupted MAC on input` jeszcze przed
+pytaniem o hasło — ruch jest najpewniej modyfikowany przez firmowe zabezpieczenia sieci.
+**Rozwiązanie: FTPS** (port 21 z TLS) — działa bez zarzutu. Deploy idzie przez `tools/deploy.ps1`.
+
+**Uwaga o ścieżkach:** `DOCUMENT_ROOT` raportuje `private_html`, choć pliki wgrywane są do
+`public_html` (DirectAdmin trzyma je jako dowiązanie). Nie polegać na `$_SERVER['DOCUMENT_ROOT']`
+przy budowaniu ścieżek — używać `__DIR__`.
 - [ ] **Subdomena** `ftf.dobo.com.pl` + certyfikat SSL (Let's Encrypt z panelu)
   - Osobna subdomena, nie podkatalog — izolacja od reszty strony i czysty callback OAuth
 - [ ] **Baza MySQL** + użytkownik (zapisz dane dostępowe)
@@ -154,7 +175,12 @@ Najważniejsza faza pod względem ryzyka.
 - [ ] `app/src/Support/Crypto.php` — AES-256-GCM, klucz `APP_KEY` z `.env` (do tokenów SF w Fazie 2)
 - [ ] `app/db/migrations/001_init.sql` + `app/bin/migrate.php`
 - [ ] `app/templates/layout.twig`, `login.twig`, `dashboard.twig`
-- [ ] `deploy.md` — spisana procedura wgrywania
+- [x] `tools/deploy.ps1` — **gotowe** — wgrywanie przez FTPS (SSH zablokowany przez sieć firmową)
+  - `-Test` sprawdza połączenie · `-ListPath` listuje katalog · `-LocalFile`/`-LocalDir` wgrywa ·
+    `-DeleteRemote` kasuje
+  - Dane logowania w `%USERPROFILE%\.ftp-dobo.txt` — **poza repozytorium**, hasło trafia do curl-a
+    przez tymczasowy `.netrc`, więc nie widać go ani w rozmowie, ani w liście procesów
+- [ ] `deploy.md` — spisana procedura wgrywania (co gdzie ląduje, w jakiej kolejności)
 
 ### Uwagi
 
@@ -211,6 +237,12 @@ nazwa, typ, obiekt, trigger, status, wersja.
       playgrounda (Developer Edition) i przyspiesza pracę.
 - [ ] Import partiami z paskiem postępu odpytywanym AJAX-em
       (cron cyberfolks, limit 60 min/zadanie — zostaw na później, gdy pojawią się org z setkami Flow)
+
+> ⚠️ **`max_execution_time = 180 s` na produkcji** (ustalone w Fazie 0). Import „wszystkich Flow
+> jednym żądaniem" **urwie się w połowie** i zostawi bazę w stanie częściowym. Dlatego partie są
+> wymagane, nie opcjonalne: jedno żądanie HTTP = kilka Flow (np. 5), front dopytuje o kolejne,
+> każda partia zapisuje się w bazie osobno. Efekt uboczny jest pożądany — import da się wznowić
+> po przerwaniu, bo `metadata_hash` mówi, co już jest pobrane.
 - [ ] **`app/src/Flow/DigestBuilder.php`** — najważniejszy plik w projekcie.
       Zamienia 100–300 KB surowego JSON-a na 2–5 KB konkretów:
   - [ ] typ i trigger: obiekt, before/after save, create/update/delete
