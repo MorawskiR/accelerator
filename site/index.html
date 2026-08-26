@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flownatic — Sales Cloud Flow Testing Framework</title>
+<meta name="description" content="Flownatic — akcelerator do testowania Salesforce Flow. Czyta strukturę Flow z org i generuje konkretne przypadki testowe.">
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    --bg:#070b16;
+    --bg2:#0d1428;
+    --ink:#eef2ff;
+    --muted:#8a96b8;
+    --a:#3ba9ff;
+    --b:#5ef0d0;
+    --line:rgba(140,160,210,.16);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;
+    overflow-x:hidden;
+  }
+
+  /* tlo: dwie miekkie poswiaty + delikatna siatka */
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .glow{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5}
+  .glow.one{width:60vmax;height:60vmax;left:-18vmax;top:-22vmax;
+    background:radial-gradient(circle,rgba(59,169,255,.55),transparent 62%);
+    animation:drift1 22s ease-in-out infinite alternate}
+  .glow.two{width:52vmax;height:52vmax;right:-16vmax;bottom:-20vmax;
+    background:radial-gradient(circle,rgba(94,240,208,.42),transparent 62%);
+    animation:drift2 27s ease-in-out infinite alternate}
+  .grid{position:absolute;inset:0;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),
+                     linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse 80% 60% at 50% 45%,#000 30%,transparent 78%);
+    -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 45%,#000 30%,transparent 78%);
+    opacity:.55}
+  @keyframes drift1{to{transform:translate3d(6vmax,4vmax,0) scale(1.12)}}
+  @keyframes drift2{to{transform:translate3d(-5vmax,-4vmax,0) scale(1.08)}}
+
+  main{position:relative;z-index:1;flex:1;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:clamp(24px,6vw,64px) 20px}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:9px;
+    padding:7px 15px;margin-bottom:clamp(24px,4vw,38px);
+    border:1px solid var(--line);border-radius:999px;
+    background:rgba(255,255,255,.035);
+    font-size:clamp(11px,1.5vw,13px);letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--b);
+    box-shadow:0 0 0 0 rgba(94,240,208,.6);animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(94,240,208,.55)}
+    70%{box-shadow:0 0 0 12px rgba(94,240,208,0)}
+    100%{box-shadow:0 0 0 0 rgba(94,240,208,0)}
+  }
+
+  h1{
+    margin:0;
+    font-size:clamp(3.2rem,15vw,11rem);
+    line-height:.9;
+    font-weight:800;
+    letter-spacing:-.035em;
+    background:linear-gradient(100deg,#ffffff 8%,var(--a) 42%,var(--b) 72%,#ffffff 96%);
+    background-size:220% auto;
+    -webkit-background-clip:text;background-clip:text;
+    color:transparent;
+    animation:shine 9s linear infinite;
+  }
+  @keyframes shine{to{background-position:220% center}}
+
+  .rule{width:min(560px,72vw);height:1px;margin:clamp(22px,3.4vw,34px) auto;
+    background:linear-gradient(90deg,transparent,var(--line) 18%,rgba(94,240,208,.55),var(--line) 82%,transparent)}
+
+  .tag{margin:0;color:#c3cde8;
+    font-size:clamp(1rem,2.5vw,1.5rem);font-weight:500;letter-spacing:.01em}
+  .sub{margin:14px auto 0;max-width:62ch;color:var(--muted);
+    font-size:clamp(.9rem,1.7vw,1.05rem);line-height:1.65}
+
+  .chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;
+    margin-top:clamp(30px,4.5vw,46px)}
+  .chip{padding:8px 15px;border:1px solid var(--line);border-radius:999px;
+    background:rgba(255,255,255,.03);color:#aab6d6;font-size:clamp(.76rem,1.4vw,.87rem)}
+  .chip b{color:var(--b);font-weight:600}
+
+  footer{position:relative;z-index:1;padding:22px 20px 30px;text-align:center;
+    color:#5d6889;font-size:.8rem;border-top:1px solid rgba(140,160,210,.09)}
+
+  @media (prefers-reduced-motion:reduce){
+    .glow,h1,.dot{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true">
+  <div class="glow one"></div>
+  <div class="glow two"></div>
+  <div class="grid"></div>
+</div>
+
+<main>
+  <span class="badge"><span class="dot"></span> W budowie · Faza 0</span>
+
+  <h1>FLOWNATIC</h1>
+
+  <div class="rule"></div>
+
+  <p class="tag">Sales Cloud Flow Testing Framework</p>
+  <p class="sub">
+    Czyta strukturę Flow prosto z Twojej organizacji Salesforce
+    i zamienia generyczną checklistę w konkretne przypadki testowe —
+    dopasowane do tego jednego, właśnie tego Flow.
+  </p>
+
+  <div class="chips">
+    <span class="chip">Analiza <b>metadanych Flow</b></span>
+    <span class="chip">Wykrywanie <b>ryzyk</b></span>
+    <span class="chip">Generowanie <b>przypadków testowych</b></span>
+    <span class="chip">Eksport do <b>Excela</b></span>
+  </div>
+</main>
+
+<footer>dobo.com.pl — Rafał Morawski</footer>
+
+</body>
+</html>

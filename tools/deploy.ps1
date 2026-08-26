@@ -26,6 +26,8 @@ param(
     [switch]$Test,
     [string]$ListPath,      # listowanie zdalnego katalogu, np. domains/
     [string]$DeleteRemote,  # skasowanie pliku na serwerze, np. domains/x/public_html/plik.php
+    [string]$RenameFrom,    # zmiana nazwy na serwerze (razem z -RenameTo), sciezki od katalogu domowego
+    [string]$RenameTo,
     [string]$LocalFile,
     [string]$LocalDir,
     [string]$RemotePath,
@@ -103,6 +105,18 @@ try {
             Write-Host $r.Output
         }
         else { Write-Host "BLAD listowania /$p (exit $($r.Code))`n$($r.Output)" -ForegroundColor Red }
+        return
+    }
+
+    # ── ZMIANA NAZWY NA SERWERZE ────────────────────────────────
+    if ($RenameFrom) {
+        if (-not $RenameTo) { throw "Podaj -RenameTo" }
+        $from = '/' + $RenameFrom.TrimStart('/')
+        $to = '/' + $RenameTo.TrimStart('/')
+        $dir = ($from -replace '/[^/]+$', '')
+        $r = Invoke-Curl @('-Q', "RNFR $from", '-Q', "RNTO $to", "ftp://$($cfg['host'])$dir/")
+        if ($r.Ok) { Write-Host "ZMIENIONO  $from  ->  $to" -ForegroundColor Green }
+        else { Write-Host "BLAD zmiany nazwy (exit $($r.Code))`n$($r.Output)" -ForegroundColor Red }
         return
     }
 
