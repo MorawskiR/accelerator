@@ -1,9 +1,13 @@
-# Sales Cloud Flow Testing Framework — plan projektu
+# Flownatic — Sales Cloud Flow Testing Framework · plan projektu
 
 > **Zasada pracy: jedna faza naraz.** Nie zaczynamy kolejnej fazy, dopóki poprzednia nie przejdzie swojego
 > kryterium „Gotowe, gdy". Każda faza kończy się czymś, co da się uruchomić i zobaczyć.
+>
+> **Ten plik wyjaśnia _dlaczego_** — architektura, uzasadnienia decyzji, ryzyka.
+> Bieżący postęp odznaczamy w **[`task.md`](task.md)**, a stan projektu na zimny start
+> (po przerwaniu sesji lub skompaktowaniu kontekstu) opisuje **[`kontekst.md`](kontekst.md)**.
 
-**Aplikacja:** webowa · **Hosting:** cyberfolks (`ftf.dobo.com.pl`) · **Stack:** PHP 8.1+ / MySQL / Slim 4
+**Aplikacja:** webowa · **Hosting:** cyberfolks (`ftf.dobo.com.pl`) · **Stack:** PHP 8.4 / MySQL / Slim 4
 **AI:** Claude API (`claude-opus-5`) · **Org testowa:** hands-on playground · **Użytkownik:** jeden (POC)
 
 ---
