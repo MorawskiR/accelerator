@@ -80,18 +80,17 @@ ruch jest najpewniej modyfikowany przez firmowe zabezpieczenia sieci. Zmiana pak
 ignoruje nawet jawnie wskazany serwer. Do weryfikacji używać DNS-over-HTTPS:
 
 ```bash
-curl -s -H 'accept: application/dns-json'   'https://cloudflare-dns.com/dns-query?name=ftf.dobo.com.pl&type=A'
+curl -s -H 'accept: application/dns-json' "https://cloudflare-dns.com/dns-query?name=ftf.dobo.com.pl&type=A"
 ```
 
-Google (`https://dns.google/resolve?name=...&type=A`) też działa, ale cache'uje NXDOMAIN na czas
-`SOA minimum` = **3600 s**. Jeśli pytałeś o nazwę **przed** jej utworzeniem, przez godzinę będzie
-zwracał NXDOMAIN mimo istniejącego rekordu — wtedy pytaj Cloudflare.
+Google (`https://dns.google/resolve?name=NAZWA&type=A`) też działa i nie wymaga nagłówka, ale cache'uje
+NXDOMAIN na czas `SOA minimum`, czyli **3600 s**. Jeśli pytałeś o nazwę **przed** jej utworzeniem, przez
+godzinę będzie zwracał NXDOMAIN mimo istniejącego rekordu — wtedy pytaj Cloudflare.
 
-**Sprawdzenie vhosta z pominięciem DNS** (działa nawet przy zatrutym cache):
+**Sprawdzenie vhosta z pominięciem DNS** (działa nawet przy zatrutym cache — testuje sam serwer):
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}
-"   --resolve "ftf.dobo.com.pl:80:185.208.164.165" "http://ftf.dobo.com.pl/"
+curl -s -o /dev/null -w "HTTP %{http_code}" --resolve "ftf.dobo.com.pl:80:185.208.164.165" "http://ftf.dobo.com.pl/"
 ```
 
 **Sekrety.** Dane FTP leżą w `%USERPROFILE%\.ftp-dobo.txt` — **poza repozytorium**. Skrypt przekazuje
