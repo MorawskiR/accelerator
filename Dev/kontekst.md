@@ -173,13 +173,30 @@ publiczny, nie nasze autorstwo.
 
 ## 7. Gdzie jesteśmy i co dalej
 
-**Zrobione:** Faza 0 punkt 1 (weryfikacja hostingu) · narzędzie deployu przez FTPS ·
-strona-wizytówka na `dobo.com.pl` — co przy okazji **udowodniło, że cała ścieżka deployu działa**
-i zdjęło największe ryzyko z Fazy 1.
+**Stan na koniec sesji 2026-08-27.**
 
-**Następny krok:** certyfikat Let's Encrypt dla `ftf.dobo.com.pl` (DirectAdmin, po stronie Rafała),
-potem baza MySQL. Do posprzątania: zbędna subdomena `ftp.dobo.com.pl`.
+**Zrobione:** Faza 0 punkt 1 (weryfikacja hostingu) · `tools/deploy.ps1` z FTPS i `-RemoveDir` ·
+strona-wizytówka na `dobo.com.pl` · **subdomena `ftf.dobo.com.pl` postawiona** (vhost i DNS działają) ·
+omyłkowa subdomena `ftp.dobo.com.pl` skasowana wraz z katalogiem · `app/composer.json` z pełnym stackiem.
 
-**Największe otwarte ryzyko:** brak środowiska lokalnego — na komputerze **nie ma ani PHP, ani Composera,
-ani MySQL**. Bez tego nie zbudujemy `vendor/`, a bez `vendor/` nie ruszy Faza 1. To najpilniejsza
-instalacja (Laragon).
+**Blokada dnia — HTTPS na subdomenie.** Na serwerze włączono wymuszanie HTTPS, ale jedyny certyfikat to
+`CN=dobo.com.pl` (SAN: `dobo.com.pl`, `www.dobo.com.pl`, wystawca cyber_Folks → Certum, publicznie
+zaufany). `ftf.dobo.com.pl` nie jest nim objęte, więc **subdomena jest niedostępna w przeglądarce**.
+Rafał kupił certyfikat, ale na koniec sesji **nie był jeszcze wydany** — serwer nadal podawał stary.
+
+**Obejście, które już działa:** `https://dobo.com.pl/ftf/` zwraca 200 z **publicznie zaufanym**
+certyfikatem (`ssl_verify_result: 0`), bo DocumentRoot subdomeny leży w `public_html` domeny głównej.
+To ten sam katalog, więc aplikację można wdrażać i testować pod tym adresem **bez czekania na
+certyfikat** — łącznie z callbackiem OAuth z Fazy 2 (`https://dobo.com.pl/ftf/oauth/callback`).
+Środowisko UAT `qekbnopwvk.cfolks.pl` też ma ważny certyfikat (`*.cfolks.pl`, Certum DV).
+
+**Następny krok:** sprawdzić, czy certyfikat objął `ftf.dobo.com.pl` — w DirectAdmin subdomena bywa
+osobną pozycją do zaznaczenia i domyślnie zaznaczone są tylko domena główna i `www`. Jeśli tak,
+przechodzimy na `ftf.dobo.com.pl`; jeśli nie, pracujemy pod `dobo.com.pl/ftf/`. Potem baza MySQL.
+
+**Największe otwarte ryzyko — bez zmian:** brak środowiska lokalnego. Na komputerze **nie ma ani PHP,
+ani Composera, ani MySQL**. `app/composer.json` jest napisany, ale `composer install` nie ma czym
+się uruchomić, a bez `vendor/` Faza 1 nie ruszy. **Laragon to najpilniejsza rzecz do zainstalowania.**
+
+**Do sprawdzenia jutro:** czy droga walidacji ACME nadal jest wolna (była 2026-08-27) oraz czy
+certyfikat nie wymaga ponownego wydania z zaznaczoną subdomeną.
