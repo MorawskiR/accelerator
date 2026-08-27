@@ -1,0 +1,447 @@
+<title>Flownatic — Dzień Pierwszy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root{
+  --ground:#f7f9fc;
+  --surface:#ffffff;
+  --surface-2:#eef3fa;
+  --ink:#101828;
+  --ink-2:#39445c;
+  --muted:#5a6782;
+  --line:#dde5f0;
+  --line-soft:#e9eff7;
+  --accent:#0b6fc4;
+  --accent-soft:#e4f0fb;
+  --teal:#0b7d6e;
+  --teal-soft:#dff3ef;
+  --warn:#9a6206;
+  --warn-soft:#fbf0d9;
+  --risk:#b23c0a;
+  --risk-soft:#fbe8dd;
+  --shadow:0 1px 2px rgba(16,24,40,.05), 0 8px 24px -16px rgba(16,24,40,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0a0f1d;
+    --surface:#111a2c;
+    --surface-2:#172136;
+    --ink:#e9eefb;
+    --ink-2:#c2ccE2;
+    --muted:#8c99b8;
+    --line:#25314b;
+    --line-soft:#1c2740;
+    --accent:#5cb4ff;
+    --accent-soft:#132741;
+    --teal:#4fd8bf;
+    --teal-soft:#0f2b28;
+    --warn:#e0aa4a;
+    --warn-soft:#2c2314;
+    --risk:#f08050;
+    --risk-soft:#2e1a12;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0a0f1d;
+  --surface:#111a2c;
+  --surface-2:#172136;
+  --ink:#e9eefb;
+  --ink-2:#c2ccE2;
+  --muted:#8c99b8;
+  --line:#25314b;
+  --line-soft:#1c2740;
+  --accent:#5cb4ff;
+  --accent-soft:#132741;
+  --teal:#4fd8bf;
+  --teal-soft:#0f2b28;
+  --warn:#e0aa4a;
+  --warn-soft:#2c2314;
+  --risk:#f08050;
+  --risk-soft:#2e1a12;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Source Serif 4",Georgia,"Times New Roman",serif;
+  font-size:17px;
+  line-height:1.68;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 96px}
+
+/* ─────────── nagłówek ─────────── */
+.masthead{
+  border-bottom:1px solid var(--line);
+  padding:44px 0 30px;
+  margin-bottom:44px;
+  display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;
+}
+.brand{display:flex;flex-direction:column;gap:8px}
+.brand .name{
+  font-family:Archivo,system-ui,sans-serif;
+  font-weight:700;font-size:clamp(2.1rem,5vw,3rem);letter-spacing:-.03em;line-height:1;
+  background:linear-gradient(96deg,var(--accent),var(--teal));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.brand .what{font-family:Archivo,sans-serif;font-size:.95rem;font-weight:500;color:var(--muted);letter-spacing:.01em}
+.meta{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.78rem;color:var(--muted);text-align:right;line-height:1.9}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ─────────── typografia ─────────── */
+h2{
+  font-family:Archivo,system-ui,sans-serif;
+  font-weight:600;font-size:1.42rem;letter-spacing:-.018em;
+  margin:0 0 4px;color:var(--ink);text-wrap:balance;
+}
+h3{
+  font-family:Archivo,system-ui,sans-serif;
+  font-weight:600;font-size:1.02rem;letter-spacing:-.008em;
+  margin:0 0 10px;color:var(--ink);
+}
+p{margin:0 0 16px;max-width:68ch;color:var(--ink-2)}
+p:last-child{margin-bottom:0}
+strong{color:var(--ink);font-weight:600}
+code{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.855em;background:var(--surface-2);color:var(--ink);
+  padding:.1em .38em;border-radius:4px;border:1px solid var(--line-soft);
+}
+
+/* ─────────── sekcje z szyną ─────────── */
+section{
+  display:grid;grid-template-columns:132px minmax(0,1fr);gap:34px;
+  padding:34px 0;border-top:1px solid var(--line-soft);
+}
+section:first-of-type{border-top:none;padding-top:0}
+.rail{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);padding-top:.42em;
+}
+@media (max-width:760px){
+  section{grid-template-columns:1fr;gap:12px}
+  .rail{padding-top:0}
+}
+
+/* ─────────── kafle liczbowe ─────────── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:12px;margin:0}
+.stat{
+  background:var(--surface);border:1px solid var(--line);border-radius:9px;
+  padding:15px 16px;box-shadow:var(--shadow);
+}
+.stat .n{
+  font-family:Archivo,sans-serif;font-weight:700;font-size:1.75rem;letter-spacing:-.03em;
+  color:var(--accent);line-height:1;font-variant-numeric:tabular-nums;
+}
+.stat .l{
+  font-family:"IBM Plex Mono",monospace;font-size:.685rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);margin-top:7px;
+}
+
+/* ─────────── tabele ─────────── */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:9px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:520px}
+th{
+  font-family:Archivo,sans-serif;font-weight:600;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);text-align:left;padding:11px 15px;border-bottom:1px solid var(--line);
+  background:var(--surface-2);white-space:nowrap;
+}
+td{padding:12px 15px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-2)}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--ink);font-weight:600}
+td.mono,th.mono{font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-variant-numeric:tabular-nums}
+
+.pill{
+  display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.68rem;
+  letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap;
+}
+.pill.ok{background:var(--teal-soft);color:var(--teal)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.risk{background:var(--risk-soft);color:var(--risk)}
+.pill.info{background:var(--accent-soft);color:var(--accent)}
+
+/* ─────────── wyróżnienie ─────────── */
+.note{
+  background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:0 9px 9px 0;padding:18px 20px;margin:0 0 18px;box-shadow:var(--shadow);
+}
+.note.risk{border-left-color:var(--risk)}
+.note h3{margin-bottom:7px}
+.note p{font-size:.94rem;margin-bottom:10px}
+
+/* ─────────── oś commitów ─────────── */
+.log{list-style:none;margin:0;padding:0;position:relative}
+.log::before{content:"";position:absolute;left:6px;top:9px;bottom:9px;width:1px;background:var(--line)}
+.log li{position:relative;padding:0 0 17px 27px}
+.log li:last-child{padding-bottom:0}
+.log li::before{
+  content:"";position:absolute;left:1.5px;top:7px;width:10px;height:10px;border-radius:50%;
+  background:var(--ground);border:2px solid var(--accent);
+}
+.log .h{font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--accent);letter-spacing:.02em}
+.log .t{font-family:Archivo,sans-serif;font-weight:500;font-size:.94rem;color:var(--ink);margin-top:1px}
+.log .d{font-size:.86rem;color:var(--muted);margin-top:2px;max-width:62ch;line-height:1.55}
+
+/* ─────────── postęp faz ─────────── */
+.phases{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.ph{
+  flex:1 1 92px;border-radius:7px;padding:10px 11px;border:1px solid var(--line);
+  background:var(--surface);
+}
+.ph.now{border-color:var(--accent);background:var(--accent-soft)}
+.ph .k{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.ph.now .k{color:var(--accent)}
+.ph .v{font-family:Archivo,sans-serif;font-size:.84rem;font-weight:500;color:var(--ink-2);margin-top:3px;line-height:1.35}
+.ph.now .v{color:var(--ink)}
+
+.bar{height:7px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line-soft)}
+.bar span{display:block;height:100%;width:33%;background:linear-gradient(90deg,var(--accent),var(--teal))}
+.barlab{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--muted);margin-top:7px}
+
+ul.clean{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+ul.clean li{padding-left:17px;position:relative;color:var(--ink-2);font-size:.95rem;max-width:66ch}
+ul.clean li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:6px;border-radius:2px;background:var(--accent)}
+ul.clean li b{color:var(--ink);font-weight:600}
+
+footer{
+  border-top:1px solid var(--line);margin-top:44px;padding-top:22px;
+  font-family:"IBM Plex Mono",monospace;font-size:.74rem;color:var(--muted);
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;
+}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="brand">
+      <div class="name">Flownatic</div>
+      <div class="what">Raport z sesji · akcelerator do testowania Salesforce Flow</div>
+    </div>
+    <div class="meta">
+      <div><b>26 sierpnia 2026</b></div>
+      <div>Rafał Morawski</div>
+      <div>dobo.com.pl</div>
+    </div>
+  </header>
+
+  <section>
+    <div class="rail">Streszczenie</div>
+    <div>
+      <p>Sesja zamieniła pomysł opisany w trzech dokumentach w rozpisany projekt z działającą ścieżką wdrożenia. Powstał plan podzielony na <strong>siedem faz</strong>, repozytorium z procesem pracy na trzech gałęziach oraz komplet dokumentacji odpornej na przerwanie sesji.</p>
+      <p>Zweryfikowaliśmy środowisko produkcyjne. Dwa znalezione ograniczenia — limit 180 sekund na żądanie i wyłączona powłoka — <strong>zmieniły projekt Fazy 3</strong> i przesądziły o sposobie budowania zależności. Trzecie ograniczenie, tym razem po stronie Salesforce, wymusiło architekturę cache'owania metadanych.</p>
+      <p>Największą przeszkodą okazała się blokada SSH z firmowego laptopa. Obeszliśmy ją, budując narzędzie wdrożeniowe oparte na FTPS, a jego skuteczność potwierdziliśmy publikując pierwszą stronę na <code>dobo.com.pl</code> — co przy okazji zdjęło największe ryzyko z Fazy 1.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Liczby</div>
+    <div class="stats">
+      <div class="stat"><div class="n">6</div><div class="l">commitów</div></div>
+      <div class="stat"><div class="n">13</div><div class="l">plików w repo</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">gałęzie</div></div>
+      <div class="stat"><div class="n">7</div><div class="l">faz planu</div></div>
+      <div class="stat"><div class="n">1</div><div class="l">strona live</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Materiał wejściowy</div>
+    <div>
+      <h2>Co analizowaliśmy</h2>
+      <p>Trzy dokumenty, każdy wnoszący co innego. Kluczowy okazał się arkusz — to w nim leży cała wartość merytoryczna, którą aplikacja ma zautomatyzować.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Dokument</th><th>Zawartość</th><th>Rola w projekcie</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>SalesforcCloud_FTF.xlsx</td>
+              <td>6 arkuszy: Overview, Flow Inventory, Universal Checklist (TC-001…TC-026), Test Cases per typ Flow, Defect Log, Progress Tracker</td>
+              <td><span class="pill info">rdzeń</span> treść merytoryczna, którą aplikacja automatyzuje</td>
+            </tr>
+            <tr>
+              <td>Zgłoszenie pomysłu (.odt)</td>
+              <td>Opis akceleratora, idea №00001131</td>
+              <td>zakres i cel biznesowy</td>
+            </tr>
+            <tr>
+              <td>Prezentacja (.odp)</td>
+              <td>Slajdy 1–3 własne, reszta to niewypełniony szablon</td>
+              <td>kierunek: „czytać dane z org przez API”</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Decyzje</div>
+    <div>
+      <h2>Cztery rozstrzygnięcia, które ukształtowały projekt</h2>
+      <p>Każde zapadło po weryfikacji, nie z przyzwyczajenia. Uzasadnienia trafiły do <code>Dev/plan.md</code>, żeby za miesiąc dało się je odtworzyć.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Obszar</th><th>Wybór</th><th>Dlaczego akurat tak</th></tr></thead>
+          <tbody>
+            <tr><td>Backend</td><td>PHP 8.4 + MySQL, Slim 4</td><td>Node.js na cyberfolks wymaga ręcznego <code>nohup</code> i proxy w <code>.htaccess</code>, bez PM2 i bez wsparcia hostingu. Laravel to na współdzielonym hostingu walka z document rootem bez korzyści w zamian</td></tr>
+            <tr><td>Silnik AI</td><td>Claude API, <code>claude-opus-5</code></td><td>Działa z każdą org, w tym Developer Edition. Einstein wymagałby licencji, których playground może nie mieć — wraca do rozważenia w Fazie 6</td></tr>
+            <tr><td>Zakres MVP</td><td>Analizator Flow → generator przypadków testowych</td><td>To jedyna część, której Excel nie potrafi. Pełny menedżer testów byłby głównie przepisaniem arkusza do przeglądarki</td></tr>
+            <tr><td>Kolejność prac</td><td>Parser przed AI, deploy w Fazie 1</td><td>Parser robi to, co musi być powtarzalne; model dostaje mały, czysty opis. Deploy wcześnie, bo ryzyko hostingowe najgorzej odkrywać po trzech tygodniach kodowania</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Weryfikacja</div>
+    <div>
+      <h2>Środowisko produkcyjne</h2>
+      <p>Serwer <code>s65.cyber-folks.pl</code>, pakiet cyber_SPRINT, panel DirectAdmin. Diagnostykę przeprowadziliśmy wąskim skryptem zamiast <code>phpinfo()</code>, żeby nie wystawiać publicznie nadmiaru informacji o serwerze — i usunęliśmy go zaraz po odczycie.</p>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Element</th><th class="mono">Wynik</th><th>Status</th><th>Konsekwencja dla projektu</th></tr></thead>
+          <tbody>
+            <tr><td>PHP</td><td class="mono">8.4.21 / LiteSpeed</td><td><span class="pill ok">OK</span></td><td>zapas ponad wymagane 8.1</td></tr>
+            <tr><td>Rozszerzenie <code>zip</code></td><td class="mono">obecne</td><td><span class="pill ok">OK</span></td><td>przesądza o wykonalności Fazy 5 — bez niego nie ma eksportu do Excela</td></tr>
+            <tr><td>Pozostałe rozszerzenia</td><td class="mono">komplet</td><td><span class="pill ok">OK</span></td><td>curl, openssl, pdo_mysql, mbstring, xml, dom, fileinfo, iconv, gd</td></tr>
+            <tr><td><code>max_execution_time</code></td><td class="mono">180 s</td><td><span class="pill warn">UWAGA</span></td><td><strong>zmieniło projekt Fazy 3</strong> — import Flow musi iść partiami, inaczej urwie się w połowie i zostawi bazę w stanie częściowym</td></tr>
+            <tr><td>Powłoka systemowa</td><td class="mono">wyłączona</td><td><span class="pill warn">UWAGA</span></td><td>Composer uruchamiamy lokalnie, <code>vendor/</code> wgrywamy przez FTP</td></tr>
+            <tr><td>SSH z laptopa firmowego</td><td class="mono">Corrupted MAC</td><td><span class="pill risk">BLOKADA</span></td><td>obejście: FTPS — patrz niżej</td></tr>
+            <tr><td>Salesforce <code>Flow.Metadata</code></td><td class="mono">1 rekord / zapytanie</td><td><span class="pill warn">UWAGA</span></td><td>import org to N+1 wywołań — wymusza cache po <code>metadata_hash</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Przeszkoda</div>
+    <div>
+      <h2>Blokada SSH i jak ją obeszliśmy</h2>
+      <div class="note risk">
+        <h3>Objaw</h3>
+        <p>Połączenie SSH przerywało się błędem <code>Corrupted MAC on input</code> — <strong>jeszcze przed pytaniem o hasło</strong>. Wykluczało to problem z kontem, hasłem czy kluczem: kanał psuł się na etapie zestawiania szyfrowania.</p>
+        <h3>Diagnoza</h3>
+        <p>Ruch jest najpewniej modyfikowany przez firmowe zabezpieczenia sieci. Istotne było odrzucenie fałszywego tropu — <strong>zmiana pakietu hostingowego nic by nie dała</strong>, bo problem leży na drodze sieciowej, a nie po stronie serwera. Oszczędziło to niepotrzebnego wydatku.</p>
+        <h3>Rozwiązanie</h3>
+        <p>FTPS na porcie 21 przechodzi bez zarzutu. Powstało narzędzie <code>tools/deploy.ps1</code> obsługujące test połączenia, listowanie katalogów, wgrywanie plików i katalogów, kasowanie oraz zmianę nazw. Hasło trafia do curl-a przez tymczasowy <code>.netrc</code>, więc nie pojawia się ani w transkrypcie rozmowy, ani w liście procesów systemu.</p>
+      </div>
+      <p>Skutek uboczny okazał się cenniejszy od samego obejścia: publikując stronę, przeszliśmy <strong>całą ścieżkę wdrożenia od pliku lokalnego po działający HTTPS</strong>. To był największy niewiadomy element Fazy 1 i przestał nim być.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Rezultaty</div>
+    <div>
+      <h2>Co powstało</h2>
+      <ul class="clean">
+        <li><b>Strona Flownatic na dobo.com.pl</b> — zastąpiła reklamę hostingu. Samodzielna, responsywna, respektuje <code>prefers-reduced-motion</code>. Oryginał zachowany na serwerze i odwracalny jedną komendą</li>
+        <li><b>tools/deploy.ps1</b> — wdrożenia przez FTPS z bezpiecznym przekazywaniem hasła</li>
+        <li><b>Dev/plan.md</b> — 7 faz, architektura, rozumowanie od końca do początku, ryzyka przypisane do faz</li>
+        <li><b>Dev/task.md</b> — tracker z podziałem, które zadania są po stronie Rafała, a które po stronie Claude</li>
+        <li><b>Dev/kontekst.md</b> — briefing na zimny start po przerwaniu sesji lub skompaktowaniu kontekstu</li>
+        <li><b>Dev/git-workflow.md</b> — proces <code>feature</code> → <code>uat</code> → <code>main</code> wraz z definicją regresji jako konkretnej listy R1–R12</li>
+        <li><b>Repozytorium</b> — trzy gałęzie, środowisko UAT wskazane na istniejącą domenę tymczasową</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Przebieg</div>
+    <div>
+      <h2>Historia zmian</h2>
+      <ol class="log">
+        <li>
+          <div class="h">e3a8dc6</div>
+          <div class="t">Inicjalizacja repozytorium</div>
+          <div class="d">Plan projektu i materiały źródłowe. Publiczny ebook Salesforce (9,8 MB) wyłączony z repo jako materiał nie naszego autorstwa.</div>
+        </li>
+        <li>
+          <div class="h">4d7c069</div>
+          <div class="t">Weryfikacja hostingu i narzędzie deployu</div>
+          <div class="d">Ustalenia środowiskowe zapisane w planie; ograniczenie 180 s dopisane do Fazy 3.</div>
+        </li>
+        <li>
+          <div class="h">c09a281</div>
+          <div class="t">Strona-wizytówka Flownatic</div>
+          <div class="d">Pierwsze publiczne wdrożenie, potwierdzające sprawność całej ścieżki.</div>
+        </li>
+        <li>
+          <div class="h">adb5760</div>
+          <div class="t">Katalog Dev z dokumentacją</div>
+          <div class="d">Plan przeniesiony, a nie skopiowany — dwie kopie rozjechałyby się po kilku dniach.</div>
+        </li>
+        <li>
+          <div class="h">5880e88</div>
+          <div class="t">Proces pracy z gałęziami</div>
+          <div class="d">Definicja regresji jako listy R1–R12, żeby ten krok nie stał się pustym rytuałem.</div>
+        </li>
+        <li>
+          <div class="h">98fa559</div>
+          <div class="t">Aktualizacja prezentacji</div>
+          <div class="d">Zabezpieczenie zmian w materiale źródłowym.</div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Stan</div>
+    <div>
+      <h2>Gdzie jesteśmy</h2>
+      <div class="phases">
+        <div class="ph now"><div class="k">Faza 0</div><div class="v">Fundament</div></div>
+        <div class="ph"><div class="k">Faza 1</div><div class="v">Szkielet</div></div>
+        <div class="ph"><div class="k">Faza 2</div><div class="v">OAuth</div></div>
+        <div class="ph"><div class="k">Faza 3</div><div class="v">Flow Digest</div></div>
+        <div class="ph"><div class="k">Faza 4</div><div class="v">Generator AI</div></div>
+        <div class="ph"><div class="k">Faza 5</div><div class="v">Eksport</div></div>
+        <div class="ph"><div class="k">Faza 6</div><div class="v">Walidacja</div></div>
+      </div>
+      <div class="bar"><span></span></div>
+      <div class="barlab">Faza 0 — 4 z 12 punktów zamkniętych</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Dalej</div>
+    <div>
+      <h2>Następne kroki</h2>
+      <p>Wszystko, co zostało do zamknięcia Fazy 0, wymaga dostępu do paneli i kont — jest po stronie Rafała.</p>
+      <ul class="clean">
+        <li><b>Laragon</b> — najpilniejsze. Na komputerze nie ma PHP, Composera ani MySQL, a bez nich nie zbudujemy <code>vendor/</code> i Faza 1 nie ruszy</li>
+        <li><b>Subdomena ftf.dobo.com.pl</b> z certyfikatem Let's Encrypt</li>
+        <li><b>Baza MySQL</b> — baza i użytkownik</li>
+        <li><b>Playground org</b> z 3–5 Flow różnych typów</li>
+        <li><b>Jeden Flow celowo wadliwy</b> — DML wewnątrz pętli, bez fault path. Bez niego nie da się udowodnić, że analizator z Fazy 3 rzeczywiście działa, a nie tylko wygląda, że działa</li>
+        <li><b>Klucz ANTHROPIC_API_KEY</b> z console.anthropic.com</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Do rozważenia</div>
+    <div>
+      <div class="note">
+        <h3>Repozytorium jest publiczne</h3>
+        <p>Zawiera dokument zgłoszenia wewnętrznego wraz z numerami spraw oraz odniesieniem do pliku firmowego. Decyzja o publikacji została podjęta świadomie, po przedstawieniu konsekwencji — warto jednak wracać do niej okresowo, zwłaszcza przed dodaniem czegokolwiek nowego. Niezależnie od widoczności obowiązuje twarda zasada: <strong>plik <code>.env</code> nigdy nie trafia do repozytorium</strong>, bo boty skanujące GitHuba znajdują wyciekniętý klucz API w kilkanaście sekund.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Flownatic · raport z sesji · 26 sierpnia 2026</span>
+    <span>github.com/MorawskiR/accelerator</span>
+  </footer>
+
+</div>
