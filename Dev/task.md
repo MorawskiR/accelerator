@@ -22,9 +22,14 @@
 - [x] 🔵 **Usuń zbędną subdomenę `ftp.dobo.com.pl`** — ✅ 2026-08-27, vhost zniknął (HTTP 403).
       ⚠️ Zostały pliki: `domains/dobo.com.pl/public_html/ftp/` nadal istnieje i odpowiada 200
       pod `dobo.com.pl/ftp/`. DirectAdmin kasuje pliki jako osobną opcję — patrz punkt niżej
-- [ ] 🔵 **Skasuj osierocony katalog `public_html/ftp/`** — Menedżer plików w DirectAdmin.
-      `deploy.ps1 -DeleteRemote` używa `DELE` i katalogów nie usuwa (trzeba by `RMD`)
+- [x] 🟢 **Skasuj osierocony katalog `public_html/ftp/`** — ✅ 2026-08-27, `dobo.com.pl/ftp/` zwraca 404.
+      Zamiast Menedżera plików: `deploy.ps1` dostał `-RemoveDir` (rekurencyjnie, `DELE` + `RMD`).
+      Bez `-Force` pokazuje wyłącznie plan; odmawia ścieżek krótszych niż dwa segmenty
 - [ ] 🔵 **Certyfikat SSL** — DirectAdmin → Certyfikaty SSL → Let's Encrypt dla `ftf.dobo.com.pl`
+      🔴 **PILNE — subdomena jest teraz niedostępna.** Wymuszanie HTTPS jest włączone (HTTP → 301),
+      ale jedyny certyfikat na serwerze to `CN=dobo.com.pl` (SAN: `dobo.com.pl`, `www.dobo.com.pl`,
+      wystawca cyber_Folks). `ftf.dobo.com.pl` nie jest nim objęte → w przeglądarce ostrzeżenie
+      o certyfikacie przed jakąkolwiek treścią. Do czasu wydania certyfikatu subdomena nie działa
 - [ ] 🔵 **Baza MySQL** — utwórz bazę i użytkownika, zapisz dane
 - [ ] 🔵 **Playground org** — zaloguj się, potwierdź uprawnienia admina
 - [ ] 🔵 **Klucz Anthropic** — `ANTHROPIC_API_KEY` z console.anthropic.com

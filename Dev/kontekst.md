@@ -72,6 +72,8 @@ ruch jest najpewniej modyfikowany przez firmowe zabezpieczenia sieci. Zmiana pak
 .\tools\deploy.ps1 -LocalFile .\site\index.html -RemotePath "domains/dobo.com.pl/public_html/"
 .\tools\deploy.ps1 -LocalDir .\public_html -RemotePath "domains/dobo.com.pl/public_html/ftf/"
 .\tools\deploy.ps1 -DeleteRemote "domains/x/public_html/plik.php"
+.\tools\deploy.ps1 -RemoveDir "domains/x/public_html/stare"          # pokazuje plan, nie kasuje
+.\tools\deploy.ps1 -RemoveDir "domains/x/public_html/stare" -Force   # wykonuje
 .\tools\deploy.ps1 -RenameFrom "sciezka/a" -RenameTo "sciezka/b"
 ```
 
