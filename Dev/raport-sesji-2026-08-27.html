@@ -236,7 +236,7 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   <header class="masthead">
     <div class="brand">
       <div class="name">Flownatic</div>
-      <div class="what">Dzień drugi — subdomena stoi, plan wymagał trzech korekt</div>
+      <div class="what">Dzień drugi — fundament stoi, adres produkcyjny zmieniony</div>
     </div>
     <div class="meta">
       <div><b>2026-08-27</b> · sesja druga</div>
@@ -249,17 +249,19 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
     <div class="rail">Skrót</div>
     <div>
       <h2>Co się dzisiaj wydarzyło</h2>
-      <p>Subdomena <code>ftf.dobo.com.pl</code> jest postawiona i ma działający vhost oraz rekord DNS.
-      Po drodze wyszło jednak, że <strong>trzy założenia z <code>plan.md</code> nie odpowiadały
-      rzeczywistości</strong> — wszystkie trzy zostały zweryfikowane pomiarem i naprawione w dokumentacji.
-      Powstał też pierwszy plik Fazy 1, <code>app/composer.json</code>.</p>
-      <p>Dzień zamyka się na <strong>jednej otwartej blokadzie</strong>: subdomena nie ma certyfikatu
-      i przez wymuszanie HTTPS jest w tej chwili niedostępna w przeglądarce. Istnieje darmowe obejście,
-      które działa już teraz — opisane niżej.</p>
+      <p>Infrastruktura stoi w całości: subdomena postawiona, baza MySQL działa i jest zweryfikowana,
+      playground Salesforce potwierdzony razem z profilem administratora. Powstał pierwszy plik
+      Fazy 1 — <code>app/composer.json</code>.</p>
+      <p>Dwie rzeczy wymagały zmiany kursu. <strong>Trzy założenia z planu nie odpowiadały
+      rzeczywistości</strong> i zostały poprawione po weryfikacji pomiarem. A pod koniec dnia
+      <strong>zmieniliśmy adres produkcyjny</strong> — subdomena okazała się nie dawać tego,
+      co obiecywała.</p>
+      <p>Był też jeden incydent bezpieczeństwa, wykryty i zamknięty. Opisany niżej, bo wniosek z niego
+      jest praktyczny.</p>
 
       <div class="stats">
-        <div class="stat"><div class="n">8</div><div class="l">commitów</div></div>
-        <div class="stat"><div class="n">3</div><div class="l">korekty planu</div></div>
+        <div class="stat"><div class="n">15</div><div class="l">commitów</div></div>
+        <div class="stat"><div class="n">9/14</div><div class="l">Faza 0</div></div>
         <div class="stat"><div class="n">1</div><div class="l">blokada</div></div>
         <div class="stat"><div class="n">0</div><div class="l">linii kodu apki</div></div>
       </div>
@@ -267,30 +269,38 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   </section>
 
   <section>
-    <div class="rail">Infrastruktura</div>
+    <div class="rail">Decyzja</div>
     <div>
-      <h2>Stan zweryfikowany pomiarem</h2>
-      <p>Wszystkie wiersze poniżej pochodzą z faktycznych zapytań wykonanych na koniec sesji, nie
-      z założeń. Kolumna SSL to <code>ssl_verify_result</code> — zero oznacza certyfikat publicznie zaufany.</p>
+      <h2>Adres produkcyjny to teraz dobo.com.pl/ftf/</h2>
+      <p>Pierwotny plan zakładał <code>ftf.dobo.com.pl</code>, uzasadniony „izolacją aplikacji od reszty
+      strony”. To uzasadnienie <strong>okazało się nietrafione</strong>: DirectAdmin zakłada subdomenę
+      wewnątrz <code>public_html</code> domeny nadrzędnej, więc subdomena i podkatalog to
+      <strong>fizycznie ten sam katalog</strong>. Subdomena nie izolowała niczego.</p>
+      <p>Rozstrzygnął certyfikat. Podkatalog ma ważny, publicznie zaufany certyfikat i działa od ręki;
+      subdomena nie ma żadnego, a przy włączonym wymuszaniu HTTPS jest przez to niedostępna
+      w przeglądarce.</p>
+
       <div class="tw">
         <table>
-          <thead>
-            <tr><th>Adres</th><th class="mono">HTTP</th><th class="mono">SSL</th><th>Stan</th></tr>
-          </thead>
+          <thead><tr><th>Rola</th><th class="mono">Adres</th><th>Stan</th></tr></thead>
           <tbody>
-            <tr><td class="mono">https://dobo.com.pl/</td><td class="mono">200</td><td class="mono">0</td>
-                <td><span class="pill ok">działa</span> strona-wizytówka</td></tr>
-            <tr><td class="mono">https://dobo.com.pl/ftf/</td><td class="mono">200</td><td class="mono">0</td>
-                <td><span class="pill ok">działa</span> ten sam katalog co subdomena</td></tr>
-            <tr><td class="mono">https://ftf.dobo.com.pl/</td><td class="mono">—</td><td class="mono">—</td>
-                <td><span class="pill risk">błąd TLS</span> certyfikat nie obejmuje nazwy</td></tr>
-            <tr><td class="mono">https://qekbnopwvk.cfolks.pl/</td><td class="mono">200</td><td class="mono">0</td>
-                <td><span class="pill ok">działa</span> środowisko UAT</td></tr>
-            <tr><td class="mono">https://dobo.com.pl/ftp/</td><td class="mono">404</td><td class="mono">0</td>
-                <td><span class="pill info">posprzątane</span> omyłkowa subdomena usunięta</td></tr>
+            <tr><td>Produkcja</td><td class="mono">https://dobo.com.pl/ftf/</td>
+                <td><span class="pill ok">działa</span> certyfikat ważny</td></tr>
+            <tr><td>Callback OAuth</td><td class="mono">https://dobo.com.pl/ftf/oauth/callback</td>
+                <td><span class="pill info">przesądzony</span> wchodzi do Connected App</td></tr>
+            <tr><td>UAT</td><td class="mono">https://qekbnopwvk.cfolks.pl</td>
+                <td><span class="pill ok">działa</span></td></tr>
+            <tr><td>Wizytówka</td><td class="mono">https://dobo.com.pl</td>
+                <td><span class="pill ok">działa</span> zostaje w korzeniu</td></tr>
+            <tr><td>Subdomena</td><td class="mono">https://ftf.dobo.com.pl</td>
+                <td><span class="pill warn">opcjonalna</span> brak certyfikatu, nie blokuje</td></tr>
           </tbody>
         </table>
       </div>
+
+      <p style="margin-top:16px">Callback domknięto <strong>teraz, przed Fazą 2</strong>, nie w trakcie.
+      Salesforce dopasowuje go co do znaku, więc późniejsza zmiana wymagałaby poprawki po stronie
+      Salesforce, nie tylko u nas.</p>
     </div>
   </section>
 
@@ -298,26 +308,23 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
     <div class="rail">Korekty</div>
     <div>
       <h2>Trzy rzeczy inne, niż zakładał plan</h2>
-      <p>Każda z nich zmienia coś konkretnego w tym, co zbudujemy w Fazie 1 i 2. Wszystkie
-      są już naniesione w <code>plan.md</code>, <code>kontekst.md</code> i <code>task.md</code>.</p>
-
       <div class="split">
         <div class="card">
           <h3>DocumentRoot leży w domenie głównej</h3>
-          <p>DirectAdmin zakłada subdomenę <em>wewnątrz</em> <code>public_html</code> domeny nadrzędnej.
-          Katalog <code>app/</code> postawiony obok byłby dostępny z sieci razem z <code>.env</code>.</p>
+          <p>Katalog <code>app/</code> postawiony obok document roota byłby dostępny z sieci razem
+          z <code>.env</code> — a tam klucz API i hasło do bazy.</p>
           <div class="was">było: <b>~/domains/ftf.dobo.com.pl/app/</b><br>jest: <i>~/flownatic-app/</i></div>
         </div>
         <div class="card">
           <h3>Aplikacja pod dwoma adresami</h3>
-          <p>Ten sam katalog odpowiada jako subdomena i jako podkatalog. Ciasteczka sesji nie są
-          współdzielone, a callback OAuth dopasowuje się dokładnie.</p>
-          <div class="was">wymóg: <i>kanoniczne 301 w .htaccess</i></div>
+          <p>Ten sam katalog odpowiada jako subdomena i jako podkatalog. Kanoniczny jest podkatalog,
+          bo tylko on ma ważny certyfikat.</p>
+          <div class="was">301 <b>na subdomenę</b> → <i>na dobo.com.pl/ftf/</i></div>
         </div>
         <div class="card">
           <h3>Lokalny DNS jest bezużyteczny</h3>
-          <p>Firmowa sieć przechwytuje zapytania: <code>nslookup</code> odpowiada z <code>127.0.0.1</code>
-          i zwraca ten sam adres AWS dla <strong>każdej</strong> nazwy, także nieistniejącej.</p>
+          <p>Firmowa sieć przechwytuje zapytania i zwraca ten sam adres AWS dla <strong>każdej</strong>
+          nazwy — także nieistniejącej. Ignoruje nawet jawnie wskazany serwer.</p>
           <div class="was">obejście: <i>Cloudflare DoH + curl --resolve</i></div>
         </div>
       </div>
@@ -325,41 +332,67 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   </section>
 
   <section>
-    <div class="rail">Blokada</div>
+    <div class="rail">Baza</div>
     <div>
-      <h2>HTTPS na subdomenie</h2>
+      <h2>MySQL działa i jest sprawdzona</h2>
+      <p>Baza <code>qekbnopwvk_flownatic</code> na MariaDB 10.6.27, użytkownik z pełnymi uprawnieniami
+      do swojej bazy, zero tabel. Połączenie zweryfikowane z produkcji jednorazowym skryptem PHP —
+      wgranym, wywołanym i skasowanym zaraz po odczycie.</p>
+
       <div class="note risk">
-        <h3>Subdomena jest teraz niedostępna w przeglądarce</h3>
-        <p>Na serwerze włączono wymuszanie HTTPS, więc HTTP zwraca 301. Jedyny certyfikat na tym
-        adresie nie obejmuje jednak nazwy <code>ftf</code> — użytkownik zobaczy ostrzeżenie
-        o certyfikacie przed jakąkolwiek treścią.</p>
-        <div class="cert">subject = CN=dobo.com.pl
-issuer&nbsp; = cyber_Folks → Certum Trusted Network CA
-SAN&nbsp;&nbsp;&nbsp;&nbsp; = dobo.com.pl, www.dobo.com.pl   <b>← brak ftf</b>
-ważny&nbsp;&nbsp; = 25.08.2026 – 12.03.2027</div>
+        <h3>Panel zignorował prośbę o kodowanie</h3>
+        <p>Baza powstała w <code>utf8mb3</code>, mimo że specyfikacja wyraźnie mówiła
+        <code>utf8mb4</code>. To ten trzybajtowy wariant, który <strong>gubi emoji i część
+        znaków</strong> — a metadane Flow z Salesforce potrafią je zawierać.</p>
+        <p style="margin-bottom:0">Poprawione przez <code>ALTER DATABASE</code> przy pustej bazie, czyli
+        bezkosztowo. Na wypełnionych tabelach byłaby to migracja. Skrypt naprawczy miał zabezpieczenie:
+        przerwałby, gdyby zastał jakiekolwiek tabele.</p>
       </div>
 
-      <p>Certyfikat został kupiony, ale do końca sesji <strong>nie był wydany</strong> — serwer nadal
-      podawał stary. W DirectAdmin subdomena bywa osobną pozycją do zaznaczenia przy wydawaniu,
-      a domyślnie zaznaczone są tylko domena główna i <code>www</code>. To pierwsza rzecz do sprawdzenia jutro.</p>
+      <p>Poprawka została potwierdzona <strong>testem zapisu</strong>, nie samym odczytem metadanych:
+      do bazy trafił ciąg <code>zazolc gesla jazn 😀</code> i wrócił identyczny, bajt w bajt.
+      W <code>utf8mb3</code> ten test by nie przeszedł.</p>
+      <p><strong>Wniosek na przyszłość:</strong> panel prawdopodobnie znów założy bazę w
+      <code>utf8mb3</code> — przy kolejnej trzeba sprawdzić i poprawić, póki jest pusta.</p>
+    </div>
+  </section>
 
-      <div class="note">
-        <h3>Obejście, które działa już dziś — za darmo</h3>
-        <p><code>https://dobo.com.pl/ftf/</code> zwraca 200 z <strong>publicznie zaufanym</strong>
-        certyfikatem, bo to fizycznie ten sam katalog co subdomena. Aplikację można wdrażać i testować
-        pod tym adresem bez czekania na cokolwiek — łącznie z callbackiem OAuth z Fazy 2
-        (<code>https://dobo.com.pl/ftf/oauth/callback</code>).</p>
-        <p>Warto też wiedzieć, że certyfikat na <code>dobo.com.pl</code> <strong>nie pochodzi od
-        Let&rsquo;s Encrypt</strong> — to darmowy certyfikat cyberfolks podpięty pod Certum.
-        Let&rsquo;s Encrypt jako urząd certyfikacji jest bezpłatny; opłata w panelu dotyczy usługi
-        hostingodawcy, nie samego certyfikatu.</p>
+  <section>
+    <div class="rail">Incydent</div>
+    <div>
+      <h2>Hasło do bazy w katalogu repozytorium</h2>
+      <div class="note risk">
+        <h3>Co się stało</h3>
+        <p>W katalogu projektu pojawił się plik, którego <strong>nazwa i treść były hasłem do bazy</strong>.
+        Powstał przy wpisywaniu polecenia w terminalu — hasło trafiło w miejsce nazwy pliku.</p>
+        <p style="margin-bottom:0">Repozytorium jest <strong>publiczne</strong>, a plik nie pasował do
+        żadnej reguły <code>.gitignore</code>. Najbliższe <code>git add -A</code> wciągnęłoby go
+        do commita.</p>
       </div>
 
-      <p>Droga walidacji ACME została sprawdzona z wyprzedzeniem plikiem testowym i <strong>nic jej nie
-      blokuje</strong>. <code>/probe.txt</code> serwuje się normalnie, więc <code>.htaccess</code> domeny
-      głównej nie przeszkadza. <code>/.well-known/acme-challenge/</code> zwraca 404 nawet dla pliku
-      fizycznie tam leżącego — to znaczy, że serwer przechwytuje tę ścieżkę i obsługuje wyzwanie sam,
-      co jest normalnym zachowaniem DirectAdmin.</p>
+      <ul class="clean">
+        <li><strong>Do gita nie trafił</strong> — sprawdzona cała historia, wszystkie gałęzie i pliki śledzone</li>
+        <li>Plik usunięty, <strong>hasło zmienione</strong>, nowe połączenie zweryfikowane</li>
+        <li><code>.gitignore</code> dostał regułę <code>/*.txt</code> na luźne pliki w korzeniu —
+            przetestowaną plikiem kontrolnym. Dokumentacja to <code>.md</code>, więc nic nie blokuje</li>
+      </ul>
+
+      <p style="margin-top:16px"><strong>Wniosek praktyczny:</strong> haseł nie wpisujemy w terminalu —
+      ani jako polecenie, ani z prefiksem <code>!</code>. Trafiają prosto z panelu do pliku poza
+      repozytorium, otwartego w Notatniku. Ta sama zasada, która od początku obowiązuje dla danych FTP.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Salesforce</div>
+    <div>
+      <h2>Playground potwierdzony</h2>
+      <p>Org <code>resilient-narwhal-j9207g-dev-ed.trailblaze.my.salesforce.com</code> odpowiada,
+      certyfikat ważny, profil użytkownika to <strong>System Administrator</strong> — czyli utworzenie
+      Connected App w Fazie 2 jest wykonalne.</p>
+      <p>Publiczny endpoint <code>/services/data/</code> podaje 37 wersji API, najnowsza to
+      <strong>v67.0 (Summer '26)</strong>. To dokładnie ta wersja, którą zakłada <code>plan.md</code>
+      przy zapytaniach do <code>FlowDefinitionView</code>, więc nic nie wymaga korekty.</p>
     </div>
   </section>
 
@@ -367,11 +400,11 @@ ważny&nbsp;&nbsp; = 25.08.2026 – 12.03.2027</div>
     <div class="rail">Narzędzia</div>
     <div>
       <h2>deploy.ps1 umie teraz kasować katalogi</h2>
-      <p>Usunięcie osieroconego katalogu po omyłkowej subdomenie wymagało komendy <code>RMD</code>,
-      której skrypt nie miał — <code>-DeleteRemote</code> używa <code>DELE</code> i działa tylko na pliki.
-      Zamiast odsyłać do Menedżera plików, skrypt dostał <code>-RemoveDir</code>.</p>
+      <p>Usunięcie osieroconego katalogu po omyłkowej subdomenie <code>ftp</code> wymagało komendy
+      <code>RMD</code>, której skrypt nie miał — <code>-DeleteRemote</code> używa <code>DELE</code>
+      i działa tylko na pliki.</p>
       <ul class="clean">
-        <li>Buduje plan od środka na zewnątrz: <code>DELE</code> na pliki, <code>RMD</code> na katalogi</li>
+        <li>Plan budowany od środka na zewnątrz: <code>DELE</code> na pliki, <code>RMD</code> na katalogi</li>
         <li>Bez <code>-Force</code> wypisuje wyłącznie plan i <strong>nic nie kasuje</strong></li>
         <li>Odmawia ścieżek krótszych niż dwa segmenty — <code>domains</code> nie przejdzie nawet z <code>-Force</code></li>
         <li>Oba zabezpieczenia sprawdzone <em>przed</em> pierwszym użyciem na produkcji</li>
@@ -383,17 +416,17 @@ ważny&nbsp;&nbsp; = 25.08.2026 – 12.03.2027</div>
     <div class="rail">Faza 1</div>
     <div>
       <h2>Pierwszy plik aplikacji</h2>
-      <p>Powstał <code>app/composer.json</code> ze stackiem: Slim 4, slim/psr7, slim/twig-view,
-      PhpSpreadsheet i oficjalny SDK Anthropic. Autoload PSR-4 dla przestrzeni
-      <code>Flownatic</code> wskazuje na <code>app/src/</code>.</p>
+      <p>Powstał <code>app/composer.json</code>: Slim 4, slim/psr7, slim/twig-view, PhpSpreadsheet
+      i oficjalny SDK Anthropic. Autoload PSR-4 dla przestrzeni <code>Flownatic</code> wskazuje
+      na <code>app/src/</code>.</p>
       <div class="note">
         <h3>Wersje sprawdzone w Packagiscie, nie z pamięci</h3>
         <p><strong>SDK Anthropic jest wciąż w wersji 0.x</strong> — najnowsza to 0.44.0. Wpisanie
         <code>^1.0</code> z pamięci wywaliłoby <code>composer install</code> przy pierwszym uruchomieniu.
         PhpSpreadsheet 5.9.0 wymaga <code>php ^8.2</code>, Slim jest w 4.15.2.</p>
-        <p><code>config.platform.php</code> ustawione na <code>8.4.21</code> celowo: <code>vendor/</code>
-        budujemy lokalnie i wgrywamy przez FTP, więc Composer musi rozwiązywać zależności pod PHP
-        produkcji, a nie pod to, co zainstaluje Laragon.</p>
+        <p style="margin-bottom:0"><code>config.platform.php</code> ustawione na <code>8.4.21</code>
+        celowo: <code>vendor/</code> budujemy lokalnie i wgrywamy przez FTP, więc Composer musi
+        rozwiązywać zależności pod PHP produkcji, a nie pod to, co zainstaluje Laragon.</p>
       </div>
     </div>
   </section>
@@ -401,27 +434,35 @@ ważny&nbsp;&nbsp; = 25.08.2026 – 12.03.2027</div>
   <section>
     <div class="rail">Commity</div>
     <div>
-      <h2>Osiem kroków, każdy zweryfikowany</h2>
+      <h2>Piętnaście kroków, każdy zweryfikowany</h2>
       <ul class="log">
-        <li><div class="h">60710d4</div><div class="t">Faza 1: composer.json ze stackiem aplikacji</div>
+        <li><div class="h">60710d4</div><div class="t">composer.json ze stackiem aplikacji</div>
             <div class="d">Wersje pakietów potwierdzone w Packagiscie przed zapisem.</div></li>
         <li><div class="h">0217aa5</div><div class="t">Subdomena postawiona + korekta architektury</div>
-            <div class="d">Vhost odpowiada 200. Katalog app/ przeniesiony poza drzewo domen.</div></li>
+            <div class="d">Katalog app/ przeniesiony poza drzewo domen, poza zasięg sieci.</div></li>
         <li><div class="h">f5de0c4</div><div class="t">Aplikacja pod dwoma adresami — wymóg 301</div>
             <div class="d">Skutek dla callbacku OAuth zapisany przy zadaniu .htaccess.</div></li>
         <li><div class="h">463b971</div><div class="t">Subdomena ftp skasowana, został katalog</div>
             <div class="d">DirectAdmin usuwa vhost, ale pliki zostawia jako osobną opcję.</div></li>
         <li><div class="h">9c5a488</div><div class="t">DNS potwierdzony + jak go weryfikować</div>
             <div class="d">NXDOMAIN z Google to był cache negatywny, nie brak rekordu.</div></li>
-        <li><div class="h">351bf84</div><div class="t">Poprawka formatowania bloków bash</div>
-            <div class="d">Przykłady curl-a były niewykonywalne po pierwszym zapisie.</div></li>
         <li><div class="h">d7bae1f</div><div class="t">deploy.ps1: -RemoveDir + katalog usunięty</div>
             <div class="d">3 pozycje, 0 błędów. Reszta public_html nietknięta.</div></li>
         <li><div class="h">5a23ccc</div><div class="t">Sprawdzenie drogi walidacji ACME</div>
             <div class="d">Nic nie blokuje wyzwania. Pliki testowe posprzątane.</div></li>
+        <li><div class="h">030391d</div><div class="t">Raport z sesji</div>
+            <div class="d">Ten dokument. Zaktualizowany na koniec dnia.</div></li>
+        <li><div class="h">4932c23</div><div class="t">Adresem produkcyjnym jest dobo.com.pl/ftf/</div>
+            <div class="d">Kierunek kanonicznego 301 odwrócony. Callback OAuth przesądzony.</div></li>
+        <li><div class="h">c42b0aa</div><div class="t">Baza MySQL + zabezpieczenie .gitignore</div>
+            <div class="d">utf8mb3 poprawione na utf8mb4. Reguła /*.txt po incydencie z hasłem.</div></li>
+        <li><div class="h">8c1c27a</div><div class="t">Playground Salesforce + wersja API</div>
+            <div class="d">v67.0 Summer '26 — zgodne z założeniem plan.md.</div></li>
+        <li><div class="h">260e94d</div><div class="t">Profil System Administrator potwierdzony</div>
+            <div class="d">Connected App w Fazie 2 jest wykonalna.</div></li>
       </ul>
-      <p style="margin-top:16px"><code>CLAUDE.md</code> (<code>7806467</code>) powstał tego samego dnia
-      w równoległej sesji i był już wypchnięty, zanim ta sesja go dotknęła.</p>
+      <p style="margin-top:16px">Pominięto trzy commity porządkowe: <code>CLAUDE.md</code> z równoległej
+      sesji, poprawkę formatowania bloków bash i doprecyzowanie parametrów bazy.</p>
     </div>
   </section>
 
@@ -429,26 +470,28 @@ ważny&nbsp;&nbsp; = 25.08.2026 – 12.03.2027</div>
     <div class="rail">Jutro</div>
     <div>
       <h2>Od czego zacząć</h2>
-      <ul class="clean">
-        <li><strong>Sprawdzić certyfikat</strong> — czy objął <code>ftf.dobo.com.pl</code>. Jeśli nie,
-            wydać ponownie z <em>zaznaczoną subdomeną</em>; jeśli tak, przechodzimy na ładny adres</li>
-        <li><strong>Zainstalować Laragon</strong> — to nadal największe ryzyko projektu, patrz niżej</li>
-        <li><strong>Baza MySQL</strong> w DirectAdmin — kolejny punkt Fazy 0</li>
-        <li><strong>Playground Salesforce</strong> i klucz <code>ANTHROPIC_API_KEY</code></li>
-      </ul>
 
-      <div class="note risk" style="margin-top:20px">
-        <h3>Największe otwarte ryzyko — bez zmian od wczoraj</h3>
+      <div class="note risk">
+        <h3>Laragon — jedyna realna blokada</h3>
         <p>Na komputerze <strong>nie ma ani PHP, ani Composera, ani MySQL</strong>.
         <code>app/composer.json</code> jest napisany, ale <code>composer install</code> nie ma czym się
-        uruchomić — a bez <code>vendor/</code> Faza 1 nie ruszy z miejsca, bo na serwerze nie ma powłoki
-        i zależności muszą powstać lokalnie.</p>
-        <p style="margin-bottom:0">Dopóki Laragon nie stoi, każdy kolejny plik Fazy 1 można napisać,
-        ale <strong>nie da się go uruchomić ani przetestować</strong>.</p>
+        uruchomić — a na serwerze nie ma powłoki, więc <code>vendor/</code> musi powstać lokalnie.</p>
+        <p style="margin-bottom:0">Pliki Fazy 1 można pisać już teraz, ale <strong>nie da się ich
+        uruchomić ani przetestować</strong>, dopóki Laragon nie stoi. To ostatnia rzecz oddzielająca
+        projekt od pierwszej linijki działającego kodu.</p>
       </div>
 
+      <h3 style="margin-top:22px">Pozostałe otwarte punkty Fazy 0</h3>
+      <ul class="clean">
+        <li><strong>Flow w playgroundzie</strong> — 3–5 różnych typów, potrzebne w Fazie 2 i 3</li>
+        <li><strong>Jeden Flow celowo wadliwy</strong> — DML wewnątrz pętli, bez fault path.
+            Bez niego nie udowodnimy, że <code>RiskScanner</code> z Fazy 3 faktycznie działa</li>
+        <li><strong>Klucz <code>ANTHROPIC_API_KEY</code></strong> — potrzebny dopiero w Fazie 4</li>
+        <li><strong>Certyfikat SSL dla subdomeny</strong> — opcjonalny, daje wyłącznie ładniejszy adres</li>
+      </ul>
+
       <div class="phases" style="margin-top:22px">
-        <div class="ph"><div class="k">Faza 0</div><div class="v">Fundament — prawie</div></div>
+        <div class="ph"><div class="k">Faza 0</div><div class="v">Fundament — 9/14</div></div>
         <div class="ph now"><div class="k">Faza 1</div><div class="v">Szkielet — start</div></div>
         <div class="ph"><div class="k">Faza 2</div><div class="v">OAuth</div></div>
         <div class="ph"><div class="k">Faza 3</div><div class="v">Digest + ryzyka</div></div>
@@ -456,8 +499,8 @@ ważny&nbsp;&nbsp; = 25.08.2026 – 12.03.2027</div>
         <div class="ph"><div class="k">Faza 5</div><div class="v">Eksport</div></div>
         <div class="ph"><div class="k">Faza 6</div><div class="v">Walidacja</div></div>
       </div>
-      <div class="bar"><span style="width:18%"></span></div>
-      <div class="barlab">Faza 0 domknięta w części technicznej · pozostałe punkty czekają na panel i Laragona</div>
+      <div class="bar"><span style="width:22%"></span></div>
+      <div class="barlab">Infrastruktura gotowa · brakuje środowiska lokalnego i Flow do testowania</div>
     </div>
   </section>
 

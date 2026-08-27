@@ -178,26 +178,32 @@ publiczny, nie nasze autorstwo.
 
 ## 7. Gdzie jesteśmy i co dalej
 
-**Stan na koniec sesji 2026-08-27.**
+**Stan na koniec sesji 2026-08-27** (15 commitów tego dnia). **Faza 0: 9 punktów zamkniętych, 5 otwartych.**
 
-**Zrobione:** Faza 0 punkt 1 (weryfikacja hostingu) · `tools/deploy.ps1` z FTPS i `-RemoveDir` ·
-strona-wizytówka na `dobo.com.pl` · subdomena `ftf.dobo.com.pl` postawiona · omyłkowa `ftp.dobo.com.pl`
-skasowana wraz z katalogiem · `app/composer.json` z pełnym stackiem.
+**Infrastruktura stoi w całości.** Subdomena postawiona, omyłkowa `ftp` skasowana, baza MySQL działa
+i jest zweryfikowana, playground Salesforce potwierdzony razem z profilem System Administrator.
+Powstał pierwszy plik Fazy 1 — `app/composer.json`.
 
-**Decyzja zamykająca blokadę SSL.** Adresem produkcyjnym jest **`https://dobo.com.pl/ftf/`**, nie
-subdomena. Powód: to fizycznie ten sam katalog, więc subdomena nie dawała obiecywanej izolacji, a przy
-tym nie ma certyfikatu obejmującego jej nazwę. Podkatalog ma ważny, publicznie zaufany certyfikat
-(cyber_Folks → Certum) i działa od ręki. **Certyfikat dla subdomeny przestał być blokadą** i jest
-opcjonalny — daje wyłącznie ładniejszy adres.
+**Adres produkcyjny: `https://dobo.com.pl/ftf/`** (decyzja z 2026-08-27, szczegóły w sekcji 2).
+Nie `ftf.dobo.com.pl`. Certyfikat dla subdomeny jest opcjonalny i **nic już nie blokuje**.
 
-**Callback OAuth dla Fazy 2 jest już przesądzony:** `https://dobo.com.pl/ftf/oauth/callback`.
-Salesforce dopasowuje go dokładnie, a zmiana po rejestracji Connected App wymaga poprawki
-po stronie Salesforce — dlatego adres został wybrany teraz, przed Fazą 2.
+**Callback OAuth przesądzony:** `https://dobo.com.pl/ftf/oauth/callback`. Wchodzi do Connected App
+w Fazie 2, a Salesforce dopasowuje go dokładnie — dlatego adres domknięto przed Fazą 2, nie w trakcie.
 
-**Następny krok:** Faza 1 — `public_html/index.php`, `.htaccess` (z kanonicznym 301 na
-`dobo.com.pl/ftf/`), `Config`/`Db`/`Crypto`, migracja `001_init.sql`, szablony Twig. Równolegle
-po stronie Rafała: baza MySQL, playground Salesforce, klucz `ANTHROPIC_API_KEY`.
+**Baza:** `qekbnopwvk_flownatic` na MariaDB 10.6.27, pusta, `utf8mb4_unicode_ci`. Uwaga na przyszłość:
+**panel zakłada bazy w `utf8mb3`** mimo prośby o `utf8mb4` — trzeba poprawiać `ALTER DATABASE`, póki
+baza jest pusta. Zweryfikowane testem zapisu i odczytu emoji bez strat.
 
-**Największe otwarte ryzyko — bez zmian:** brak środowiska lokalnego. Na komputerze **nie ma ani PHP,
-ani Composera, ani MySQL**. `app/composer.json` jest napisany, ale `composer install` nie ma czym się
-uruchomić, a bez `vendor/` Faza 1 nie ruszy. **Laragon to najpilniejsza rzecz do zainstalowania.**
+**Incydent bezpieczeństwa — zamknięty.** W katalogu repozytorium wylądował plik, którego nazwa i treść
+były hasłem do bazy. Do gita nie trafił (sprawdzona cała historia i wszystkie gałęzie), został usunięty,
+a hasło zmienione. `.gitignore` dostał regułę `/*.txt`, bo repo jest publiczne i najbliższe `git add -A`
+by ten plik złapało. **Wniosek na przyszłość: haseł nie wpisujemy w terminalu, tylko w Notatniku.**
+
+**Otwarte punkty Fazy 0 — wszystkie 🔵:** klucz `ANTHROPIC_API_KEY` (potrzebny dopiero w Fazie 4),
+Flow w playgroundzie 3–5 typów oraz jeden celowo wadliwy (potrzebne w Fazie 2–3), certyfikat SSL
+(opcjonalny) i **Laragon**.
+
+**Największe otwarte ryzyko — jedyna realna blokada:** brak środowiska lokalnego. Na komputerze **nie ma
+ani PHP, ani Composera, ani MySQL**. `app/composer.json` jest napisany, ale `composer install` nie ma czym
+się uruchomić, a na serwerze nie ma powłoki, więc `vendor/` musi powstać lokalnie. Pliki Fazy 1 można
+pisać już teraz — ale nie da się ich uruchomić ani przetestować, dopóki Laragon nie stoi.
