@@ -89,12 +89,14 @@ Przeglądarka  ──►  ftf.dobo.com.pl  (Apache + PHP, cyberfolks)
 Układ katalogów na serwerze — **kod źródłowy i sekrety poza katalogiem publicznym**:
 
 ```
-~/domains/ftf.dobo.com.pl/
-├── public_html/              ← document root, tylko to jest widoczne z sieci
-│   ├── index.php             ← front controller
-│   ├── .htaccess             ← rewrite wszystkiego do index.php
-│   └── assets/
-└── app/                      ← NIEDOSTĘPNE z przeglądarki
+/home/qekbnopwvk/
+├── domains/dobo.com.pl/public_html/
+│   ├── index.html            ← strona-wizytówka Flownatic (domena główna)
+│   └── ftf/                  ← DOCUMENT ROOT subdomeny ftf.dobo.com.pl
+│       ├── index.php         ← front controller
+│       ├── .htaccess         ← rewrite wszystkiego do index.php
+│       └── assets/
+└── flownatic-app/            ← NIEDOSTĘPNE z przeglądarki (poza domains/)
     ├── .env                  ← ANTHROPIC_API_KEY, SF_CLIENT_SECRET, APP_KEY
     ├── vendor/               ← zależności Composera
     ├── src/
@@ -102,6 +104,14 @@ Układ katalogów na serwerze — **kod źródłowy i sekrety poza katalogiem pu
     ├── db/migrations/
     └── storage/logs/
 ```
+
+> ⚠️ **Zweryfikowane 2026-08-27, inaczej niż pierwotnie zakładano.** DirectAdmin na cyberfolks zakłada
+> subdomenę **wewnątrz** `public_html` domeny nadrzędnej, a nie jako osobne `~/domains/ftf.dobo.com.pl/`.
+> Dlatego `app/` **nie może** stać obok document roota — wylądowałby w drzewie publicznym razem z `.env`.
+> Idzie więc do `~/flownatic-app/`, poza `domains/`. W repozytorium katalogi nazywają się `public_html/`
+> i `app/`; `index.php` szuka autoloadera najpierw pod `__DIR__/../app` (lokalnie), a potem pod
+> `dirname(__DIR__, 4) . '/flownatic-app'` (serwer), więc ten sam kod działa w obu układach.
+
 
 **Stack:** Slim 4 + PDO + Twig + `phpoffice/phpspreadsheet` + `anthropic-ai/sdk`.
 Świadomie **nie Laravel** — na współdzielonym hostingu to walka z document rootem, uprawnieniami

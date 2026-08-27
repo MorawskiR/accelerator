@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-08-26 · **Aktualny stan:** Faza 0, punkt 1 zamknięty
+**Ostatnia aktualizacja:** 2026-08-27 · **Aktualny stan:** Faza 0 — subdomena postawiona
 
 ---
 
@@ -54,7 +54,9 @@ twardych liczb do obrony tego zgłoszenia.
 | `max_execution_time` | **180 s** — twarde ograniczenie, patrz sekcja 4 |
 | `memory_limit` | 128 MB |
 | `disable_functions` | `exec, shell_exec, system, proc_open, popen, symlink, link`… → **brak powłoki** |
-| Domeny | `domains/dobo.com.pl`, `domains/qekbnopwvk.cfolks.pl`; **`ftf.dobo.com.pl` jeszcze nie istnieje** |
+| Domeny | `domains/dobo.com.pl`, `domains/qekbnopwvk.cfolks.pl` |
+| `ftf.dobo.com.pl` | **Istnieje od 2026-08-27.** DocumentRoot: `domains/dobo.com.pl/public_html/ftf/` — patrz sekcja 4 punkt 7 |
+| `ftp.dobo.com.pl` | Utworzona omyłkowo (literówka), do skasowania w DirectAdmin |
 | `dobo.com.pl` | Strona-wizytówka Flownatic (`site/index.html`). Oryginalna reklama hostingu zachowana jako `index-hosting-oryginal.html` |
 
 **Dostęp do serwera — ważne.** SSH jest włączone na koncie (port 222), ale **nie działa z firmowego
@@ -68,7 +70,7 @@ ruch jest najpewniej modyfikowany przez firmowe zabezpieczenia sieci. Zmiana pak
 .\tools\deploy.ps1 -Test                                    # sprawdzenie połączenia
 .\tools\deploy.ps1 -ListPath "domains/dobo.com.pl/public_html/"
 .\tools\deploy.ps1 -LocalFile .\site\index.html -RemotePath "domains/dobo.com.pl/public_html/"
-.\tools\deploy.ps1 -LocalDir .\public_html -RemotePath "domains/ftf.dobo.com.pl/public_html/"
+.\tools\deploy.ps1 -LocalDir .\public_html -RemotePath "domains/dobo.com.pl/public_html/ftf/"
 .\tools\deploy.ps1 -DeleteRemote "domains/x/public_html/plik.php"
 .\tools\deploy.ps1 -RenameFrom "sciezka/a" -RenameTo "sciezka/b"
 ```
@@ -90,6 +92,14 @@ Klucz SSH `%USERPROFILE%\.ssh\cyberfolks_dobo` został wygenerowany, ale jest be
 5. **`DOCUMENT_ROOT` raportuje `private_html`**, choć pliki idą do `public_html`. Nie polegać na
    `$_SERVER['DOCUMENT_ROOT']` — używać `__DIR__`.
 6. **Na Opus 5 nie ustawiać** `budgetTokens` ani `thinking` — zwraca 400. Thinking jest domyślnie włączone.
+7. **DocumentRoot subdomeny leży WEWNĄTRZ `public_html` domeny głównej** —
+   `domains/dobo.com.pl/public_html/ftf/`, a nie `domains/ftf.dobo.com.pl/`, jak zakładał `plan.md`.
+   DirectAdmin na cyberfolks tak właśnie zakłada subdomeny. **Konsekwencja bezpieczeństwa:** katalog
+   `app/` postawiony obok document roota byłby dostępny z sieci razem z `.env` (klucz Anthropic,
+   `APP_KEY`, hasło do bazy). Dlatego `app/` idzie do **`~/flownatic-app/`**, poza `domains/`.
+   `public_html/index.php` szuka autoloadera po kolei: najpierw `__DIR__/../app` (układ lokalny),
+   potem `dirname(__DIR__, 4) . '/flownatic-app'` (układ serwera) — dzięki temu ten sam kod
+   działa lokalnie i na produkcji.
 
 ---
 
@@ -143,8 +153,8 @@ publiczny, nie nasze autorstwo.
 strona-wizytówka na `dobo.com.pl` — co przy okazji **udowodniło, że cała ścieżka deployu działa**
 i zdjęło największe ryzyko z Fazy 1.
 
-**Następny krok:** Faza 0, punkt 2 — subdomena `ftf.dobo.com.pl` + certyfikat Let's Encrypt
-(DirectAdmin, po stronie Rafała). Potem punkt 3: baza MySQL.
+**Następny krok:** certyfikat Let's Encrypt dla `ftf.dobo.com.pl` (DirectAdmin, po stronie Rafała),
+potem baza MySQL. Do posprzątania: zbędna subdomena `ftp.dobo.com.pl`.
 
 **Największe otwarte ryzyko:** brak środowiska lokalnego — na komputerze **nie ma ani PHP, ani Composera,
 ani MySQL**. Bez tego nie zbudujemy `vendor/`, a bez `vendor/` nie ruszy Faza 1. To najpilniejsza

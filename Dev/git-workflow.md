@@ -72,7 +72,7 @@ git merge uat
 git push
 git tag -a faza-2 -m "Faza 2 zakonczona"
 git push --tags
-.\tools\deploy.ps1 -LocalDir .\public_html -RemotePath "domains/ftf.dobo.com.pl/public_html/"
+.\tools\deploy.ps1 -LocalDir .\public_html -RemotePath "domains/dobo.com.pl/public_html/ftf/"
 ```
 
 **Zamknięcie feature brancha:**

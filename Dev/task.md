@@ -15,7 +15,12 @@
 - [x] 🟢 Sprawdź rozszerzenia PHP — wszystkie OK, w tym krytyczny `zip`
 - [x] 🟢 Ustal drogę wgrywania plików — SSH nieużywalny, **FTPS działa**, `tools/deploy.ps1`
 - [x] 🔵 Utwórz `%USERPROFILE%\.ftp-dobo.txt` z danymi FTP (poza repo)
-- [ ] 🔵 **Subdomena `ftf.dobo.com.pl`** — DirectAdmin → Subdomeny → dodaj `ftf` do `dobo.com.pl`
+- [x] 🔵 **Subdomena `ftf.dobo.com.pl`** — ✅ 2026-08-27, vhost odpowiada HTTP 200.
+      ⚠️ DocumentRoot wyszedł jako `domains/dobo.com.pl/public_html/ftf/`, **nie** `domains/ftf.dobo.com.pl/`
+      — czyli wewnątrz `public_html` domeny głównej. Konsekwencja: `app/` **nie może** stanąć obok,
+      musi trafić poza drzewo domen (`~/flownatic-app/`). Szczegóły w `kontekst.md`, sekcja 4 punkt 7.
+- [ ] 🔵 **Usuń zbędną subdomenę `ftp.dobo.com.pl`** — powstała przez literówkę 2026-08-27 13:45,
+      zawiera wyłącznie placeholder DirectAdmin. Nazwa koliduje z konwencją hosta FTP
 - [ ] 🔵 **Certyfikat SSL** — DirectAdmin → Certyfikaty SSL → Let's Encrypt dla `ftf.dobo.com.pl`
 - [ ] 🔵 **Baza MySQL** — utwórz bazę i użytkownika, zapisz dane
 - [ ] 🔵 **Playground org** — zaloguj się, potwierdź uprawnienia admina
