@@ -55,7 +55,11 @@
       🔑 Dane zapisz w `%USERPROFILE%\.flownatic-db.txt` — **poza repozytorium**,
       w formacie `host=` / `dbname=` / `user=` / `pass=`, tak jak `.ftp-dobo.txt`.
       Hasło nie trafia do rozmowy ani do commita
-- [ ] 🔵 **Playground org** — zaloguj się, potwierdź uprawnienia admina
+- [x] 🔵 **Playground org** — ✅ 2026-08-27, org odpowiada, certyfikat ważny.
+      `resilient-narwhal-j9207g-dev-ed.trailblaze.my.salesforce.com`
+      API do **v67.0 (Summer '26)** — zgodne z tym, co zakłada `plan.md`.
+      ⚠️ Do potwierdzenia przez Rafała: profil **System Administrator**.
+      Bez niego nie da się utworzyć Connected App, czyli Faza 2 nie ruszy
 - [ ] 🔵 **Klucz Anthropic** — `ANTHROPIC_API_KEY` z console.anthropic.com
 - [ ] 🔵 **Środowisko lokalne** — zainstaluj Laragon (PHP 8.x + MySQL + Composer); obecnie **nic nie ma**
 - [ ] 🔵 **Flow w playgroundzie** — utwórz 3–5 różnych typów (Record-Triggered, Screen, Scheduled)

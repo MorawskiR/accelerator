@@ -59,6 +59,9 @@ twardych liczb do obrony tego zgłoszenia.
 | **Adres produkcyjny** | **`https://dobo.com.pl/ftf/`** — ważny certyfikat, działa. Katalog: `domains/dobo.com.pl/public_html/ftf/` |
 | `ftf.dobo.com.pl` | Subdomena istnieje od 2026-08-27, ale **nie jest adresem produkcyjnym** — brak certyfikatu obejmującego tę nazwę |
 | `ftp.dobo.com.pl` | Utworzona omyłkowo, **subdomena skasowana 2026-08-27** (vhost zwraca 403). Osierocony katalog `public_html/ftp/` czeka na usunięcie |
+| **Playground Salesforce** | `resilient-narwhal-j9207g-dev-ed.trailblaze.my.salesforce.com` |
+| API Salesforce | do **v67.0 (Summer '26)**, 37 wersji — zgodne z założeniem `plan.md` |
+| Baza MySQL | `qekbnopwvk_flownatic`, MariaDB 10.6.27, **utf8mb4_unicode_ci**, pusta. Dane w `%USERPROFILE%\.flownatic-db.txt` |
 | `dobo.com.pl` | Strona-wizytówka Flownatic (`site/index.html`). Oryginalna reklama hostingu zachowana jako `index-hosting-oryginal.html` |
 
 **Dostęp do serwera — ważne.** SSH jest włączone na koncie (port 222), ale **nie działa z firmowego
