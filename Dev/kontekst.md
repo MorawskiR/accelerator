@@ -100,6 +100,10 @@ Klucz SSH `%USERPROFILE%\.ssh\cyberfolks_dobo` został wygenerowany, ale jest be
    `public_html/index.php` szuka autoloadera po kolei: najpierw `__DIR__/../app` (układ lokalny),
    potem `dirname(__DIR__, 4) . '/flownatic-app'` (układ serwera) — dzięki temu ten sam kod
    działa lokalnie i na produkcji.
+   **Drugi skutek:** aplikacja jest dostępna pod dwoma adresami — `ftf.dobo.com.pl` oraz
+   `dobo.com.pl/ftf/` (oba zwracaja HTTP 200). Ciasteczka sesji nie sa miedzy nimi wspoldzielone,
+   a callback OAuth z Fazy 2 dopasowuje sie dokladnie, wiec `public_html/.htaccess` musi robic
+   kanoniczne 301 na `ftf.dobo.com.pl`.
 
 ---
 

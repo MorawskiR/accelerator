@@ -38,7 +38,10 @@
 - [x] 🟢 Strona-wizytówka `site/index.html` na `dobo.com.pl` — dowód, że cała ścieżka deployu działa
 - [ ] 🟢 `composer.json` + instalacja zależności lokalnie (Slim 4, Twig, PhpSpreadsheet, anthropic-ai/sdk)
 - [ ] 🟢 `public_html/index.php` — front controller
-- [ ] 🟢 `public_html/.htaccess` — `RewriteRule ^ index.php [QSA,L]`
+- [ ] 🟢 `public_html/.htaccess` — `RewriteRule ^ index.php [QSA,L]` **+ kanoniczne 301**
+      z `dobo.com.pl/ftf/` na `ftf.dobo.com.pl`. Oba adresy serwuja ten sam katalog
+      (zweryfikowane 2026-08-27, HTTP 200 z obu), a callback OAuth z Fazy 2 jest
+      dopasowywany dokladnie — wejscie zlym hostem wywali `redirect_uri mismatch`
 - [ ] 🟢 `app/.htaccess` — `Require all denied` (druga linia obrony)
 - [ ] 🟢 `app/src/Support/Config.php` — odczyt `.env`
 - [ ] 🟢 `app/src/Support/Db.php` — PDO
