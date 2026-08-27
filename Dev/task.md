@@ -19,8 +19,11 @@
       ⚠️ DocumentRoot wyszedł jako `domains/dobo.com.pl/public_html/ftf/`, **nie** `domains/ftf.dobo.com.pl/`
       — czyli wewnątrz `public_html` domeny głównej. Konsekwencja: `app/` **nie może** stanąć obok,
       musi trafić poza drzewo domen (`~/flownatic-app/`). Szczegóły w `kontekst.md`, sekcja 4 punkt 7.
-- [ ] 🔵 **Usuń zbędną subdomenę `ftp.dobo.com.pl`** — powstała przez literówkę 2026-08-27 13:45,
-      zawiera wyłącznie placeholder DirectAdmin. Nazwa koliduje z konwencją hosta FTP
+- [x] 🔵 **Usuń zbędną subdomenę `ftp.dobo.com.pl`** — ✅ 2026-08-27, vhost zniknął (HTTP 403).
+      ⚠️ Zostały pliki: `domains/dobo.com.pl/public_html/ftp/` nadal istnieje i odpowiada 200
+      pod `dobo.com.pl/ftp/`. DirectAdmin kasuje pliki jako osobną opcję — patrz punkt niżej
+- [ ] 🔵 **Skasuj osierocony katalog `public_html/ftp/`** — Menedżer plików w DirectAdmin.
+      `deploy.ps1 -DeleteRemote` używa `DELE` i katalogów nie usuwa (trzeba by `RMD`)
 - [ ] 🔵 **Certyfikat SSL** — DirectAdmin → Certyfikaty SSL → Let's Encrypt dla `ftf.dobo.com.pl`
 - [ ] 🔵 **Baza MySQL** — utwórz bazę i użytkownika, zapisz dane
 - [ ] 🔵 **Playground org** — zaloguj się, potwierdź uprawnienia admina

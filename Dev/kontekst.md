@@ -56,7 +56,7 @@ twardych liczb do obrony tego zgłoszenia.
 | `disable_functions` | `exec, shell_exec, system, proc_open, popen, symlink, link`… → **brak powłoki** |
 | Domeny | `domains/dobo.com.pl`, `domains/qekbnopwvk.cfolks.pl` |
 | `ftf.dobo.com.pl` | **Istnieje od 2026-08-27.** DocumentRoot: `domains/dobo.com.pl/public_html/ftf/` — patrz sekcja 4 punkt 7 |
-| `ftp.dobo.com.pl` | Utworzona omyłkowo (literówka), do skasowania w DirectAdmin |
+| `ftp.dobo.com.pl` | Utworzona omyłkowo, **subdomena skasowana 2026-08-27** (vhost zwraca 403). Osierocony katalog `public_html/ftp/` czeka na usunięcie |
 | `dobo.com.pl` | Strona-wizytówka Flownatic (`site/index.html`). Oryginalna reklama hostingu zachowana jako `index-hosting-oryginal.html` |
 
 **Dostęp do serwera — ważne.** SSH jest włączone na koncie (port 222), ale **nie działa z firmowego
