@@ -29,7 +29,12 @@
       🔴 **PILNE — subdomena jest teraz niedostępna.** Wymuszanie HTTPS jest włączone (HTTP → 301),
       ale jedyny certyfikat na serwerze to `CN=dobo.com.pl` (SAN: `dobo.com.pl`, `www.dobo.com.pl`,
       wystawca cyber_Folks). `ftf.dobo.com.pl` nie jest nim objęte → w przeglądarce ostrzeżenie
-      o certyfikacie przed jakąkolwiek treścią. Do czasu wydania certyfikatu subdomena nie działa
+      o certyfikacie przed jakąkolwiek treścią. Do czasu wydania certyfikatu subdomena nie działa.
+      ✅ **Droga dla ACME sprawdzona 2026-08-27 — nic nie blokuje.** Plik testowy w katalogu
+      subdomeny serwuje się (`/probe.txt` → 200), więc `.htaccess` domeny głównej nie przeszkadza.
+      `/.well-known/` zwraca 403 (katalog istnieje), a `/.well-known/acme-challenge/` zwraca 404
+      nawet dla pliku fizycznie tam leżącego — czyli serwer **przechwytuje tę ścieżkę** i obsługuje
+      wyzwanie sam. To normalne zachowanie DirectAdmin i oznacza, że walidacja powinna przejść
 - [ ] 🔵 **Baza MySQL** — utwórz bazę i użytkownika, zapisz dane
 - [ ] 🔵 **Playground org** — zaloguj się, potwierdź uprawnienia admina
 - [ ] 🔵 **Klucz Anthropic** — `ANTHROPIC_API_KEY` z console.anthropic.com
