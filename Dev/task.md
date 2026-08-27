@@ -37,7 +37,13 @@
       `/.well-known/` zwraca 403 (katalog istnieje), a `/.well-known/acme-challenge/` zwraca 404
       nawet dla pliku fizycznie tam leżącego — czyli serwer **przechwytuje tę ścieżkę** i obsługuje
       wyzwanie sam. To normalne zachowanie DirectAdmin i oznacza, że walidacja powinna przejść
-- [ ] 🔵 **Baza MySQL** — DirectAdmin → Zarządzanie kontem → Bazy danych MySQL
+- [x] 🔵 **Baza MySQL** — ✅ 2026-08-27, połączenie zweryfikowane z produkcji.
+      MariaDB 10.6.27, baza pusta (0 tabel), użytkownik ma `ALL PRIVILEGES` na swojej bazie.
+      ⚠️ **Panel założył bazę w `utf8mb3`, nie `utf8mb4`** — mimo że o to prosiliśmy.
+      Poprawione `ALTER DATABASE` przy pustej bazie; jest `utf8mb4` / `utf8mb4_unicode_ci`.
+      Gdyby kiedyś zakładać kolejną bazę — panel prawdopodobnie znów da `utf8mb3`, sprawdzić.
+      Dane w `%USERPROFILE%\.flownatic-db.txt`, poza repo.
+      Oryginalne parametry (do wglądu): DirectAdmin → Zarządzanie kontem → Bazy danych MySQL
       | nazwa bazy | `flownatic` → panel utworzy `qekbnopwvk_flownatic` |
       | użytkownik | `flownatic` → `qekbnopwvk_flownatic`, pełne uprawnienia do tej bazy |
       | hasło | wygenerowane przez panel, silne |

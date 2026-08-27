@@ -8,6 +8,12 @@
 *.pem
 !.env.example
 
+# Luzne pliki .txt w korzeniu repo. Powod: 2026-08-27 w katalogu projektu
+# wyladowal plik, ktorego NAZWA I TRESC byly haslem do bazy. Nie zdazyl trafic
+# do gita, ale kazde `git add -A` by go zlapalo, a repo jest publiczne.
+# Dokumentacja projektu to .md, wiec ta regula niczego potrzebnego nie blokuje.
+/*.txt
+
 # ── Zależności (odtwarzalne z composer.json / package.json) ──────
 /app/vendor/
 /vendor/
