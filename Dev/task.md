@@ -37,7 +37,18 @@
       `/.well-known/` zwraca 403 (katalog istnieje), a `/.well-known/acme-challenge/` zwraca 404
       nawet dla pliku fizycznie tam leżącego — czyli serwer **przechwytuje tę ścieżkę** i obsługuje
       wyzwanie sam. To normalne zachowanie DirectAdmin i oznacza, że walidacja powinna przejść
-- [ ] 🔵 **Baza MySQL** — utwórz bazę i użytkownika, zapisz dane
+- [ ] 🔵 **Baza MySQL** — DirectAdmin → Zarządzanie kontem → Bazy danych MySQL
+      | nazwa bazy | `flownatic` → panel utworzy `qekbnopwvk_flownatic` |
+      | użytkownik | `flownatic` → `qekbnopwvk_flownatic`, pełne uprawnienia do tej bazy |
+      | hasło | wygenerowane przez panel, silne |
+      | host | `localhost` — aplikacja stoi na tym samym serwerze |
+      | **kodowanie** | **`utf8mb4` / `utf8mb4_unicode_ci`** — nie `utf8`! |
+      ⚠️ `utf8` w MySQL to trzybajtowy wariant, który **gubi emoji i część znaków** —
+      metadane Flow z Salesforce potrafią je zawierać. Zmiana kodowania po zapisaniu
+      danych jest bolesna, więc trzeba ustawić to od razu.
+      🔑 Dane zapisz w `%USERPROFILE%\.flownatic-db.txt` — **poza repozytorium**,
+      w formacie `host=` / `dbname=` / `user=` / `pass=`, tak jak `.ftp-dobo.txt`.
+      Hasło nie trafia do rozmowy ani do commita
 - [ ] 🔵 **Playground org** — zaloguj się, potwierdź uprawnienia admina
 - [ ] 🔵 **Klucz Anthropic** — `ANTHROPIC_API_KEY` z console.anthropic.com
 - [ ] 🔵 **Środowisko lokalne** — zainstaluj Laragon (PHP 8.x + MySQL + Composer); obecnie **nic nie ma**
