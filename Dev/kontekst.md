@@ -75,6 +75,25 @@ ruch jest najpewniej modyfikowany przez firmowe zabezpieczenia sieci. Zmiana pak
 .\tools\deploy.ps1 -RenameFrom "sciezka/a" -RenameTo "sciezka/b"
 ```
 
+**DNS — lokalnemu resolverowi nie ufać.** Firmowa sieć przechwytuje DNS: `nslookup` odpowiada z
+`127.0.0.1` i zwraca ten sam adres AWS (`35.168.95.233`) dla **każdej** nazwy, także nieistniejącej —
+ignoruje nawet jawnie wskazany serwer. Do weryfikacji używać DNS-over-HTTPS:
+
+```bash
+curl -s -H 'accept: application/dns-json'   'https://cloudflare-dns.com/dns-query?name=ftf.dobo.com.pl&type=A'
+```
+
+Google (`https://dns.google/resolve?name=...&type=A`) też działa, ale cache'uje NXDOMAIN na czas
+`SOA minimum` = **3600 s**. Jeśli pytałeś o nazwę **przed** jej utworzeniem, przez godzinę będzie
+zwracał NXDOMAIN mimo istniejącego rekordu — wtedy pytaj Cloudflare.
+
+**Sprawdzenie vhosta z pominięciem DNS** (działa nawet przy zatrutym cache):
+
+```bash
+curl -s -o /dev/null -w "%{http_code}
+"   --resolve "ftf.dobo.com.pl:80:185.208.164.165" "http://ftf.dobo.com.pl/"
+```
+
 **Sekrety.** Dane FTP leżą w `%USERPROFILE%\.ftp-dobo.txt` — **poza repozytorium**. Skrypt przekazuje
 hasło curl-owi przez tymczasowy `.netrc`, więc nie pojawia się ani w rozmowie, ani w liście procesów.
 Klucz SSH `%USERPROFILE%\.ssh\cyberfolks_dobo` został wygenerowany, ale jest bezużyteczny (patrz wyżej).
