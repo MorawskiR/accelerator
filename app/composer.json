@@ -1,0 +1,36 @@
+{
+    "name": "flownatic/accelerator",
+    "description": "Flownatic - akcelerator do manualnego testowania Salesforce Flow",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-zip": "*",
+        "slim/slim": "^4.12",
+        "slim/psr7": "^1.6",
+        "slim/twig-view": "^3.3",
+        "twig/twig": "^3.8",
+        "phpoffice/phpspreadsheet": "^5.0",
+        "anthropic-ai/sdk": "^0.44"
+    },
+    "autoload": {
+        "psr-4": {
+            "Flownatic\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "platform": {
+            "php": "8.4.21"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
