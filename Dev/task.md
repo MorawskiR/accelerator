@@ -25,8 +25,10 @@
 - [x] 🟢 **Skasuj osierocony katalog `public_html/ftp/`** — ✅ 2026-08-27, `dobo.com.pl/ftp/` zwraca 404.
       Zamiast Menedżera plików: `deploy.ps1` dostał `-RemoveDir` (rekurencyjnie, `DELE` + `RMD`).
       Bez `-Force` pokazuje wyłącznie plan; odmawia ścieżek krótszych niż dwa segmenty
-- [ ] 🔵 **Certyfikat SSL** — DirectAdmin → Certyfikaty SSL → Let's Encrypt dla `ftf.dobo.com.pl`
-      🔴 **PILNE — subdomena jest teraz niedostępna.** Wymuszanie HTTPS jest włączone (HTTP → 301),
+- [ ] 🔵 **Certyfikat SSL dla `ftf.dobo.com.pl`** — ⚪ **już nie blokuje, opcjonalne.**
+      Adresem produkcyjnym jest `https://dobo.com.pl/ftf/`, który ma ważny certyfikat.
+      Ten punkt daje wyłącznie ładniejszy adres; zrobić, jeśli certyfikat się pojawi.
+      Kontekst historyczny — stan z 2026-08-27: Wymuszanie HTTPS jest włączone (HTTP → 301),
       ale jedyny certyfikat na serwerze to `CN=dobo.com.pl` (SAN: `dobo.com.pl`, `www.dobo.com.pl`,
       wystawca cyber_Folks). `ftf.dobo.com.pl` nie jest nim objęte → w przeglądarce ostrzeżenie
       o certyfikacie przed jakąkolwiek treścią. Do czasu wydania certyfikatu subdomena nie działa.
@@ -52,9 +54,10 @@
 - [ ] 🟢 `composer.json` + instalacja zależności lokalnie (Slim 4, Twig, PhpSpreadsheet, anthropic-ai/sdk)
 - [ ] 🟢 `public_html/index.php` — front controller
 - [ ] 🟢 `public_html/.htaccess` — `RewriteRule ^ index.php [QSA,L]` **+ kanoniczne 301**
-      z `dobo.com.pl/ftf/` na `ftf.dobo.com.pl`. Oba adresy serwuja ten sam katalog
-      (zweryfikowane 2026-08-27, HTTP 200 z obu), a callback OAuth z Fazy 2 jest
-      dopasowywany dokladnie — wejscie zlym hostem wywali `redirect_uri mismatch`
+      z `ftf.dobo.com.pl` na `dobo.com.pl/ftf/` — **uwaga: kierunek odwrócony 2026-08-27**.
+      Oba adresy serwują ten sam katalog, ale kanoniczny jest podkatalog, bo tylko on ma
+      ważny certyfikat. Callback OAuth z Fazy 2 jest dopasowywany dokładnie, więc wejście
+      złym hostem wywaliłoby `redirect_uri mismatch`
 - [ ] 🟢 `app/.htaccess` — `Require all denied` (druga linia obrony)
 - [ ] 🟢 `app/src/Support/Config.php` — odczyt `.env`
 - [ ] 🟢 `app/src/Support/Db.php` — PDO
@@ -64,14 +67,14 @@
 - [ ] 🟢 `app/templates/` — `layout.twig`, `login.twig`, `dashboard.twig`
 - [ ] 🟢 `.env.example` do repo · 🔵 prawdziwy `.env` tylko lokalnie i na serwerze
 - [ ] 🟢 `deploy.md` — spisana procedura wgrywania
-- [ ] **Gotowe, gdy:** `https://ftf.dobo.com.pl` → logowanie → dashboard
+- [ ] **Gotowe, gdy:** `https://dobo.com.pl/ftf/` → logowanie → dashboard
 
 ---
 
 ## FAZA 2 — OAuth do Salesforce i inwentarz Flow
 
 - [ ] 🔵 **Connected App** w playgroundzie — OAuth 2.0 Web Server Flow **z PKCE**,
-      callback `https://ftf.dobo.com.pl/oauth/callback`, scopes: `api`, `refresh_token`, `offline_access`
+      callback `https://dobo.com.pl/ftf/oauth/callback`, scopes: `api`, `refresh_token`, `offline_access`
 - [ ] 🟢 `app/src/Salesforce/OAuthService.php` — authorize → callback → tokeny zaszyfrowane w bazie
 - [ ] 🟢 Automatyczny refresh tokenu przy `401` / `INVALID_SESSION_ID`
 - [ ] 🟢 `app/src/Salesforce/ApiClient.php` — cURL z retry, wspólny dla REST i Tooling

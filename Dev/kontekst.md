@@ -38,6 +38,7 @@ twardych liczb do obrony tego zgłoszenia.
 | Zakres MVP | **Analizator Flow → generator TC** | To sedno pomysłu i to, czego Excel nie potrafi. Pełny menedżer testów byłby głównie przepisaniem arkusza |
 | Użytkownicy | **Jeden, jedna org** | POC. Bez `tenant_id`, bez izolacji — najszybsza droga do walidacji |
 | Kolejność | **Deploy w Fazie 1, nie na końcu** | Ryzyko hostingowe najgorzej odkrywać po trzech tygodniach kodowania. Callback OAuth i tak wymaga publicznego HTTPS już w Fazie 2 |
+| Adres produkcyjny | **`dobo.com.pl/ftf/`, nie subdomena** | Subdomena i podkatalog to fizycznie ten sam katalog, więc subdomena nie daje izolacji. Podkatalog ma ważny, publicznie zaufany certyfikat od ręki — subdomena nie ma żadnego. Decyzja z 2026-08-27 |
 | Kolejność | **Parser (Faza 3) przed AI (Faza 4)** | Deterministyczny parser robi to, co musi być powtarzalne. Model dostaje mały, czysty opis i robi to, w czym jest dobry. Taniej, celniej, i część wartości działa bez API AI |
 
 ---
@@ -55,7 +56,8 @@ twardych liczb do obrony tego zgłoszenia.
 | `memory_limit` | 128 MB |
 | `disable_functions` | `exec, shell_exec, system, proc_open, popen, symlink, link`… → **brak powłoki** |
 | Domeny | `domains/dobo.com.pl`, `domains/qekbnopwvk.cfolks.pl` |
-| `ftf.dobo.com.pl` | **Istnieje od 2026-08-27.** DocumentRoot: `domains/dobo.com.pl/public_html/ftf/` — patrz sekcja 4 punkt 7 |
+| **Adres produkcyjny** | **`https://dobo.com.pl/ftf/`** — ważny certyfikat, działa. Katalog: `domains/dobo.com.pl/public_html/ftf/` |
+| `ftf.dobo.com.pl` | Subdomena istnieje od 2026-08-27, ale **nie jest adresem produkcyjnym** — brak certyfikatu obejmującego tę nazwę |
 | `ftp.dobo.com.pl` | Utworzona omyłkowo, **subdomena skasowana 2026-08-27** (vhost zwraca 403). Osierocony katalog `public_html/ftp/` czeka na usunięcie |
 | `dobo.com.pl` | Strona-wizytówka Flownatic (`site/index.html`). Oryginalna reklama hostingu zachowana jako `index-hosting-oryginal.html` |
 
@@ -120,10 +122,10 @@ Klucz SSH `%USERPROFILE%\.ssh\cyberfolks_dobo` został wygenerowany, ale jest be
    `public_html/index.php` szuka autoloadera po kolei: najpierw `__DIR__/../app` (układ lokalny),
    potem `dirname(__DIR__, 4) . '/flownatic-app'` (układ serwera) — dzięki temu ten sam kod
    działa lokalnie i na produkcji.
-   **Drugi skutek:** aplikacja jest dostępna pod dwoma adresami — `ftf.dobo.com.pl` oraz
-   `dobo.com.pl/ftf/` (oba zwracaja HTTP 200). Ciasteczka sesji nie sa miedzy nimi wspoldzielone,
-   a callback OAuth z Fazy 2 dopasowuje sie dokladnie, wiec `public_html/.htaccess` musi robic
-   kanoniczne 301 na `ftf.dobo.com.pl`.
+   **Drugi skutek:** aplikacja jest dostępna pod dwoma adresami — `dobo.com.pl/ftf/` oraz
+   `ftf.dobo.com.pl`. Ciasteczka sesji nie są między nimi współdzielone, a callback OAuth z Fazy 2
+   dopasowuje się dokładnie, więc `public_html/.htaccess` musi robić kanoniczne 301
+   **na `dobo.com.pl/ftf/`** — to on jest adresem produkcyjnym, bo tylko on ma ważny certyfikat.
 
 ---
 
@@ -162,7 +164,7 @@ publiczny, nie nasze autorstwo.
 - **Język:** polski, w rozmowie i w dokumentacji projektu.
 - **Commity:** jeden na ukończony punkt z `task.md`, po polsku, wypychane na bieżąco.
 - **Gałęzie:** `feature/*` → `uat` (regresja na `qekbnopwvk.cfolks.pl`) → `main` (produkcja na
-  `ftf.dobo.com.pl`). Po zamknięciu fazy gałąź feature kasujemy i otwieramy nową.
+  `dobo.com.pl/ftf/`). Po zamknięciu fazy gałąź feature kasujemy i otwieramy nową.
   Pełny proces i definicja regresji: **[`git-workflow.md`](git-workflow.md)**.
 - **Podział ról:** 🔵 panel hostingu, Salesforce, konta i klucze — po stronie Rafała.
   🟢 kod, skrypty, deploy, dokumentacja — po stronie Claude (przez FTPS ma dostęp do serwera).
@@ -176,27 +178,23 @@ publiczny, nie nasze autorstwo.
 **Stan na koniec sesji 2026-08-27.**
 
 **Zrobione:** Faza 0 punkt 1 (weryfikacja hostingu) · `tools/deploy.ps1` z FTPS i `-RemoveDir` ·
-strona-wizytówka na `dobo.com.pl` · **subdomena `ftf.dobo.com.pl` postawiona** (vhost i DNS działają) ·
-omyłkowa subdomena `ftp.dobo.com.pl` skasowana wraz z katalogiem · `app/composer.json` z pełnym stackiem.
+strona-wizytówka na `dobo.com.pl` · subdomena `ftf.dobo.com.pl` postawiona · omyłkowa `ftp.dobo.com.pl`
+skasowana wraz z katalogiem · `app/composer.json` z pełnym stackiem.
 
-**Blokada dnia — HTTPS na subdomenie.** Na serwerze włączono wymuszanie HTTPS, ale jedyny certyfikat to
-`CN=dobo.com.pl` (SAN: `dobo.com.pl`, `www.dobo.com.pl`, wystawca cyber_Folks → Certum, publicznie
-zaufany). `ftf.dobo.com.pl` nie jest nim objęte, więc **subdomena jest niedostępna w przeglądarce**.
-Rafał kupił certyfikat, ale na koniec sesji **nie był jeszcze wydany** — serwer nadal podawał stary.
+**Decyzja zamykająca blokadę SSL.** Adresem produkcyjnym jest **`https://dobo.com.pl/ftf/`**, nie
+subdomena. Powód: to fizycznie ten sam katalog, więc subdomena nie dawała obiecywanej izolacji, a przy
+tym nie ma certyfikatu obejmującego jej nazwę. Podkatalog ma ważny, publicznie zaufany certyfikat
+(cyber_Folks → Certum) i działa od ręki. **Certyfikat dla subdomeny przestał być blokadą** i jest
+opcjonalny — daje wyłącznie ładniejszy adres.
 
-**Obejście, które już działa:** `https://dobo.com.pl/ftf/` zwraca 200 z **publicznie zaufanym**
-certyfikatem (`ssl_verify_result: 0`), bo DocumentRoot subdomeny leży w `public_html` domeny głównej.
-To ten sam katalog, więc aplikację można wdrażać i testować pod tym adresem **bez czekania na
-certyfikat** — łącznie z callbackiem OAuth z Fazy 2 (`https://dobo.com.pl/ftf/oauth/callback`).
-Środowisko UAT `qekbnopwvk.cfolks.pl` też ma ważny certyfikat (`*.cfolks.pl`, Certum DV).
+**Callback OAuth dla Fazy 2 jest już przesądzony:** `https://dobo.com.pl/ftf/oauth/callback`.
+Salesforce dopasowuje go dokładnie, a zmiana po rejestracji Connected App wymaga poprawki
+po stronie Salesforce — dlatego adres został wybrany teraz, przed Fazą 2.
 
-**Następny krok:** sprawdzić, czy certyfikat objął `ftf.dobo.com.pl` — w DirectAdmin subdomena bywa
-osobną pozycją do zaznaczenia i domyślnie zaznaczone są tylko domena główna i `www`. Jeśli tak,
-przechodzimy na `ftf.dobo.com.pl`; jeśli nie, pracujemy pod `dobo.com.pl/ftf/`. Potem baza MySQL.
+**Następny krok:** Faza 1 — `public_html/index.php`, `.htaccess` (z kanonicznym 301 na
+`dobo.com.pl/ftf/`), `Config`/`Db`/`Crypto`, migracja `001_init.sql`, szablony Twig. Równolegle
+po stronie Rafała: baza MySQL, playground Salesforce, klucz `ANTHROPIC_API_KEY`.
 
 **Największe otwarte ryzyko — bez zmian:** brak środowiska lokalnego. Na komputerze **nie ma ani PHP,
-ani Composera, ani MySQL**. `app/composer.json` jest napisany, ale `composer install` nie ma czym
-się uruchomić, a bez `vendor/` Faza 1 nie ruszy. **Laragon to najpilniejsza rzecz do zainstalowania.**
-
-**Do sprawdzenia jutro:** czy droga walidacji ACME nadal jest wolna (była 2026-08-27) oraz czy
-certyfikat nie wymaga ponownego wydania z zaznaczoną subdomeną.
+ani Composera, ani MySQL**. `app/composer.json` jest napisany, ale `composer install` nie ma czym się
+uruchomić, a bez `vendor/` Faza 1 nie ruszy. **Laragon to najpilniejsza rzecz do zainstalowania.**

@@ -72,7 +72,7 @@ Do diagnostyki produkcji służy `tools/_check.php` — wgrywany **tymczasowo** 
 |---|---|---|
 | `feature/*` | lokalnie | — |
 | `uat` | UAT, tu robimy pełną regresję | `qekbnopwvk.cfolks.pl` |
-| `main` | produkcja | `ftf.dobo.com.pl` (subdomena jeszcze nie istnieje) |
+| `main` | produkcja | `dobo.com.pl/ftf/` |
 
 Przepływ: `feature/*` → `uat` (regresja R1–R12 z `git-workflow.md`, na danych z playgrounda) → `main` + tag
 `faza-N`. Poprawki po nieudanej regresji wracają na gałąź feature — **nie łatamy bezpośrednio na `uat` ani

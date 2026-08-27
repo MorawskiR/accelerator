@@ -7,7 +7,7 @@
 > Bieżący postęp odznaczamy w **[`task.md`](task.md)**, a stan projektu na zimny start
 > (po przerwaniu sesji lub skompaktowaniu kontekstu) opisuje **[`kontekst.md`](kontekst.md)**.
 
-**Aplikacja:** webowa · **Hosting:** cyberfolks (`ftf.dobo.com.pl`) · **Stack:** PHP 8.4 / MySQL / Slim 4
+**Aplikacja:** webowa · **Hosting:** cyberfolks (`dobo.com.pl/ftf/`) · **Stack:** PHP 8.4 / MySQL / Slim 4
 **AI:** Claude API (`claude-opus-5`) · **Org testowa:** hands-on playground · **Użytkownik:** jeden (POC)
 
 ---
@@ -79,7 +79,7 @@ aplikacja robi żmudną część.
 ## Architektura
 
 ```
-Przeglądarka  ──►  ftf.dobo.com.pl  (Apache + PHP, cyberfolks)
+Przeglądarka  ──►  dobo.com.pl/ftf/  (Apache + PHP, cyberfolks)
                           │
                           ├──►  Salesforce Tooling API   (metadane Flow)
                           ├──►  Claude API                (generowanie TC)
@@ -92,7 +92,7 @@ Układ katalogów na serwerze — **kod źródłowy i sekrety poza katalogiem pu
 /home/qekbnopwvk/
 ├── domains/dobo.com.pl/public_html/
 │   ├── index.html            ← strona-wizytówka Flownatic (domena główna)
-│   └── ftf/                  ← DOCUMENT ROOT subdomeny ftf.dobo.com.pl
+│   └── ftf/                  ← DOCUMENT ROOT aplikacji — adres produkcyjny
 │       ├── index.php         ← front controller
 │       ├── .htaccess         ← rewrite wszystkiego do index.php
 │       └── assets/
@@ -159,8 +159,11 @@ pytaniem o hasło — ruch jest najpewniej modyfikowany przez firmowe zabezpiecz
 **Uwaga o ścieżkach:** `DOCUMENT_ROOT` raportuje `private_html`, choć pliki wgrywane są do
 `public_html` (DirectAdmin trzyma je jako dowiązanie). Nie polegać na `$_SERVER['DOCUMENT_ROOT']`
 przy budowaniu ścieżek — używać `__DIR__`.
-- [ ] **Subdomena** `ftf.dobo.com.pl` + certyfikat SSL (Let's Encrypt z panelu)
-  - Osobna subdomena, nie podkatalog — izolacja od reszty strony i czysty callback OAuth
+- [x] **Subdomena** `ftf.dobo.com.pl` — postawiona 2026-08-27, ale **nie jest adresem produkcyjnym**
+  - **Decyzja z 2026-08-27:** produkcja idzie pod `https://dobo.com.pl/ftf/`. Pierwotne uzasadnienie
+    („izolacja od reszty strony”) okazało się nietrafione — DocumentRoot subdomeny to **ten sam
+    katalog** co `dobo.com.pl/ftf/`, więc subdomena nie izoluje niczego. Podkatalog ma za to ważny,
+    publicznie zaufany certyfikat od ręki, a subdomena go nie ma
 - [ ] **Baza MySQL** + użytkownik (zapisz dane dostępowe)
 - [ ] **Playground org** — zaloguj się, potwierdź uprawnienia admina (potrzebne do Tooling API na Flow)
 - [ ] **Klucz Anthropic** — `ANTHROPIC_API_KEY` z console.anthropic.com
@@ -176,7 +179,7 @@ baza istnieje · playground ma 3–5 Flow, w tym jeden celowo wadliwy.
 
 # FAZA 1 — Szkielet aplikacji i deploy na produkcję
 
-**Cel:** działający, zalogowany „pusty" dashboard pod `https://ftf.dobo.com.pl`.
+**Cel:** działający, zalogowany „pusty" dashboard pod `https://dobo.com.pl/ftf/`.
 Najważniejsza faza pod względem ryzyka.
 
 ### Pliki do utworzenia
@@ -204,7 +207,7 @@ Najważniejsza faza pod względem ryzyka.
 - `app/.htaccess` z `Require all denied` jako druga linia obrony, gdyby katalog jednak był serwowany.
 - `deploy.md` powstaje **teraz**, nie później — za miesiąc nie będziesz pamiętał, co się gdzie wgrywa.
 
-**Gotowe, gdy:** wchodzisz na `https://ftf.dobo.com.pl`, logujesz się, widzisz dashboard.
+**Gotowe, gdy:** wchodzisz na `https://dobo.com.pl/ftf/`, logujesz się, widzisz dashboard.
 Deploy jest powtarzalny i opisany.
 
 ---
@@ -215,7 +218,7 @@ Deploy jest powtarzalny i opisany.
 To zastępuje ręczne wypełnianie arkusza „Flow Inventory".
 
 - [ ] **Connected App** w playgroundzie: OAuth 2.0 Web Server Flow **z PKCE**,
-      callback `https://ftf.dobo.com.pl/oauth/callback`, scopes: `api`, `refresh_token`, `offline_access`
+      callback `https://dobo.com.pl/ftf/oauth/callback`, scopes: `api`, `refresh_token`, `offline_access`
 - [ ] `app/src/Salesforce/OAuthService.php` — authorize → callback → wymiana kodu na tokeny →
       zapis **zaszyfrowanych** tokenów w `sf_connections`; automatyczny refresh przy `401` /
       `INVALID_SESSION_ID`
@@ -386,7 +389,7 @@ To jest „punkt drugi" z Twojego zgłoszenia. Bez tego cała reszta jest tylko 
 
 Test akceptacyjny całości, do przejścia po Fazie 5:
 
-1. `https://ftf.dobo.com.pl` → logowanie → dashboard
+1. `https://dobo.com.pl/ftf/` → logowanie → dashboard
 2. „Połącz org" → OAuth do playgrounda → powrót z aktywnym połączeniem
 3. Lista Flow zgadza się z **Setup → Process Automation → Flows** w org (nazwy, typy, statusy)
 4. Wybór Flow → import metadanych → widoczna struktura + wykryte ryzyka
