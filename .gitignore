@@ -14,6 +14,11 @@
 # Dokumentacja projektu to .md, wiec ta regula niczego potrzebnego nie blokuje.
 /*.txt
 
+# Wypelniona konfiguracja spike OAuth - zawiera Consumer Secret z Salesforce.
+# Przyklad sf-oauth.example.php commitujemy, wypelniona kopia NIGDY.
+tools/sf-oauth/sf-oauth.php
+app/sf-oauth.php
+
 # ── Zależności (odtwarzalne z composer.json / package.json) ──────
 /app/vendor/
 /vendor/

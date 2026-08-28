@@ -108,7 +108,16 @@
 
 ## FAZA 2 — OAuth do Salesforce i inwentarz Flow
 
-- [ ] 🔵 **Connected App** w playgroundzie — OAuth 2.0 Web Server Flow **z PKCE**,
+- [ ] 🔵 **External Client App** w playgroundzie — OAuth 2.0 Web Server Flow **z PKCE**,
+      Setup → wyszukaj `external client` → **External Client App Manager** → New.
+      Dwa Callback URL: `https://dobo.com.pl/ftf/sfoauth.php` (spike) oraz
+      `https://dobo.com.pl/ftf/oauth/callback` (aplikacja). Pelna instrukcja:
+      `tools/sf-oauth/README.md`. ⚠️ Salesforce propaguje nowa aplikacje **do 30 minut**.
+- [x] 🟢 **Spike OAuth przed Faza 2** — `tools/sf-oauth/sfoauth.php`, samodzielny skrypt
+      bez Composera. Sprawdza PKCE, obecnosc `refresh_token`, **`describe` na
+      `FlowDefinitionView`** (realne nazwy pol zamiast zgadywania) i liczbe Flow w org.
+      Czeka na Consumer Key/Secret z ECA.
+- [ ] 🔵 ~~Connected App~~ (zastapione przez External Client App wyzej) — OAuth z PKCE,
       callback `https://dobo.com.pl/ftf/oauth/callback`, scopes: `api`, `refresh_token`, `offline_access`
 - [ ] 🟢 `app/src/Salesforce/OAuthService.php` — authorize → callback → tokeny zaszyfrowane w bazie
 - [ ] 🟢 Automatyczny refresh tokenu przy `401` / `INVALID_SESSION_ID`
