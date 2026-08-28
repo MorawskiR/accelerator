@@ -60,7 +60,15 @@
       API do **v67.0 (Summer '26)** — zgodne z tym, co zakłada `plan.md`.
       ✅ Profil **System Administrator** potwierdzony 2026-08-27 — Connected App w Fazie 2
       jest wykonalna
-- [ ] 🔵 **Klucz Anthropic** — `ANTHROPIC_API_KEY` z console.anthropic.com
+- [x] 🔵 **Klucz Anthropic** — ✅ 2026-08-28, klucz utworzony i **ważny**.
+      `GET /v1/models` zwraca 200, `claude-opus-5` jest na liście dostępnych modeli.
+      Przechowywany w `%USERPROFILE%\.flownatic-anthropic.txt`, poza repo.
+- [ ] 🔵 **Doładuj konto Anthropic** — ⚠️ **klucz działa, ale konto nie ma środków.**
+      Wywołanie `/v1/messages` zwraca `invalid_request_error`: *credit balance is too low*.
+      Console → **Plans & Billing** → kup kredyty. Warto od razu ustawić limit wydatków.
+      ⚪ **Nie blokuje Faz 1–3** — AI wchodzi dopiero w Fazie 4. Zrobić przed nią.
+      Uwaga metodyczna: sama ważność klucza (`/v1/models` → 200) **nie dowodzi**, że da się
+      uruchomić model. Brak środków widać wyłącznie przy realnym wywołaniu `/v1/messages`
 - [ ] 🔵 **Środowisko lokalne** — zainstaluj Laragon (PHP 8.x + MySQL + Composer); obecnie **nic nie ma**
 - [ ] 🔵 **Flow w playgroundzie** — utwórz 3–5 różnych typów (Record-Triggered, Screen, Scheduled)
 - [ ] 🔵 **Jeden Flow celowo wadliwy** — DML wewnątrz Loop, bez fault path
