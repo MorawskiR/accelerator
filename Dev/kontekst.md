@@ -179,43 +179,42 @@ publiczny, nie nasze autorstwo.
 
 ## 7. Gdzie jesteśmy i co dalej
 
-**Stan na koniec sesji 2026-08-27** (15 commitów tego dnia). **Faza 0: 9 punktów zamkniętych, 5 otwartych.**
+**Stan na koniec sesji 2026-08-28.** Faza 0: **11 punktów zamkniętych, 5 otwartych** —
+ale **żaden z otwartych nie blokuje Fazy 1**. Faza 1: **2 z 14**.
 
-**Infrastruktura stoi w całości.** Subdomena postawiona, omyłkowa `ftp` skasowana, baza MySQL działa
-i jest zweryfikowana, playground Salesforce potwierdzony razem z profilem System Administrator.
-Powstał pierwszy plik Fazy 1 — `app/composer.json`.
+### Co działa i jest sprawdzone
 
-**Adres produkcyjny: `https://dobo.com.pl/ftf/`** (decyzja z 2026-08-27, szczegóły w sekcji 2).
-Nie `ftf.dobo.com.pl`. Certyfikat dla subdomeny jest opcjonalny i **nic już nie blokuje**.
+| Element | Stan |
+|---|---|
+| Adres produkcyjny | `https://dobo.com.pl/ftf/` — ważny certyfikat, HTTP 200 |
+| Callback OAuth (Faza 2) | `https://dobo.com.pl/ftf/oauth/callback` — **przesądzony**, nie zmieniać |
+| Baza | `qekbnopwvk_flownatic`, MariaDB 10.6.27, `utf8mb4_unicode_ci`, pusta |
+| Playground | `resilient-narwhal-j9207g-dev-ed.trailblaze.my.salesforce.com`, API v67.0, profil admina |
+| Lokalnie | Laragon, **PHP 8.3.33** (produkcja 8.4.21), Composer 2.10.2, `ext-zip` włączony ręcznie |
+| `vendor/` | wdrożony do `~/flownatic-app/vendor/`, **autoloader zweryfikowany na produkcji** |
+| Deploy | `deploy.ps1 -UploadZip` — 3738 plików w **1,4 s** zamiast 16–60 minut |
 
-**Callback OAuth przesądzony:** `https://dobo.com.pl/ftf/oauth/callback`. Wchodzi do Connected App
-w Fazie 2, a Salesforce dopasowuje go dokładnie — dlatego adres domknięto przed Fazą 2, nie w trakcie.
+### Otwarte punkty Fazy 0 — żaden nie blokuje
 
-**Baza:** `qekbnopwvk_flownatic` na MariaDB 10.6.27, pusta, `utf8mb4_unicode_ci`. Uwaga na przyszłość:
-**panel zakłada bazy w `utf8mb3`** mimo prośby o `utf8mb4` — trzeba poprawiać `ALTER DATABASE`, póki
-baza jest pusta. Zweryfikowane testem zapisu i odczytu emoji bez strat.
+- **Doładowanie konta Anthropic** — klucz jest ważny, ale saldo zerowe. Potrzebne dopiero w **Fazie 4**.
+  Ścieżka: `platform.claude.com/settings/billing` (komunikat API myli, mówiąc „Plans & Billing”).
+- **Flow w playgroundzie** — Rafał robi je 2026-08-28. Specyfikacja w `task.md`: cztery typy
+  (RT-/SF-/SCH-/AL-) plus jeden celowo wadliwy z **czterema** wadami naraz, bo tylu reguł
+  szuka `RiskScanner`. Potrzebne w **Fazie 2–3**.
+- **Certyfikat SSL subdomeny** i **PHP 8.4 lokalnie** — świadome decyzje o odłożeniu, nie dług.
 
-**Incydent bezpieczeństwa — zamknięty.** W katalogu repozytorium wylądował plik, którego nazwa i treść
-były hasłem do bazy. Do gita nie trafił (sprawdzona cała historia i wszystkie gałęzie), został usunięty,
-a hasło zmienione. `.gitignore` dostał regułę `/*.txt`, bo repo jest publiczne i najbliższe `git add -A`
-by ten plik złapało. **Wniosek na przyszłość: haseł nie wpisujemy w terminalu, tylko w Notatniku.**
+### Następny krok
 
-**Otwarte punkty Fazy 0 — wszystkie 🔵:** klucz `ANTHROPIC_API_KEY` (potrzebny dopiero w Fazie 4),
-Flow w playgroundzie 3–5 typów oraz jeden celowo wadliwy (potrzebne w Fazie 2–3), certyfikat SSL
-(opcjonalny) i **Laragon**.
+**Faza 1, reszta plików:** `public_html/index.php`, oba `.htaccess` (z kanonicznym 301 na
+`dobo.com.pl/ftf/`), `Config`/`Db`/`Crypto`, `Routes` + `AuthMiddleware`, `001_init.sql`
++ `migrate.php`, szablony Twig, `.env.example`, `deploy.md`.
+Kryterium „Gotowe, gdy”: wejście na `https://dobo.com.pl/ftf/` → logowanie → dashboard.
 
-**Spike OAuth — napisany, zaparkowany.** `tools/sf-oauth/sfoauth.php` powstał 2026-08-28, żeby
-zawczasu zdjąć największe ryzyko techniczne. Jest **nieuruchomiony** — wracamy do niego
-w Fazie 2, zgodnie z zasadą jednej fazy naraz. Wymaga Consumer Key/Secret z External Client App.
-Nie ma lokalnego PHP, więc jego składnia nie została zweryfikowana maszynowo.
+### Rzeczy, o których łatwo zapomnieć
 
-**Środowisko lokalne stoi (2026-08-28).** Laragon w `C:\laragon`, dodany do PATH, z Composerem,
-MySQL i HeidiSQL. **Uwaga: lokalny PHP to 8.3.33, produkcja 8.4.21** — `bin/php/` zawiera tylko
-tę jedną wersję. Nie blokuje budowania `vendor/`, bo `composer.json` ma
-`config.platform.php = 8.4.21` i Composer rozwiązuje zależności pod PHP produkcji.
-Rozjazd dotyczy wyłącznie lokalnego uruchamiania kodu.
-
-**Największe otwarte ryzyko — jedyna realna blokada:** brak środowiska lokalnego. Na komputerze **nie ma
-ani PHP, ani Composera, ani MySQL**. `app/composer.json` jest napisany, ale `composer install` nie ma czym
-się uruchomić, a na serwerze nie ma powłoki, więc `vendor/` musi powstać lokalnie. Pliki Fazy 1 można
-pisać już teraz — ale nie da się ich uruchomić ani przetestować, dopóki Laragon nie stoi.
+- **Pisz jawne `?Typ`**, nie `Typ $x = null` — PHP 8.4 na produkcji uznaje to drugie za przestarzałe,
+  a lokalne 8.3 tego nie pokaże.
+- **Spike OAuth** (`tools/sf-oauth/`) jest napisany, ale **nieuruchomiony** — czeka na Fazę 2
+  i na Consumer Key z External Client App.
+- **Hasła i klucze nigdy przez terminal** — 2026-08-27 hasło do bazy wylądowało jako nazwa pliku
+  w katalogu publicznego repo. Zawsze Notatnik, do pliku poza repozytorium.
