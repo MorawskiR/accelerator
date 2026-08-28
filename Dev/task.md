@@ -108,17 +108,24 @@
 
 ## FAZA 2 — OAuth do Salesforce i inwentarz Flow
 
-- [ ] 🔵 **External Client App** w playgroundzie — OAuth 2.0 Web Server Flow **z PKCE**,
+> **⏸️ Faza nie rozpoczęta.** Zaczynamy dopiero po zamknięciu kryterium „Gotowe, gdy" Fazy 1.
+> Wyjątkiem jest spike poniżej: kod powstał 2026-08-28, żeby zawczasu zdjąć ryzyko z OAuth,
+> ale **nie został uruchomiony** i świadomie czeka na tę fazę.
+
+- [x] 🟢 **Spike OAuth — kod napisany** (2026-08-28), `tools/sf-oauth/sfoauth.php`.
+      Samodzielny skrypt bez Composera, więc uruchomi się mimo braku Laragona.
+      Sprawdza PKCE, obecność `refresh_token`, **`describe` na `FlowDefinitionView`**
+      (realne nazwy pól zamiast zgadywania) i liczbę Flow w org.
+      ⚠️ **Nieuruchomiony i niezweryfikowany** — brak lokalnego PHP, więc nawet składnia
+      nie została sprawdzona maszynowo, tylko strukturalnie.
+- [ ] 🔵 **External Client App** w playgroundzie — OAuth 2.0 Web Server Flow **z PKCE**.
       Setup → wyszukaj `external client` → **External Client App Manager** → New.
       Dwa Callback URL: `https://dobo.com.pl/ftf/sfoauth.php` (spike) oraz
-      `https://dobo.com.pl/ftf/oauth/callback` (aplikacja). Pelna instrukcja:
-      `tools/sf-oauth/README.md`. ⚠️ Salesforce propaguje nowa aplikacje **do 30 minut**.
-- [x] 🟢 **Spike OAuth przed Faza 2** — `tools/sf-oauth/sfoauth.php`, samodzielny skrypt
-      bez Composera. Sprawdza PKCE, obecnosc `refresh_token`, **`describe` na
-      `FlowDefinitionView`** (realne nazwy pol zamiast zgadywania) i liczbe Flow w org.
-      Czeka na Consumer Key/Secret z ECA.
-- [ ] 🔵 ~~Connected App~~ (zastapione przez External Client App wyzej) — OAuth z PKCE,
-      callback `https://dobo.com.pl/ftf/oauth/callback`, scopes: `api`, `refresh_token`, `offline_access`
+      `https://dobo.com.pl/ftf/oauth/callback` (aplikacja).
+      Scopes: `api`, `refresh_token`, `offline_access`. Instrukcja: `tools/sf-oauth/README.md`.
+      ⚠️ Salesforce propaguje nową aplikację **do 30 minut**.
+- [ ] 🟢 **Uruchom spike** i zapisz wynik — zwłaszcza listę pól `FlowDefinitionView`,
+      bo na niej oprzemy SOQL. Po odczycie skasować oba pliki z serwera
 - [ ] 🟢 `app/src/Salesforce/OAuthService.php` — authorize → callback → tokeny zaszyfrowane w bazie
 - [ ] 🟢 Automatyczny refresh tokenu przy `401` / `INVALID_SESSION_ID`
 - [ ] 🟢 `app/src/Salesforce/ApiClient.php` — cURL z retry, wspólny dla REST i Tooling

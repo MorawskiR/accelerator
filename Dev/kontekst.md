@@ -203,6 +203,11 @@ by ten plik złapało. **Wniosek na przyszłość: haseł nie wpisujemy w termin
 Flow w playgroundzie 3–5 typów oraz jeden celowo wadliwy (potrzebne w Fazie 2–3), certyfikat SSL
 (opcjonalny) i **Laragon**.
 
+**Spike OAuth — napisany, zaparkowany.** `tools/sf-oauth/sfoauth.php` powstał 2026-08-28, żeby
+zawczasu zdjąć największe ryzyko techniczne. Jest **nieuruchomiony** — wracamy do niego
+w Fazie 2, zgodnie z zasadą jednej fazy naraz. Wymaga Consumer Key/Secret z External Client App.
+Nie ma lokalnego PHP, więc jego składnia nie została zweryfikowana maszynowo.
+
 **Największe otwarte ryzyko — jedyna realna blokada:** brak środowiska lokalnego. Na komputerze **nie ma
 ani PHP, ani Composera, ani MySQL**. `app/composer.json` jest napisany, ale `composer install` nie ma czym
 się uruchomić, a na serwerze nie ma powłoki, więc `vendor/` musi powstać lokalnie. Pliki Fazy 1 można
