@@ -94,8 +94,31 @@
       od razu, zamiast przejsc lokalnie i zaskoczyc na produkcji.
       **Wrocic, gdy:** trafimy na zachowanie rozniace sie miedzy wersjami, albo w Fazie 6,
       gdzie mierzymy realne czasy i srodowisko powinno odpowiadac produkcji co do wersji.
-- [ ] 🔵 **Flow w playgroundzie** — utwórz 3–5 różnych typów (Record-Triggered, Screen, Scheduled)
-- [ ] 🔵 **Jeden Flow celowo wadliwy** — DML wewnątrz Loop, bez fault path
+- [ ] 🔵 **Flow w playgroundzie** — 3–5 różnych typów. Chodzi o **pokrycie typów**,
+      nie o liczbę: eksport z Fazy 5 ma osobne prefiksy dla każdego z nich.
+      | Prefiks | Typ | Propozycja |
+      |---|---|---|
+      | `RT-` | Record-Triggered | na `Opportunity`, **after save**, z Decision na `StageName` |
+      | `SF-` | Screen Flow | 2 ekrany, pole wymagane + walidacja |
+      | `SCH-` | Scheduled | codziennie, `Get Records` na `Account` |
+      | `AL-` | Autolaunched | wywoływany z innego Flow, bez triggera |
+      Przynajmniej jeden **na standardowym obiekcie** (Account/Opportunity) — pola
+      niestandardowe utrudniłyby czytanie wyniku w Fazie 3.
+- [ ] 🔵 **Jeden Flow celowo wadliwy** — to **nie jest** punkt do odhaczenia byle jak.
+      Bez niego nie udowodnimy, że `RiskScanner` z Fazy 3 cokolwiek wykrywa,
+      a to sedno wartości całego narzędzia. Ma zawierać **wszystkie cztery** wady,
+      bo dokładnie tych czterech reguł szuka skaner:
+      1. **DML wewnątrz pętli** — `Update Records` w środku `Loop`
+         → w realnym użyciu daje `Too many DML statements: 151`
+      2. **DML bez fault path** — żaden element `Create/Update/Delete` nie ma
+         połączenia błędu (`faultConnector`) → checklista TC-015
+      3. **After Save bez entry criteria** — Record-Triggered, który uruchamia się
+         przy każdej zmianie i aktualizuje ten sam rekord → ryzyko rekursji, RT-004
+      4. **`Get Records` bez filtrów** — pobiera wszystko z obiektu, bez warunków
+      Nazwij go rozpoznawalnie, np. `Flownatic_Bad_Example`, żeby nie pomylić go
+      z poprawnymi przy testach.
+      ⚠️ **Aktywuj go** — nieaktywne wersje mają inny status w `FlowDefinitionView`
+      i mogłyby nie wejść do inwentarza z Fazy 2.
       *(bez tego nie ma jak udowodnić, że RiskScanner z Fazy 3 działa)*
 
 ---
