@@ -82,9 +82,18 @@
       Nie blokuje: `composer.json` ma `config.platform.php = 8.4.21`, więc Composer
       rozwiązuje zależności pod PHP produkcji niezależnie od wersji lokalnej.
       Różnica dotyczy wyłącznie lokalnego uruchamiania kodu.
-- [ ] 🔵 **Opcjonalnie: dograj PHP 8.4 do Laragona** — pobierz build Windows x64
-      **Thread Safe** z windows.php.net, rozpakuj do `C:\laragon\bin\php\php-8.4.x-Win32-vs16-x64`,
-      potem Menu → PHP → Version. Wyrówna lokalne z produkcją; do `composer install` niepotrzebne
+- [ ] ⏸️ **Opcjonalnie: PHP 8.4 lokalnie — ODLOZONE, decyzja 2026-08-28.**
+      Pierwotny cel (zgodnosc z produkcja przy budowaniu `vendor/`) **odpadl**: Composer
+      rozwiazuje zaleznosci pod 8.4.21 dzieki `config.platform.php`, a autoloader zostal
+      zweryfikowany **na produkcji**, pod prawdziwym PHP 8.4.21.
+      Zostaje jedna realna roznica: **PHP 8.4 uznaje za przestarzale niejawnie nullowalne
+      parametry** (`f(Foo $x = null)`). Na 8.3 przechodzi cicho, na 8.4 sypie ostrzezeniami.
+      Tansze lekarstwo niz drugi PHP: **pisac jawne `?Typ` od poczatku** — i tak lepszy styl,
+      a `composer.json` deklaruje `php ^8.2`, wiec kod ma byc zgodny z szerszym zakresem.
+      Lokalne 8.3 dziala przy okazji jak straznik: skladnia dostepna tylko w 8.4 wywali sie
+      od razu, zamiast przejsc lokalnie i zaskoczyc na produkcji.
+      **Wrocic, gdy:** trafimy na zachowanie rozniace sie miedzy wersjami, albo w Fazie 6,
+      gdzie mierzymy realne czasy i srodowisko powinno odpowiadac produkcji co do wersji.
 - [ ] 🔵 **Flow w playgroundzie** — utwórz 3–5 różnych typów (Record-Triggered, Screen, Scheduled)
 - [ ] 🔵 **Jeden Flow celowo wadliwy** — DML wewnątrz Loop, bez fault path
       *(bez tego nie ma jak udowodnić, że RiskScanner z Fazy 3 działa)*
