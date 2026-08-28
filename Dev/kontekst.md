@@ -208,6 +208,12 @@ zawczasu zdjąć największe ryzyko techniczne. Jest **nieuruchomiony** — wrac
 w Fazie 2, zgodnie z zasadą jednej fazy naraz. Wymaga Consumer Key/Secret z External Client App.
 Nie ma lokalnego PHP, więc jego składnia nie została zweryfikowana maszynowo.
 
+**Środowisko lokalne stoi (2026-08-28).** Laragon w `C:\laragon`, dodany do PATH, z Composerem,
+MySQL i HeidiSQL. **Uwaga: lokalny PHP to 8.3.33, produkcja 8.4.21** — `bin/php/` zawiera tylko
+tę jedną wersję. Nie blokuje budowania `vendor/`, bo `composer.json` ma
+`config.platform.php = 8.4.21` i Composer rozwiązuje zależności pod PHP produkcji.
+Rozjazd dotyczy wyłącznie lokalnego uruchamiania kodu.
+
 **Największe otwarte ryzyko — jedyna realna blokada:** brak środowiska lokalnego. Na komputerze **nie ma
 ani PHP, ani Composera, ani MySQL**. `app/composer.json` jest napisany, ale `composer install` nie ma czym
 się uruchomić, a na serwerze nie ma powłoki, więc `vendor/` musi powstać lokalnie. Pliki Fazy 1 można

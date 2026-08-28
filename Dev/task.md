@@ -75,7 +75,16 @@
       ⚪ **Nie blokuje Faz 1–3** — AI wchodzi dopiero w Fazie 4. Zrobić przed nią.
       Uwaga metodyczna: sama ważność klucza (`/v1/models` → 200) **nie dowodzi**, że da się
       uruchomić model. Brak środków widać wyłącznie przy realnym wywołaniu `/v1/messages`
-- [ ] 🔵 **Środowisko lokalne** — zainstaluj Laragon (PHP 8.x + MySQL + Composer); obecnie **nic nie ma**
+- [x] 🔵 **Środowisko lokalne** — ✅ 2026-08-28, Laragon w `C:\laragon`.
+      Jest Composer, MySQL, Apache, Node, HeidiSQL. Laragon dodany do PATH.
+      ⚠️ **Zainstalowany PHP to 8.3.33, nie 8.4** — `bin/php/` zawiera tylko tę wersję,
+      więc przełącznik w menu nie miał czego zaoferować. Produkcja stoi na **8.4.21**.
+      Nie blokuje: `composer.json` ma `config.platform.php = 8.4.21`, więc Composer
+      rozwiązuje zależności pod PHP produkcji niezależnie od wersji lokalnej.
+      Różnica dotyczy wyłącznie lokalnego uruchamiania kodu.
+- [ ] 🔵 **Opcjonalnie: dograj PHP 8.4 do Laragona** — pobierz build Windows x64
+      **Thread Safe** z windows.php.net, rozpakuj do `C:\laragon\bin\php\php-8.4.x-Win32-vs16-x64`,
+      potem Menu → PHP → Version. Wyrówna lokalne z produkcją; do `composer install` niepotrzebne
 - [ ] 🔵 **Flow w playgroundzie** — utwórz 3–5 różnych typów (Record-Triggered, Screen, Scheduled)
 - [ ] 🔵 **Jeden Flow celowo wadliwy** — DML wewnątrz Loop, bez fault path
       *(bez tego nie ma jak udowodnić, że RiskScanner z Fazy 3 działa)*
