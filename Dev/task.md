@@ -65,7 +65,13 @@
       Przechowywany w `%USERPROFILE%\.flownatic-anthropic.txt`, poza repo.
 - [ ] 🔵 **Doładuj konto Anthropic** — ⚠️ **klucz działa, ale konto nie ma środków.**
       Wywołanie `/v1/messages` zwraca `invalid_request_error`: *credit balance is too low*.
-      Console → **Plans & Billing** → kup kredyty. Warto od razu ustawić limit wydatków.
+      Ścieżka: **https://platform.claude.com/settings/billing** (Settings → Billing).
+      ⚠️ Komunikat API mówi „Plans & Billing” — **taka pozycja nie istnieje**, to Settings → Billing.
+      Domena to dziś `platform.claude.com`, nie `console.anthropic.com`.
+      Wymaga roli **Admin** lub **Billing** — na niższych opcja zakupu się nie pokaże.
+      Model przedpłacony: kredyty kupuje się z góry, są dostępne od razu, **wygasają po roku**
+      i są bezzwrotne — dla POC kupować mało. Auto-doładowania raczej nie włączać,
+      dopóki nie znamy realnego zużycia z Fazy 4.
       ⚪ **Nie blokuje Faz 1–3** — AI wchodzi dopiero w Fazie 4. Zrobić przed nią.
       Uwaga metodyczna: sama ważność klucza (`/v1/models` → 200) **nie dowodzi**, że da się
       uruchomić model. Brak środków widać wyłącznie przy realnym wywołaniu `/v1/messages`
