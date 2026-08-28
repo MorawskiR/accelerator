@@ -79,6 +79,7 @@ ruch jest najpewniej modyfikowany przez firmowe zabezpieczenia sieci. Zmiana pak
 .\tools\deploy.ps1 -DeleteRemote "domains/x/public_html/plik.php"
 .\tools\deploy.ps1 -RemoveDir "domains/x/public_html/stare"          # pokazuje plan, nie kasuje
 .\tools\deploy.ps1 -RemoveDir "domains/x/public_html/stare" -Force   # wykonuje
+.\tools\deploy.ps1 -UploadZip .\app\vendor -RemotePath "flownatic-app/vendor"   # katalog -> zip -> rozpakowanie na serwerze
 .\tools\deploy.ps1 -RenameFrom "sciezka/a" -RenameTo "sciezka/b"
 ```
 

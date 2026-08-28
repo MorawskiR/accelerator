@@ -32,6 +32,10 @@ param(
     [switch]$Test,
     [string]$ListPath,      # listowanie zdalnego katalogu, np. domains/
     [string]$DeleteRemote,  # skasowanie pliku na serwerze, np. domains/x/public_html/plik.php
+    [string]$UploadZip,     # katalog lokalny -> zip -> wgranie -> rozpakowanie na serwerze
+    [string]$ExtractorPath = 'domains/dobo.com.pl/public_html/ftf',  # gdzie ladowac rozpakowywacz
+    [string]$ExtractorUrl  = 'https://dobo.com.pl/ftf',              # ten sam katalog po HTTPS
+    [string]$ResolveIp     = '185.208.164.165',                      # firmowy DNS klamie, wymuszamy IP
     [string]$RemoveDir,     # rekurencyjne usuniecie katalogu; bez -Force tylko pokazuje plan
     [switch]$Force,         # potwierdzenie dla -RemoveDir
     [string]$RenameFrom,    # zmiana nazwy na serwerze (razem z -RenameTo), sciezki od katalogu domowego
@@ -80,6 +84,15 @@ function Invoke-Curl {
     # UWAGA: nie nazywac tego parametru $Args - to zmienna zastrzezona w PowerShellu
     param([string[]]$CurlArgs)
     $out = & curl.exe @curlBase @CurlArgs 2>&1
+    return @{ Ok = ($LASTEXITCODE -eq 0); Output = ($out -join "`n"); Code = $LASTEXITCODE }
+}
+
+function Invoke-CurlPlain {
+    # Osobno od Invoke-Curl: BEZ --netrc-file, zeby dane logowania FTP nie trafily
+    # w zadanie HTTP do serwera WWW. curl nie dopasowalby ich po nazwie hosta,
+    # ale nie wysylamy tego, czego nie musimy.
+    param([string[]]$CurlArgs)
+    $out = & curl.exe @('--connect-timeout', '20', '--max-time', '300', '-sS') @CurlArgs 2>&1
     return @{ Ok = ($LASTEXITCODE -eq 0); Output = ($out -join "`n"); Code = $LASTEXITCODE }
 }
 
@@ -195,6 +208,131 @@ try {
             else { $fail++; Write-Host "  BLAD      /$($i.Path)  (exit $($r.Code))`n$($r.Output)" -ForegroundColor Red }
         }
         Write-Host "Zakonczono: $ok usunietych, $fail bledow." -ForegroundColor Cyan
+        return
+    }
+
+    # ── ZIP + WGRANIE + ROZPAKOWANIE NA SERWERZE ────────────────
+    # Powod istnienia: FTPS wgrywa plik po pliku, a vendor/ to ~3700 plikow.
+    # Jeden transfer zamiast tysiecy skraca deploy z godziny do minuty.
+    # Serwer nie ma powloki, ale ma PHP z rozszerzeniem zip - wiec rozpakowuje
+    # jednorazowy skrypt, ktory kasuje sam siebie po zakonczeniu.
+    if ($UploadZip) {
+        if (-not $RemotePath) { throw 'Podaj -RemotePath, np. "flownatic-app/vendor"' }
+        if (-not (Test-Path $UploadZip)) { throw 'Nie ma katalogu: $UploadZip' }
+
+        $srcDir     = (Resolve-Path $UploadZip).Path
+        $remoteDir  = $RemotePath.Trim('/')
+        $parentDir  = ($remoteDir -replace '/[^/]+$', '')
+        if ($parentDir -eq $remoteDir) { $parentDir = '' }
+        $zipName    = (Split-Path $remoteDir -Leaf) + '.zip'
+        $remoteZip  = if ($parentDir) { "$parentDir/$zipName" } else { $zipName }
+        $depth      = ($ExtractorPath.Trim('/') -split '/').Count
+
+        # ── 1. spakowanie lokalnie ──
+        $localZip = Join-Path $env:TEMP ((Split-Path $remoteDir -Leaf) + '-' + [guid]::NewGuid().ToString('N').Substring(0,8) + '.zip')
+        Write-Host "Pakowanie $srcDir ..." -ForegroundColor Cyan
+        # UWAGA: NIE uzywac ZipFile::CreateFromDirectory. W .NET Framework (PowerShell 5.1)
+        # zapisuje separatory jako \, a specyfikacja ZIP wymaga /. PHP potraktowal je wtedy
+        # jako czesc nazwy pliku i zamiast drzewa katalogow powstalo 3738 plaskich plikow.
+        Add-Type -AssemblyName System.IO.Compression
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $zs = [System.IO.File]::Open($localZip, [System.IO.FileMode]::Create)
+        $ar = New-Object System.IO.Compression.ZipArchive($zs, [System.IO.Compression.ZipArchiveMode]::Create)
+        foreach ($f in (Get-ChildItem -Path $srcDir -Recurse -File)) {
+            $rel = $f.FullName.Substring($srcDir.Length).TrimStart([char]92) -replace [regex]::Escape([string][char]92), '/'
+            $en = $ar.CreateEntry($rel, [System.IO.Compression.CompressionLevel]::Optimal)
+            $es = $en.Open(); $fs = [System.IO.File]::OpenRead($f.FullName)
+            $fs.CopyTo($es); $fs.Dispose(); $es.Dispose()
+        }
+        $ar.Dispose(); $zs.Dispose()
+        $mb    = [math]::Round((Get-Item $localZip).Length / 1MB, 1)
+        $files = (Get-ChildItem -Path $srcDir -Recurse -File).Count
+        Write-Host "  $files plikow -> archiwum $mb MB" -ForegroundColor DarkGreen
+
+        try {
+            # ── 2. wgranie archiwum (jeden transfer) ──
+            Write-Host "Wgrywanie archiwum do /$remoteZip ..." -ForegroundColor Cyan
+            $r = Invoke-Curl @('--ftp-create-dirs', '-T', $localZip, "ftp://$($cfg['host'])/$remoteZip")
+            if (-not $r.Ok) { throw "Nie udalo sie wgrac archiwum (exit $($r.Code))`n$($r.Output)" }
+
+            # ── 3. jednorazowy rozpakowywacz ──
+            $php = @"
+<?php
+header('Content-Type: application/json');
+`$t0   = microtime(true);
+`$home = dirname(__DIR__, $depth);
+`$zip  = `$home . '/$remoteZip';
+`$dest = `$home . '/$remoteDir';
+`$out  = [];
+try {
+    if (!class_exists('ZipArchive')) { throw new RuntimeException('brak rozszerzenia zip na serwerze'); }
+    if (!is_file(`$zip))             { throw new RuntimeException('nie znalazlem archiwum: ' . `$zip); }
+    if (!is_dir(`$dest) && !mkdir(`$dest, 0755, true) && !is_dir(`$dest)) {
+        throw new RuntimeException('nie moge utworzyc katalogu: ' . `$dest);
+    }
+    `$z = new ZipArchive();
+    `$rc = `$z->open(`$zip);
+    if (`$rc !== true) { throw new RuntimeException('ZipArchive::open zwrocilo ' . `$rc); }
+    `$out['wpisow'] = `$z->numFiles;
+    // Rozpakowujemy wpis po wpisie zamiast extractTo: normalizujemy separatory
+    // (archiwa z Windowsa potrafia miec \) i odrzucamy wyjscie poza katalog docelowy.
+    `$pominiete = 0;
+    for (`$i = 0; `$i < `$z->numFiles; `$i++) {
+        `$nazwa = str_replace('\\', '/', `$z->getNameIndex(`$i));
+        if (`$nazwa === '' || strpos(`$nazwa, '../') !== false || `$nazwa[0] === '/') { `$pominiete++; continue; }
+        `$cel = `$dest . '/' . `$nazwa;
+        if (substr(`$nazwa, -1) === '/') { if (!is_dir(`$cel)) { @mkdir(`$cel, 0755, true); } continue; }
+        `$kat = dirname(`$cel);
+        if (!is_dir(`$kat) && !@mkdir(`$kat, 0755, true) && !is_dir(`$kat)) { `$pominiete++; continue; }
+        `$we = `$z->getStream(`$z->getNameIndex(`$i));
+        if (`$we === false) { `$pominiete++; continue; }
+        `$wy = fopen(`$cel, 'wb');
+        stream_copy_to_stream(`$we, `$wy);
+        fclose(`$wy); fclose(`$we);
+    }
+    `$out['pominiete'] = `$pominiete;
+    `$z->close();
+    `$out['ok']       = true;
+    `$out['cel']      = `$dest;
+    `$out['sekundy']  = round(microtime(true) - `$t0, 1);
+    `$out['limit_php']= (int) ini_get('max_execution_time');
+    `$out['zip_usuniety'] = @unlink(`$zip);
+} catch (Throwable `$e) {
+    `$out['ok'] = false;
+    `$out['blad'] = `$e->getMessage();
+}
+echo json_encode(`$out, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+@unlink(__FILE__);
+"@
+            $localPhp = Join-Path $env:TEMP '_unzip.php'
+            Set-Content -Path $localPhp -Value $php -Encoding utf8 -NoNewline
+
+            Write-Host "Wgrywanie rozpakowywacza ..." -ForegroundColor Cyan
+            $r = Invoke-Curl @('--ftp-create-dirs', '-T', $localPhp,
+                               "ftp://$($cfg['host'])/$($ExtractorPath.Trim('/'))/_unzip.php")
+            if (-not $r.Ok) { throw "Nie udalo sie wgrac rozpakowywacza (exit $($r.Code))`n$($r.Output)" }
+            Remove-Item $localPhp -Force -ErrorAction SilentlyContinue
+
+            # ── 4. uruchomienie przez HTTPS (z pominieciem firmowego DNS) ──
+            Write-Host "Rozpakowywanie na serwerze ..." -ForegroundColor Cyan
+            $urlHost = ([uri]$ExtractorUrl).Host
+            $r = Invoke-CurlPlain @('--resolve', "${urlHost}:443:$ResolveIp", "$ExtractorUrl/_unzip.php")
+            Write-Host $r.Output
+
+            if ($r.Output -match '"ok":true') {
+                Write-Host "GOTOWE - rozpakowane do /$remoteDir" -ForegroundColor Green
+                Write-Host "Rozpakowywacz skasowal sam siebie." -ForegroundColor DarkGreen
+            }
+            else {
+                Write-Host "ROZPAKOWANIE NIE POWIODLO SIE." -ForegroundColor Red
+                Write-Host "Sprzatanie recznie:" -ForegroundColor Yellow
+                Write-Host "  .\tools\deploy.ps1 -DeleteRemote `"$($ExtractorPath.Trim('/'))/_unzip.php`""
+                Write-Host "  .\tools\deploy.ps1 -DeleteRemote `"$remoteZip`""
+            }
+        }
+        finally {
+            Remove-Item $localZip -Force -ErrorAction SilentlyContinue
+        }
         return
     }
 

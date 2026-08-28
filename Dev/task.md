@@ -95,7 +95,14 @@
 
 - [x] 🟢 `tools/deploy.ps1` — wgrywanie przez FTPS (`-Test`, `-ListPath`, `-LocalFile`, `-LocalDir`, `-DeleteRemote`, `-RenameFrom`/`-RenameTo`)
 - [x] 🟢 Strona-wizytówka `site/index.html` na `dobo.com.pl` — dowód, że cała ścieżka deployu działa
-- [ ] 🟢 `composer.json` + instalacja zależności lokalnie (Slim 4, Twig, PhpSpreadsheet, anthropic-ai/sdk)
+- [x] 🟢 `composer.json` + instalacja zależności — ✅ 2026-08-28.
+      Slim 4.15.2, slim/psr7 1.8.0, slim/twig-view 3.4.1, twig 3.28.0,
+      PhpSpreadsheet 5.9.0, anthropic-ai/sdk 0.44.0. Autoloader sprawdzony **na produkcji**:
+      wszystkie klasy się ładują, PHP 8.4.21, `zip` obecny.
+- [x] 🟢 **`deploy.ps1 -UploadZip`** — deploy `vendor/` przez archiwum zamiast plik po pliku.
+      3738 plików → 4,3 MB w jednym transferze, rozpakowanie na serwerze **1,4 s** przy limicie 180 s.
+      Bez tego ten sam deploy trwałby 16–60 minut. `vendor/` leży w `~/flownatic-app/`,
+      poza `domains/` — sprawdzone, że nie da się go otworzyć z przeglądarki.
 - [ ] 🟢 `public_html/index.php` — front controller
 - [ ] 🟢 `public_html/.htaccess` — `RewriteRule ^ index.php [QSA,L]` **+ kanoniczne 301**
       z `ftf.dobo.com.pl` na `dobo.com.pl/ftf/` — **uwaga: kierunek odwrócony 2026-08-27**.
