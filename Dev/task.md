@@ -94,16 +94,18 @@
       od razu, zamiast przejsc lokalnie i zaskoczyc na produkcji.
       **Wrocic, gdy:** trafimy na zachowanie rozniace sie miedzy wersjami, albo w Fazie 6,
       gdzie mierzymy realne czasy i srodowisko powinno odpowiadac produkcji co do wersji.
-- [ ] 🔵 **Flow w playgroundzie** — 3–5 różnych typów. Chodzi o **pokrycie typów**,
-      nie o liczbę: eksport z Fazy 5 ma osobne prefiksy dla każdego z nich.
-      | Prefiks | Typ | Propozycja |
+- [x] 🔵 **Flow w playgroundzie** — ✅ 2026-08-29, wszystkie cztery typy pokryte.
+      **Wzorzec do porównania w Fazie 2** — inwentarz w apce ma zwrócić dokładnie te pozycje:
+      | # | Nazwa | Typ |
       |---|---|---|
-      | `RT-` | Record-Triggered | na `Opportunity`, **after save**, z Decision na `StageName` |
-      | `SF-` | Screen Flow | 2 ekrany, pole wymagane + walidacja |
-      | `SCH-` | Scheduled | codziennie, `Get Records` na `Account` |
-      | `AL-` | Autolaunched | wywoływany z innego Flow, bez triggera |
-      Przynajmniej jeden **na standardowym obiekcie** (Account/Opportunity) — pola
-      niestandardowe utrudniłyby czytanie wyniku w Fazie 3.
+      | 1 | `SF-Create Case for Contact` | Screen Flow |
+      | 2 | `SF-Add Contact` | Screen Flow |
+      | 3 | `AL-Closed Won Opportunities` | Autolaunched |
+      | 4 | `SCH- Task on not closed opp` | Scheduled |
+      | 5 | `RT-Currency change` | Record-Triggered |
+      ⚠️ Nazwy przepisane od Rafała, **niezweryfikowane przez API** — spike OAuth nie był
+      jeszcze uruchomiony. Przy pierwszym imporcie sprawdzić pisownię, zwłaszcza spację
+      w `SCH- Task` i wielkość liter — API zwraca `DeveloperName` bez spacji i myślników.
 - [ ] 🔵 **Jeden Flow celowo wadliwy** — to **nie jest** punkt do odhaczenia byle jak.
       Bez niego nie udowodnimy, że `RiskScanner` z Fazy 3 cokolwiek wykrywa,
       a to sedno wartości całego narzędzia. Ma zawierać **wszystkie cztery** wady,
