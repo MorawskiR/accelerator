@@ -216,7 +216,16 @@
       3. Brakowało `DurableId` (stabilna tożsamość), `Description` (zasila prompt Fazy 4)
          i `LastModifiedDate` (pomijanie niezmienionych Flow bez pobierania metadanych).
       Zapytanie bazowe SOQL zapisane w `Dev/reference/flowdefinitionview.md`.
-- [ ] 🟢 Pobranie inwentarza Flow → tabela `flows`
+- [x] 🟢 Pobranie inwentarza Flow → tabela `flows` — ✅ 2026-08-31, `Flow\FlowImporter`.
+      SOQL oparty na **realnych polach** z `describe`, nie na dokumentacji.
+      **Paginacja** przez `nextRecordsUrl` — bez niej import po cichu urwałby się na 2000
+      rekordach; playground ma ich kilka, ale realna org może mieć setki.
+      Filtr `IsTemplate = false AND ManageableState = 'unmanaged'` odsiewa szablony
+      i pakiety zarządzane — nie testujemy cudzego kodu, a każdy zbędny rekord to
+      zmarnowany limit API przy pobieraniu metadanych w Fazie 3.
+      **Zniknięte Flow są oznaczane, nie kasowane** — kaskada zabrałaby ze sobą
+      wygenerowane przypadki testowe. **13 testów**, w tym paginacja, brak duplikatów
+      przy ponownym imporcie i konwersja daty ISO na format MySQL.
 - [ ] 🟢 Widok listy Flow z filtrem po typie i statusie
 - [ ] 🟢 Czytelny komunikat przy rozłączonej org (nie błąd 500)
 - [ ] **Gotowe, gdy:** lista Flow w apce zgadza się z Setup → Process Automation → Flows
