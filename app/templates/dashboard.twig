@@ -1,0 +1,33 @@
+{% extends "layout.twig" %}
+{% block tytul %}Dashboard — Flownatic{% endblock %}
+
+{% block pasek %}
+<div class="pasek">
+  <span class="marka">Flownatic</span>
+  <span class="kto">
+    {{ email }}
+    <span class="znacznik">{{ srodowisko }}</span>
+    <form method="post" action="{{ wylogujUrl }}" style="margin:0">
+      <button type="submit" class="cichy">Wyloguj</button>
+    </form>
+  </span>
+</div>
+{% endblock %}
+
+{% block tresc %}
+<h1>Dashboard</h1>
+<p>Szkielet aplikacji działa: logowanie, sesja i połączenie z bazą są na miejscu.
+Poniżej to, co powstanie w kolejnych fazach.</p>
+
+<div class="karta">
+  <h2 style="margin-top:0">Czego jeszcze nie ma</h2>
+  <ul class="lista">
+    <li><strong>Faza 2</strong> — połączenie z org przez OAuth i automatyczny inwentarz Flow</li>
+    <li><strong>Faza 3</strong> — struktura Flow i deterministyczne wykrywanie ryzyk</li>
+    <li><strong>Faza 4</strong> — generowanie przypadków testowych przez Claude</li>
+    <li><strong>Faza 5</strong> — eksport do .xlsx w układzie frameworku</li>
+  </ul>
+</div>
+
+<p class="przygaszone">Ten widok celowo pokazuje, czego brakuje, zamiast udawać gotową aplikację.</p>
+{% endblock %}
