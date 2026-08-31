@@ -19,22 +19,53 @@ ktory pojdzie do `public_html/index.php` w Fazie 1.
 
 ## Krok 1 - External Client App w Salesforce (po stronie Rafala)
 
-Setup -> wyszukaj **external client** -> **External Client App Manager** -> **New External Client App**
+Setup -> Quick Find -> wpisz **external client** -> **External Client App Manager**
+-> **New External Client App**
+
+### Basic Information
+
+| Pole | Wartosc |
+|---|---|
+| External Client App Name | `Flownatic POC` |
+| API Name | wypelni sie samo |
+| Contact Email | adres Rafala |
+| Distribution State | **Local** (aplikacja tylko dla tej org) |
+
+### API (Enable OAuth Settings)
+
+Zaznacz **Enable OAuth**, potem:
 
 | Ustawienie | Wartosc |
 |---|---|
-| Nazwa | `Flownatic POC` |
-| **Enable OAuth** | zaznaczone |
-| **Callback URL** | `https://dobo.com.pl/ftf/sfoauth.php` |
-| Drugi Callback URL | `https://dobo.com.pl/ftf/oauth/callback` (dla aplikacji z Fazy 2) |
-| **OAuth Scopes** | `api`, `refresh_token`, `offline_access` |
-| **Require PKCE** | zaznaczone |
-| Refresh token policy | wazny do odwolania |
+| **Callback URL** | dwie linie, kazda w osobnym wierszu: |
+| | `https://dobo.com.pl/ftf/sfoauth.php` |
+| | `https://dobo.com.pl/ftf/oauth/callback` |
+| **OAuth Scopes** | `Manage user data via APIs (api)` |
+| | `Perform requests at any time (refresh_token, offline_access)` |
 
-Consumer Key i Secret: **Settings -> Consumer Key and Secret** w utworzonej aplikacji.
+### Flow Enablement / Security
 
-> Salesforce potrafi propagowac nowa aplikacje **do 30 minut**. Jesli wymiana kodu na token
-> odbija sie bledem tuz po utworzeniu - odczekaj, zanim zaczniesz szukac innej przyczyny.
+| Ustawienie | Jak ustawic | Dlaczego |
+|---|---|---|
+| **Enable Authorization Code and Credentials Flow** | zaznaczone | to nasz przeplyw |
+| **Require Proof Key for Code Exchange (PKCE) extension for Supported Authorization Flows** | **zaznaczone** | chroni kod autoryzacyjny przed przechwyceniem |
+| **Require secret for Web Server Flow** | **ZOSTAW ZAZNACZONE** | patrz nizej |
+
+> **Uwaga o sekrecie.** Dokumentacja Data Loadera kaze odznaczyc "Require secret for
+> Web Server Flow" - ale Data Loader to aplikacja desktopowa (klient publiczny), ktory
+> nie ma gdzie bezpiecznie trzymac sekretu. **Nasza aplikacja stoi na serwerze**, sekret
+> lezy w `~/flownatic-app/.env` poza katalogiem publicznym, wiec jestesmy klientem
+> poufnym i sekretu powinnismy wymagac. PKCE i sekret razem to mocniejsze zabezpieczenie
+> niz kazde z osobna.
+
+### Consumer Key i Secret
+
+Po utworzeniu: otworz aplikacje -> zakladka **Settings** -> sekcja **OAuth Settings**
+-> **Consumer Key and Secret**.
+
+> ⚠️ **Salesforce propaguje nowa aplikacje do 30 minut.** Jesli wymiana kodu na token
+> odbije sie bledem tuz po utworzeniu, to najpewniej propagacja, a nie bledna
+> konfiguracja. Odczekaj, zanim zaczniesz szukac innej przyczyny.
 
 ## Krok 2 - konfiguracja
 
