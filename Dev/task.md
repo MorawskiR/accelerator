@@ -120,20 +120,31 @@
       3738 plików → 4,3 MB w jednym transferze, rozpakowanie na serwerze **1,4 s** przy limicie 180 s.
       Bez tego ten sam deploy trwałby 16–60 minut. `vendor/` leży w `~/flownatic-app/`,
       poza `domains/` — sprawdzone, że nie da się go otworzyć z przeglądarki.
-- [ ] 🟢 `public_html/index.php` — front controller
-- [ ] 🟢 `public_html/.htaccess` — `RewriteRule ^ index.php [QSA,L]` **+ kanoniczne 301**
-      z `ftf.dobo.com.pl` na `dobo.com.pl/ftf/` — **uwaga: kierunek odwrócony 2026-08-27**.
-      Oba adresy serwują ten sam katalog, ale kanoniczny jest podkatalog, bo tylko on ma
-      ważny certyfikat. Callback OAuth z Fazy 2 jest dopasowywany dokładnie, więc wejście
-      złym hostem wywaliłoby `redirect_uri mismatch`
-- [ ] 🟢 `app/.htaccess` — `Require all denied` (druga linia obrony)
-- [ ] 🟢 `app/src/Support/Config.php` — odczyt `.env`
-- [ ] 🟢 `app/src/Support/Db.php` — PDO
-- [ ] 🟢 `app/src/Support/Crypto.php` — AES-256-GCM na tokeny Salesforce
-- [ ] 🟢 `app/src/Http/Routes.php` + `AuthMiddleware.php`
-- [ ] 🟢 `app/db/migrations/001_init.sql` + `app/bin/migrate.php`
-- [ ] 🟢 `app/templates/` — `layout.twig`, `login.twig`, `dashboard.twig`
-- [ ] 🟢 `.env.example` do repo · 🔵 prawdziwy `.env` tylko lokalnie i na serwerze
+- [x] 🟢 `public_html/index.php` — ✅ 2026-08-31. Szuka katalogu aplikacji w dwóch miejscach
+      (`app/` obok lokalnie, `~/flownatic-app/` na serwerze), base path wyliczany ze `SCRIPT_NAME`,
+      więc ten sam plik działa w korzeniu i w podkatalogu `/ftf`.
+- [x] 🟢 `public_html/.htaccess` — ✅ 2026-08-31. Rewrite do front controllera, **kanoniczne 301**
+      z `ftf.dobo.com.pl` na `dobo.com.pl/ftf/`, `Options -Indexes`, blokada serwowania
+      `.env`/`.sql`/`.log`, nagłówki `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`.
+- [x] 🟢 `app/.htaccess` — ✅ 2026-08-31, `Require all denied` jako druga linia obrony.
+- [x] 🟢 `app/src/Support/Config.php` — ✅ 2026-08-31. Bez `phpdotenv`, ta sama ścieżka lokalnie
+      i na serwerze. **13 testów**, w tym `=` w wartości, `#` w cudzysłowie, wcięcia, wyjątki.
+- [x] 🟢 `app/src/Support/Db.php` — ✅ 2026-08-31. PDO, wyjątki, prawdziwe prepared statements,
+      `utf8mb4`. **9 testów na prawdziwej bazie**, w tym odporność na wstrzyknięcie SQL i emoji.
+- [x] 🟢 `app/src/Support/Crypto.php` — ✅ 2026-08-31. AES-256-GCM. **12 testów**, w tym wykrywanie
+      podmiany szyfrogramu, podmiany taga, obcego klucza i złego `APP_KEY`.
+- [x] 🟢 `app/src/Http/Routes.php` + `AuthMiddleware.php` — ✅ 2026-08-31. Logowanie z CSRF,
+      `session_regenerate_id`, jednakowy komunikat przy złym loginie i haśle, trasa `/health`.
+- [x] 🟢 `app/db/migrations/001_init.sql` + `app/bin/migrate.php` — ✅ 2026-08-31. Sześć tabel
+      plus rejestr migracji, przenośny SQL (MySQL lokalnie, MariaDB na produkcji), tryby
+      `--status` i `--dry-run`. **10 testów** na łańcuchu user → połączenie → flow → wersja → TC.
+- [x] 🟢 `app/templates/` — ✅ 2026-08-31, `layout.twig`, `login.twig`, `dashboard.twig`.
+      Dashboard jawnie wypisuje, czego jeszcze nie ma, zamiast udawać gotową aplikację.
+- [x] 🟢 `.env.example` do repo — ✅ 2026-08-31, komplet kluczy aż do Fazy 4.
+      🔵 prawdziwy `.env` tylko lokalnie i na serwerze, nigdy w commicie.
+- [x] 🟢 **Nieplanowane, ale potrzebne:** `app/bin/genkey.php` (generuje `APP_KEY`)
+      oraz `app/bin/adduser.php` (zakłada konto z CLI — rejestracji przez formularz nie ma,
+      bo aplikacja stoi pod publicznym adresem).
 - [ ] 🟢 `deploy.md` — spisana procedura wgrywania
 - [ ] **Gotowe, gdy:** `https://dobo.com.pl/ftf/` → logowanie → dashboard
 
