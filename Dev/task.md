@@ -188,8 +188,18 @@
       w tej fazie zadziała. `scope: refresh_token api`, token_type Bearer.
       `describe` zwrócił **34 pola** `FlowDefinitionView` → `Dev/reference/flowdefinitionview.md`.
       ⚠️ Do zrobienia: skasować `sfoauth.php` i `sf-oauth.php` z serwera.
-- [ ] 🟢 `app/src/Salesforce/OAuthService.php` — authorize → callback → tokeny zaszyfrowane w bazie
-- [ ] 🟢 Automatyczny refresh tokenu przy `401` / `INVALID_SESSION_ID`
+- [x] 🟢 `app/src/Salesforce/OAuthService.php` — ✅ 2026-08-31. Web Server Flow z PKCE,
+      napisany **na podstawie przepływu, który faktycznie przeszedł** w spike'u, nie w ciemno.
+      Tokeny trafiają do bazy wyłącznie zaszyfrowane. **20 testów** na prawdziwej bazie:
+      `code_challenge` to faktyczny SHA256 z weryfikatora, zły `state` odrzucony,
+      `org_id` wyciągnięty z identity URL, token w bazie nieczytelny i odszyfrowywalny,
+      brak `refresh_token` w odpowiedzi wykryty od razu z podpowiedzią o scope.
+- [x] 🟢 Automatyczny refresh tokenu przy `401` / `INVALID_SESSION_ID` — ✅ 2026-08-31.
+      `ApiClient` wykrywa wygaśnięcie i woła `OAuthService::refresh()`, po czym powtarza
+      żądanie nowym tokenem. **Odwołany refresh token daje `null`, nie wyjątek** —
+      to nie awaria aplikacji, tylko sygnał „połącz org ponownie”.
+      Świadomie **nie zapisujemy czasu wygaśnięcia**: Salesforce nie zwraca `expires_in`
+      dla tego przepływu, a długość sesji to ustawienie org. Zamiast zgadywać — reagujemy.
 - [x] 🟢 `app/src/Salesforce/ApiClient.php` — ✅ 2026-08-31. cURL z retry, wspólny dla
       REST i Tooling. Transport wydzielony do interfejsu `HttpTransport`, żeby dało się
       przetestować **bez żywej org** — inaczej logika ponawiania wyszłaby dopiero w połowie
