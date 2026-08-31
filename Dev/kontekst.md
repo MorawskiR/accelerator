@@ -191,6 +191,7 @@ ale **żaden z otwartych nie blokuje Fazy 1**. Faza 1: **2 z 14**.
 | Baza | `qekbnopwvk_flownatic`, MariaDB 10.6.27, `utf8mb4_unicode_ci`, pusta |
 | Playground | `resilient-narwhal-j9207g-dev-ed.trailblaze.my.salesforce.com`, API v67.0, profil admina |
 | Lokalnie | Laragon, **PHP 8.3.33** (produkcja 8.4.21), Composer 2.10.2, `ext-zip` włączony ręcznie |
+| Baza lokalna | **MySQL 8.4.3**, baza `flownatic`, root bez hasła — produkcja to **MariaDB 10.6.27** |
 | `vendor/` | wdrożony do `~/flownatic-app/vendor/`, **autoloader zweryfikowany na produkcji** |
 | Deploy | `deploy.ps1 -UploadZip` — 3738 plików w **1,4 s** zamiast 16–60 minut |
 
@@ -212,6 +213,9 @@ Kryterium „Gotowe, gdy”: wejście na `https://dobo.com.pl/ftf/` → logowani
 
 ### Rzeczy, o których łatwo zapomnieć
 
+- **Migracje pisz w przenośnym SQL-u** — lokalnie MySQL 8.4.3, na produkcji MariaDB 10.6.27.
+  Unikać składni specyficznej dla jednego z nich; trzymać się zwykłego `CREATE TABLE`,
+  `utf8mb4_unicode_ci` i typów obecnych w obu.
 - **Pisz jawne `?Typ`**, nie `Typ $x = null` — PHP 8.4 na produkcji uznaje to drugie za przestarzałe,
   a lokalne 8.3 tego nie pokaże.
 - **Spike OAuth** (`tools/sf-oauth/`) jest napisany, ale **nieuruchomiony** — czeka na Fazę 2
