@@ -145,8 +145,20 @@
 - [x] 🟢 **Nieplanowane, ale potrzebne:** `app/bin/genkey.php` (generuje `APP_KEY`)
       oraz `app/bin/adduser.php` (zakłada konto z CLI — rejestracji przez formularz nie ma,
       bo aplikacja stoi pod publicznym adresem).
-- [ ] 🟢 `deploy.md` — spisana procedura wgrywania
-- [ ] **Gotowe, gdy:** `https://dobo.com.pl/ftf/` → logowanie → dashboard
+- [x] 🟢 `deploy.md` — ✅ 2026-08-31, spisany **po** pierwszym realnym wdrożeniu,
+      nie z planu. Zawiera pułapki, które faktycznie wystąpiły: placeholder `index.html`
+      serwowany przed `index.php`, konieczność budowania paczki bez lokalnego `.env`
+      oraz uruchamianie migracji bez powłoki. Lista kontrolna po wdrożeniu.
+- [x] 🟢 `app/src/Support/Migrator.php` — logika migracji wyciągnięta z CLI,
+      bo na serwerze nie ma powłoki i te same migracje trzeba uruchomić przez HTTP.
+      Przetestowana na pustej bazie: 7 tabel, idempotencja działa.
+- [x] **Gotowe, gdy:** ✅ **2026-08-31 — FAZA 1 ZAMKNIĘTA.**
+      `https://dobo.com.pl/ftf/` → logowanie → dashboard, `APP_ENV=production`.
+      Zweryfikowane na produkcji: `/health` zwraca PHP 8.4.21 i `"baza":"tak"`,
+      niezalogowany dostaje 302 na `/login`, złe hasło odrzucone, poprawne wpuszcza
+      na dashboard z e-mailem użytkownika. Bezpieczeństwo: wszystkie skrypty jednorazowe
+      zwracają 404, `.env` i listowanie katalogów 403, trzy nagłówki bezpieczeństwa
+      obecne, wizytówka na `dobo.com.pl` nietknięta.
 
 ---
 

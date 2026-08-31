@@ -16,8 +16,8 @@
 
 | Faza | Zakres | Status |
 |---|---|---|
-| 0 | Fundament i weryfikacja hostingu | 🟡 W trakcie — punkt 1 ✅ |
-| 1 | Szkielet aplikacji + deploy na produkcję | ⬜ Nie rozpoczęta |
+| 0 | Fundament i weryfikacja hostingu | ✅ Zakończona (2 punkty świadomie odłożone) |
+| 1 | Szkielet aplikacji + deploy na produkcję | ✅ **Zakończona 2026-08-31** |
 | 2 | OAuth do Salesforce + automatyczny inwentarz Flow | ⬜ Nie rozpoczęta |
 | 3 | Metadane Flow + Flow Digest + RiskScanner | ⬜ Nie rozpoczęta |
 | 4 | Warstwa AI — generowanie przypadków testowych | ⬜ Nie rozpoczęta |
