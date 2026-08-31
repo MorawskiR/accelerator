@@ -214,4 +214,26 @@ $html =
   . '<p><strong>Skasuj ten skrypt z serwera</strong> zaraz po odczytaniu wyniku - trzyma sesje OAuth '
   . 'i jest publicznie dostepny.</p>';
 
+// Zapis wyniku do pliku poza katalogiem publicznym.
+// Powod: liczba pol FlowDefinitionView jest spora, a przepisywanie jej
+// z ekranu (czesto telefonu, bo firmowa siec blokuje domene) byloby zmudne
+// i podatne na bledy. Plik kasujemy razem ze spikiem.
+$wynik = [
+    'czas'          => date('c'),
+    'instance_url'  => $instance,
+    'ma_refresh'    => $hasRefresh,
+    'scope'         => $tok['scope'] ?? null,
+    'token_type'    => $tok['token_type'] ?? null,
+    'flow_count'    => $flowCount,
+    'describe_http' => $dc,
+    'pola'          => $fields,
+];
+
+@file_put_contents(
+    dirname(__DIR__, 4) . '/flownatic-app/spike-wynik.json',
+    json_encode($wynik, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+);
+
+$html .= '<p class="hint">Wynik zapisany takze do pliku na serwerze, poza katalogiem publicznym.</p>';
+
 render('Spike OAuth - wynik', $html);

@@ -180,8 +180,11 @@
       `https://dobo.com.pl/ftf/oauth/callback` (aplikacja).
       Scopes: `api`, `refresh_token`, `offline_access`. Instrukcja: `tools/sf-oauth/README.md`.
       ⚠️ Salesforce propaguje nową aplikację **do 30 minut**.
-- [ ] 🟢 **Uruchom spike** i zapisz wynik — zwłaszcza listę pól `FlowDefinitionView`,
-      bo na niej oprzemy SOQL. Po odczycie skasować oba pliki z serwera
+- [x] 🟢 **Uruchom spike** — ✅ 2026-08-31, **OAuth przeszedł**.
+      PKCE (S256) działa, wrócił **`refresh_token`** — automatyczne odnawianie sesji
+      w tej fazie zadziała. `scope: refresh_token api`, token_type Bearer.
+      `describe` zwrócił **34 pola** `FlowDefinitionView` → `Dev/reference/flowdefinitionview.md`.
+      ⚠️ Do zrobienia: skasować `sfoauth.php` i `sf-oauth.php` z serwera.
 - [ ] 🟢 `app/src/Salesforce/OAuthService.php` — authorize → callback → tokeny zaszyfrowane w bazie
 - [ ] 🟢 Automatyczny refresh tokenu przy `401` / `INVALID_SESSION_ID`
 - [x] 🟢 `app/src/Salesforce/ApiClient.php` — ✅ 2026-08-31. cURL z retry, wspólny dla
@@ -191,7 +194,15 @@
       i powtórzenie z nowym tokenem, brak zapętlenia przy drugim 401, **brak ponawiania
       przy 400/403/404** (oszczędza limit API playgrounda), ponawianie przy 5xx i 429,
       czytelny komunikat z `errorCode` zamiast surowego JSON-a.
-- [ ] 🟢 **Najpierw** `describe` na `FlowDefinitionView` — sprawdzić realne nazwy pól, nie zgadywać
+- [x] 🟢 **`describe` na `FlowDefinitionView`** — ✅ 2026-08-31. Opłaciło się:
+      **trzy rozbieżności** wobec schematu z Fazy 1, poprawione migracją `002`.
+      1. `ActiveVersionId`/`LatestVersionId` to **identyfikatory (string)**, nie numery
+         wersji — miałem je jako `INT`. Numer to osobne pole `VersionNumber`.
+      2. Brakowało **`RecordTriggerType`** (Create/Update/Delete) — bez niego nie
+         odróżnimy Flow przy tworzeniu od tego przy aktualizacji, a to inne przypadki testowe.
+      3. Brakowało `DurableId` (stabilna tożsamość), `Description` (zasila prompt Fazy 4)
+         i `LastModifiedDate` (pomijanie niezmienionych Flow bez pobierania metadanych).
+      Zapytanie bazowe SOQL zapisane w `Dev/reference/flowdefinitionview.md`.
 - [ ] 🟢 Pobranie inwentarza Flow → tabela `flows`
 - [ ] 🟢 Widok listy Flow z filtrem po typie i statusie
 - [ ] 🟢 Czytelny komunikat przy rozłączonej org (nie błąd 500)
