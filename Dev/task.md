@@ -63,18 +63,6 @@
 - [x] 🔵 **Klucz Anthropic** — ✅ 2026-08-28, klucz utworzony i **ważny**.
       `GET /v1/models` zwraca 200, `claude-opus-5` jest na liście dostępnych modeli.
       Przechowywany w `%USERPROFILE%\.flownatic-anthropic.txt`, poza repo.
-- [ ] 🔵 **Doładuj konto Anthropic** — ⚠️ **klucz działa, ale konto nie ma środków.**
-      Wywołanie `/v1/messages` zwraca `invalid_request_error`: *credit balance is too low*.
-      Ścieżka: **https://platform.claude.com/settings/billing** (Settings → Billing).
-      ⚠️ Komunikat API mówi „Plans & Billing” — **taka pozycja nie istnieje**, to Settings → Billing.
-      Domena to dziś `platform.claude.com`, nie `console.anthropic.com`.
-      Wymaga roli **Admin** lub **Billing** — na niższych opcja zakupu się nie pokaże.
-      Model przedpłacony: kredyty kupuje się z góry, są dostępne od razu, **wygasają po roku**
-      i są bezzwrotne — dla POC kupować mało. Auto-doładowania raczej nie włączać,
-      dopóki nie znamy realnego zużycia z Fazy 4.
-      ⚪ **Nie blokuje Faz 1–3** — AI wchodzi dopiero w Fazie 4. Zrobić przed nią.
-      Uwaga metodyczna: sama ważność klucza (`/v1/models` → 200) **nie dowodzi**, że da się
-      uruchomić model. Brak środków widać wyłącznie przy realnym wywołaniu `/v1/messages`
 - [x] 🔵 **Środowisko lokalne** — ✅ 2026-08-28, Laragon w `C:\laragon`.
       Jest Composer, MySQL, Apache, Node, HeidiSQL. Laragon dodany do PATH.
       ⚠️ **Zainstalowany PHP to 8.3.33, nie 8.4** — `bin/php/` zawiera tylko tę wersję,
@@ -208,6 +196,16 @@
 
 ## FAZA 4 — Warstwa AI
 
+- [ ] 🔵 **Doładuj konto Anthropic** — klucz jest ważny (`GET /v1/models` → 200,
+      `claude-opus-5` dostępny), ale **saldo zerowe**: `/v1/messages` zwraca
+      `credit balance is too low`. Ścieżka: **platform.claude.com/settings/billing**
+      (komunikat API myli, kierując do nieistniejącej pozycji „Plans & Billing”).
+      Wymaga roli Admin lub Billing. Kredyty przedpłacone, **wygasają po roku**
+      i są bezzwrotne — dla POC kupić mało. Szacunek: ~0,09 USD za jeden Flow
+      (digest 2–5 KB, nie surowy JSON), czyli 10–18 USD na cały rozwój Fazy 4 i walidację.
+      Auto-doładowania nie włączać, dopóki nie znamy realnego zużycia.
+      ⚠️ **Ważność klucza nie dowodzi, że da się uruchomić model** — `/v1/models`
+      zwraca 200 nawet przy pustym koncie. Sprawdzać realnym wywołaniem.
 - [ ] 🟢 `composer require anthropic-ai/sdk`
 - [ ] 🟢 `app/src/Ai/Prompts/system_checklist.md` — TC-001…TC-026 + reguły SF + format wyjścia
 - [ ] 🟢 `app/src/Ai/TestCaseGenerator.php` — model `claude-opus-5`
