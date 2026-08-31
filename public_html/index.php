@@ -81,6 +81,12 @@ $app->addRoutingMiddleware();
 $twig = Twig::create($appDir . '/templates', [
     'cache' => $debug ? false : $appDir . '/storage/cache/twig',
     'debug' => $debug,
+    // auto_reload MUSI byc wlaczone, mimo ze cache zostaje.
+    // Domyslnie Twig wiaze te opcje z 'debug', wiec na produkcji przestawalby
+    // sprawdzac date modyfikacji szablonu i serwowal skompilowana stara wersje
+    // nawet po wgraniu nowej. Deploy przez FTP nie ma kroku czyszczenia cache,
+    // wiec bez tego kazda zmiana szablonu bylaby niewidoczna.
+    'auto_reload' => true,
 ]);
 $app->add(TwigMiddleware::create($app, $twig));
 
