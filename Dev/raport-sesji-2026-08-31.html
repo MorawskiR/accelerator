@@ -236,12 +236,12 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   <header class="masthead">
     <div class="brand">
       <div class="name">Flownatic</div>
-      <div class="what">Dzień czwarty — aplikacja działa na produkcji</div>
+      <div class="what">Dzień czwarty — dwie fazy: aplikacja na produkcji i OAuth do Salesforce</div>
     </div>
     <div class="meta">
       <div><b>2026-08-31</b> · sesja czwarta</div>
       <div>gałąź <b>feature/faza-1-szkielet</b></div>
-      <div>Faza 1 zamknięta</div>
+      <div>Faza 1 ✅ · Faza 2 10/11</div>
     </div>
   </header>
 
@@ -256,10 +256,10 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
       <code>https://dobo.com.pl/ftf/</code>, logujesz się, widzisz dashboard.</p>
 
       <div class="stats">
-        <div class="stat"><div class="n">8</div><div class="l">commitów</div></div>
-        <div class="stat"><div class="n">~900</div><div class="l">linii PHP</div></div>
-        <div class="stat"><div class="n">44</div><div class="l">testy</div></div>
-        <div class="stat"><div class="n">18/18</div><div class="l">Faza 1</div></div>
+        <div class="stat"><div class="n">17</div><div class="l">commitów</div></div>
+        <div class="stat"><div class="n">~1450</div><div class="l">linii w src/</div></div>
+        <div class="stat"><div class="n">92</div><div class="l">testy</div></div>
+        <div class="stat"><div class="n">10/11</div><div class="l">Faza 2</div></div>
       </div>
     </div>
   </section>
@@ -394,36 +394,106 @@ a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius
   </section>
 
   <section>
+    <div class="rail">Faza 2</div>
+    <div>
+      <h2>OAuth do Salesforce — dziesięć z jedenastu punktów</h2>
+      <p>Po zamknięciu Fazy 1 ta sama sesja poszła dalej. <strong>Spike OAuth przeszedł na żywej
+      org</strong> i od razu się opłacił.</p>
+
+      <div class="note">
+        <h3>Uruchomienie spike'a przed pisaniem kodu ujawniło trzy błędy</h3>
+        <p>Schemat bazy z Fazy 1 powstał, <strong>zanim zobaczyliśmy prawdziwy obiekt</strong>.
+        <code>describe</code> na <code>FlowDefinitionView</code> pokazał 34 pola i trzy rozbieżności:</p>
+        <ul class="clean">
+          <li><code>ActiveVersionId</code> i <code>LatestVersionId</code> to <strong>identyfikatory</strong>,
+              nie numery wersji — miałem je jako <code>INT</code></li>
+          <li>brakowało <code>RecordTriggerType</code> (Create/Update/Delete) — bez niego nie odróżnimy
+              Flow przy tworzeniu rekordu od tego przy aktualizacji, a to inne przypadki testowe</li>
+          <li>brakowało <code>DurableId</code>, <code>Description</code> i <code>LastModifiedDate</code></li>
+        </ul>
+        <p style="margin-bottom:0">Wszystko poprawione migracją <code>002</code>, bezpiecznie, bo tabela
+        była pusta. Gdybym pisał kod na podstawie założeń, wyszłoby to przy pierwszym imporcie.</p>
+      </div>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>Klasa</th><th>Rola</th><th class="mono">Testy</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">ApiClient</td><td>REST i Tooling, retry, odświeżanie sesji</td><td class="mono">15</td></tr>
+            <tr><td class="mono">OAuthService</td><td>Web Server Flow z PKCE, szyfrowane tokeny</td><td class="mono">20</td></tr>
+            <tr><td class="mono">FlowImporter</td><td>inwentarz z paginacją</td><td class="mono">13</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin-top:16px"><strong>Kluczowa decyzja projektowa:</strong> transport HTTP wydzielony
+      do interfejsu. Dzięki temu odświeżanie tokenu przy 401, brak zapętlenia przy drugim 401 i brak
+      ponawiania przy błędach trwałych są <strong>przetestowane bez żywej org</strong> — inaczej wyszłyby
+      dopiero w połowie importu Flow.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Pułapki</div>
+    <div>
+      <h2>Cztery rzeczy wykryte przy wdrażaniu</h2>
+      <div class="split">
+        <div class="card">
+          <h3>Placeholder blokował aplikację</h3>
+          <p>DirectAdmin zostawia <code>index.html</code>, a Apache serwuje go przed
+          <code>index.php</code>. Kod był poprawny, ale niewidoczny.</p>
+          <div class="was">skasować przy <i>pierwszym wdrożeniu</i></div>
+        </div>
+        <div class="card">
+          <h3>Twig serwował stare szablony</h3>
+          <p>Domyślnie wiąże <code>auto_reload</code> z <code>debug</code>, więc przy
+          <code>APP_DEBUG=false</code> ignorował wgrane zmiany.</p>
+          <div class="was">naprawione: <i>auto_reload zawsze true</i></div>
+        </div>
+        <div class="card">
+          <h3>SOQL nie przyjmuje podwójnych cudzysłowów</h3>
+          <p>Użyłem ich, żeby ominąć problem z zapisem pliku. Wykryte przez wypisanie
+          wygenerowanego zapytania, nie przez założenie.</p>
+          <div class="was">na org dałoby <b>MALFORMED_QUERY</b></div>
+        </div>
+        <div class="card">
+          <h3>Aktualizacja .env przez podmianę linii</h3>
+          <p>Nadpisanie pliku skasowałoby <code>APP_KEY</code>, którego nie ma lokalnie —
+          a jego utrata unieważnia zapisane tokeny.</p>
+          <div class="was">podmieniać <i>tylko zmieniane klucze</i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <div class="rail">Jutro</div>
     <div>
-      <h2>Faza 2 — OAuth i inwentarz Flow</h2>
-      <ul class="clean">
-        <li>🔵 <strong>External Client App w playgroundzie</strong> — jedyna rzecz blokująca start.
-            Instrukcja w <code>tools/sf-oauth/README.md</code>. Salesforce propaguje ją
-            <strong>do 30 minut</strong>, więc warto założyć ją wcześniej</li>
-        <li>🟢 <strong>Uruchomić spike</strong> — czeka napisany od 28 sierpnia, nieuruchomiony.
-            Da realne nazwy pól <code>FlowDefinitionView</code>, na których oprzemy SOQL zamiast zgadywać</li>
-        <li>🟢 <code>OAuthService</code> i <code>ApiClient</code> — tokeny szyfrowane w bazie,
-            automatyczny refresh przy wygaśnięciu sesji</li>
-        <li>🟢 Inwentarz Flow i widok listy</li>
-      </ul>
+      <h2>Jeden punkt do zamknięcia Fazy 2</h2>
+      <p><strong>Kryterium „Gotowe, gdy":</strong> zalogować się na produkcji, kliknąć
+      <strong>Połącz z Salesforce</strong>, potem <strong>Pobierz Flow</strong> — i sprawdzić,
+      czy lista pokazuje <strong>sześć pozycji</strong> zgodnych z Setup → Process Automation → Flows.</p>
+      <p>Wszystko jest wdrożone i gotowe. Brakuje wyłącznie przejścia przez logowanie w przeglądarce,
+      czego nie da się zrobić za użytkownika.</p>
 
-      <p style="margin-top:16px">Flow w playgroundzie są gotowe: <strong>pięć poprawnych</strong>
-      pokrywających wszystkie cztery typy oraz <strong>jeden celowo wadliwy</strong>. Ich lista
-      jest w <code>task.md</code> jako wzorzec — kryterium „Gotowe, gdy" Fazy 2 brzmi dokładnie
-      „lista Flow w apce zgadza się z Setup".</p>
+      <div class="note warn" style="border-left-color:var(--warn)">
+        <h3>Do domknięcia osobno</h3>
+        <p style="margin-bottom:0">Faza 1 nie została promowana na <code>uat</code> i <code>main</code>.
+        Gałąź Fazy 2 wyszła z bieżącego stanu, więc nic nie ginie, ale promocję warto domknąć
+        zgodnie z <code>git-workflow.md</code>.</p>
+      </div>
 
       <div class="phases" style="margin-top:22px">
         <div class="ph"><div class="k">Faza 0</div><div class="v">Fundament ✅</div></div>
         <div class="ph"><div class="k">Faza 1</div><div class="v">Szkielet ✅</div></div>
-        <div class="ph now"><div class="k">Faza 2</div><div class="v">OAuth — start</div></div>
+        <div class="ph now"><div class="k">Faza 2</div><div class="v">OAuth — 10/11</div></div>
         <div class="ph"><div class="k">Faza 3</div><div class="v">Digest + ryzyka</div></div>
         <div class="ph"><div class="k">Faza 4</div><div class="v">AI</div></div>
         <div class="ph"><div class="k">Faza 5</div><div class="v">Eksport</div></div>
         <div class="ph"><div class="k">Faza 6</div><div class="v">Walidacja</div></div>
       </div>
-      <div class="bar"><span style="width:40%"></span></div>
-      <div class="barlab">Dwie fazy zamknięte · aplikacja stoi i działa pod publicznym adresem</div>
+      <div class="bar"><span style="width:52%"></span></div>
+      <div class="barlab">Dwie fazy zamknięte, trzecia na finiszu · OAuth potwierdzony na żywej org</div>
     </div>
   </section>
 

@@ -179,60 +179,59 @@ publiczny, nie nasze autorstwo.
 
 ## 7. Gdzie jesteśmy i co dalej
 
-**Stan na koniec sesji 2026-08-31.**
-**Faza 0: 13/15** (2 świadomie odłożone) · **Faza 1: 18/18 — ZAMKNIĘTA** · Faza 2: nierozpoczęta.
+**Stan na koniec sesji 2026-08-31** (17 commitów tego dnia — dwie fazy).
+**Faza 1: 18/18 ZAMKNIĘTA** · **Faza 2: 10/11** · Gałąź: `feature/faza-2-oauth-salesforce`.
 
 ### Aplikacja działa na produkcji
 
-**https://dobo.com.pl/ftf/** → logowanie → dashboard. Kryterium „Gotowe, gdy" Fazy 1 spełnione
-i zweryfikowane na żywo: `/health` zwraca PHP 8.4.21 i `"baza":"tak"`, niezalogowany dostaje 302
-na `/login`, złe hasło odrzucone, poprawne wpuszcza na dashboard ze znacznikiem `production`.
+**https://dobo.com.pl/ftf/** → logowanie → dashboard → **Flow**.
+Dane logowania: `%USERPROFILE%\.flownatic-login.txt` (`rafal@dobo.com.pl`).
 
-**Dane logowania:** `%USERPROFILE%\.flownatic-login.txt` (e-mail `rafal@dobo.com.pl`).
-Hasło zahashowane lokalnie — jawne nigdy nie trafiło na serwer ani do rozmowy.
+⚠️ **Firmowa sieć blokuje `dobo.com.pl`** filtrem Infoblox — testować z telefonu
+albo spoza sieci firmowej. Z linii poleceń wymuszać IP przez `curl --resolve`.
 
-⚠️ **Firmowa sieć blokuje `dobo.com.pl`** filtrem Infoblox. Aplikacja działa, ale z tego laptopa
-w przeglądarce zobaczysz stronę blokady. Testować z telefonu albo spoza sieci firmowej;
-z linii poleceń wymuszać IP przez `curl --resolve`.
+### Faza 2 — co powstało
 
-### Co powstało w Fazie 1
+| Klasa | Rola | Testy |
+|---|---|---|
+| `Salesforce\ApiClient` | REST i Tooling, retry, odświeżanie sesji | 15 |
+| `Salesforce\OAuthService` | Web Server Flow z PKCE, szyfrowane tokeny | 20 |
+| `Salesforce\HttpTransport` | interfejs transportu — **umożliwia testy bez org** | — |
+| `Flow\FlowImporter` | inwentarz z paginacją | 13 |
 
-| Warstwa | Pliki |
-|---|---|
-| Support | `Config`, `Db`, `Crypto` (AES-256-GCM), `Migrator` |
-| HTTP | `Routes`, `AuthMiddleware`, trzy szablony Twig |
-| Wejście | `public_html/index.php`, oba `.htaccess` |
-| Narzędzia | `bin/genkey.php`, `bin/adduser.php`, `bin/migrate.php` |
-| Baza | `001_init.sql` — 6 tabel + rejestr migracji |
+Trasy: `/org/connect`, `/oauth/callback`, `/org/disconnect`, `/flows`, `/flows/sync`.
+Widok `flows.twig` z filtrami po typie i stanie.
 
-Około 900 linii PHP. Każda warstwa testowana na działającym środowisku: Config 13 przypadków,
-Crypto 12 (w tym wykrywanie podmiany szyfrogramu i obcego klucza), Db 9 na prawdziwej bazie
-(w tym odporność na wstrzyknięcie SQL), schemat 10 na pełnym łańcuchu danych.
+**Spike OAuth przeszedł na żywej org** — PKCE działa, `refresh_token` wraca.
+Realne pola `FlowDefinitionView` (34) zapisane w `Dev/reference/flowdefinitionview.md`.
+Ujawniły **trzy błędy w schemacie z Fazy 1**, poprawione migracją `002`.
 
-### Trzy pułapki z wdrożenia — zapisane w `deploy.md`
+### Zostało do zamknięcia Fazy 2
 
-1. **DirectAdmin zostawia `index.html`** w katalogu subdomeny, a Apache serwuje go **przed**
-   `index.php`. Aplikacja się nie pokaże, dopóki placeholder nie zniknie.
-2. **Nie pakować `app/` w całości** — poleciałby lokalny `.env` i nadpisał produkcyjny.
-   Paczkę budować z katalogu tymczasowego i sprawdzać zawartość przed wysłaniem.
-3. **Migracje bez powłoki** — logika siedzi w `Support\Migrator`, uruchamiana jednorazowym
-   skryptem przez HTTP, który kasuje sam siebie.
+**Jeden punkt — kryterium „Gotowe, gdy":** Rafał loguje się na produkcji, klika
+**Połącz z Salesforce**, potem **Pobierz Flow**, i lista pokazuje **sześć pozycji**
+zgodnych z Setup → Process Automation → Flows. Wzorzec do porównania jest w `task.md`.
 
-### Następny krok: Faza 2 — OAuth i inwentarz Flow
+Wszystko jest wdrożone i gotowe — brakuje wyłącznie przejścia przez logowanie w przeglądarce.
 
-- 🔵 **External Client App** w playgroundzie — to jedyna rzecz blokująca start.
-  Instrukcja w `tools/sf-oauth/README.md`, dwa Callback URL, PKCE, scopes
-  `api`/`refresh_token`/`offline_access`. Salesforce propaguje ją **do 30 minut**.
-- 🟢 Spike `tools/sf-oauth/sfoauth.php` czeka napisany, **nieuruchomiony** — po Consumer Key
-  da realne nazwy pól `FlowDefinitionView`, na których oprzemy SOQL.
-- Flow w playgroundzie są gotowe: pięć poprawnych plus jeden celowo wadliwy.
-  Lista w `task.md` jako wzorzec do porównania — kryterium „Gotowe, gdy" Fazy 2.
+### Pułapki wykryte przy wdrażaniu — nie powtarzać
+
+1. **DirectAdmin zostawia `index.html`** w katalogu subdomeny; Apache serwuje go **przed**
+   `index.php`. Skasować przy pierwszym wdrożeniu.
+2. **Twig nie odświeżał szablonów na produkcji.** Domyślnie wiąże `auto_reload` z `debug`,
+   więc przy `APP_DEBUG=false` serwował skompilowane stare wersje. Naprawione na stałe:
+   `auto_reload => true`. **Bez tego każda zmiana widoku byłaby niewidoczna.**
+3. **Nie pakować `app/` w całości** — poleciałby lokalny `.env`. Paczkę budować z katalogu
+   tymczasowego i sprawdzać zawartość przed wysłaniem.
+4. **Aktualizując `.env` na produkcji podmieniać linie, nie nadpisywać pliku** — inaczej
+   traci się `APP_KEY`, którego nie ma lokalnie.
 
 ### Rzeczy, o których łatwo zapomnieć
 
-- **Callback OAuth jest przesądzony:** `https://dobo.com.pl/ftf/oauth/callback`. Zmiana po
-  rejestracji Connected App wymaga poprawki po stronie Salesforce.
+- **Faza 1 nie została promowana** na `uat`/`main`. Gałąź Fazy 2 wyszła z bieżącego stanu,
+  więc nic nie ginie, ale promocję trzeba domknąć zgodnie z `git-workflow.md`.
 - **Pisz jawne `?Typ`** — lokalne PHP 8.3 nie pokaże deprecjacji z produkcyjnego 8.4.
 - **Migracje w przenośnym SQL-u** — lokalnie MySQL 8.4.3, na produkcji MariaDB 10.6.27.
-- **`APP_KEY` na produkcji jest inny niż lokalny.** Jego zmiana unieważni zapisane tokeny SF.
+- **SOQL wymaga pojedynczych cudzysłowów** — podwójne dają `MALFORMED_QUERY`.
 - **Hasła i klucze nigdy przez terminal ani do rozmowy** — zawsze plik poza repozytorium.
+  Sekrety w `.flownatic-db.txt`, `.flownatic-sf.txt`, `.flownatic-login.txt`, `.flownatic-anthropic.txt`.
