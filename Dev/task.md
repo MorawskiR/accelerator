@@ -174,7 +174,10 @@
       (realne nazwy pól zamiast zgadywania) i liczbę Flow w org.
       ⚠️ **Nieuruchomiony i niezweryfikowany** — brak lokalnego PHP, więc nawet składnia
       nie została sprawdzona maszynowo, tylko strukturalnie.
-- [ ] 🔵 **External Client App** w playgroundzie — OAuth 2.0 Web Server Flow **z PKCE**.
+- [x] 🔵 **External Client App** — ✅ 2026-08-31, `Flownatic POC`. Działa, potwierdzone
+      przejściem spike'a: PKCE, dwa Callback URL, scopes `api` i `refresh_token`.
+      Consumer Key i Secret w `%USERPROFILE%\.flownatic-sf.txt`, poza repo.
+      Oryginalna instrukcja (na wypadek zakładania od nowa) — OAuth 2.0 Web Server Flow **z PKCE**.
       Setup → wyszukaj `external client` → **External Client App Manager** → New.
       Dwa Callback URL: `https://dobo.com.pl/ftf/sfoauth.php` (spike) oraz
       `https://dobo.com.pl/ftf/oauth/callback` (aplikacja).
