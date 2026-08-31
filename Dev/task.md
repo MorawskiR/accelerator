@@ -106,23 +106,18 @@
       ⚠️ Nazwy przepisane od Rafała, **niezweryfikowane przez API** — spike OAuth nie był
       jeszcze uruchomiony. Przy pierwszym imporcie sprawdzić pisownię, zwłaszcza spację
       w `SCH- Task` i wielkość liter — API zwraca `DeveloperName` bez spacji i myślników.
-- [ ] 🔵 **Jeden Flow celowo wadliwy** — to **nie jest** punkt do odhaczenia byle jak.
-      Bez niego nie udowodnimy, że `RiskScanner` z Fazy 3 cokolwiek wykrywa,
-      a to sedno wartości całego narzędzia. Ma zawierać **wszystkie cztery** wady,
-      bo dokładnie tych czterech reguł szuka skaner:
-      1. **DML wewnątrz pętli** — `Update Records` w środku `Loop`
-         → w realnym użyciu daje `Too many DML statements: 151`
-      2. **DML bez fault path** — żaden element `Create/Update/Delete` nie ma
-         połączenia błędu (`faultConnector`) → checklista TC-015
-      3. **After Save bez entry criteria** — Record-Triggered, który uruchamia się
-         przy każdej zmianie i aktualizuje ten sam rekord → ryzyko rekursji, RT-004
-      4. **`Get Records` bez filtrów** — pobiera wszystko z obiektu, bez warunków
-      Nazwij go rozpoznawalnie, np. `Flownatic_Bad_Example`, żeby nie pomylić go
-      z poprawnymi przy testach.
-      ⚠️ **Aktywuj go** — nieaktywne wersje mają inny status w `FlowDefinitionView`
-      i mogłyby nie wejść do inwentarza z Fazy 2.
-      *(bez tego nie ma jak udowodnić, że RiskScanner z Fazy 3 działa)*
-
+- [x] 🔵 **Jeden Flow celowo wadliwy** — ✅ 2026-08-31, utworzony przez Rafała.
+      Nazwa **do potwierdzenia przy pierwszym imporcie** — nie została podana, a bez OAuth
+      nie da się jej odczytać z API.
+      To on jest dowodem, że `RiskScanner` z Fazy 3 cokolwiek wykrywa. Kryterium
+      „Gotowe, gdy” Fazy 3 brzmi: **na tym Flow zapalają się „DML w pętli”
+      i „brak fault path”**. Reguły, których szuka skaner:
+      1. DML wewnątrz pętli → `Too many DML statements: 151`
+      2. DML bez fault path → TC-015
+      3. After Save bez entry criteria → ryzyko rekursji, RT-004
+      4. `Get Records` bez filtrów → nadmiar rekordów
+      ⚠️ Jeśli któraś z wad nie znalazła się w Flow, przetestujemy tylko część skanera.
+      Sprawdzić to przy pierwszym uruchomieniu Fazy 3 i w razie potrzeby dorobić.
 ---
 
 ## FAZA 1 — Szkielet aplikacji i deploy
