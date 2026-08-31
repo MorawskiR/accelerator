@@ -184,7 +184,13 @@
       bo na niej oprzemy SOQL. Po odczycie skasować oba pliki z serwera
 - [ ] 🟢 `app/src/Salesforce/OAuthService.php` — authorize → callback → tokeny zaszyfrowane w bazie
 - [ ] 🟢 Automatyczny refresh tokenu przy `401` / `INVALID_SESSION_ID`
-- [ ] 🟢 `app/src/Salesforce/ApiClient.php` — cURL z retry, wspólny dla REST i Tooling
+- [x] 🟢 `app/src/Salesforce/ApiClient.php` — ✅ 2026-08-31. cURL z retry, wspólny dla
+      REST i Tooling. Transport wydzielony do interfejsu `HttpTransport`, żeby dało się
+      przetestować **bez żywej org** — inaczej logika ponawiania wyszłaby dopiero w połowie
+      importu Flow. **15 testów** na atrapie: odświeżenie tokenu przy 401/`INVALID_SESSION_ID`
+      i powtórzenie z nowym tokenem, brak zapętlenia przy drugim 401, **brak ponawiania
+      przy 400/403/404** (oszczędza limit API playgrounda), ponawianie przy 5xx i 429,
+      czytelny komunikat z `errorCode` zamiast surowego JSON-a.
 - [ ] 🟢 **Najpierw** `describe` na `FlowDefinitionView` — sprawdzić realne nazwy pól, nie zgadywać
 - [ ] 🟢 Pobranie inwentarza Flow → tabela `flows`
 - [ ] 🟢 Widok listy Flow z filtrem po typie i statusie
