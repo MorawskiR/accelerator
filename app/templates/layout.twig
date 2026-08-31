@@ -64,6 +64,28 @@ ul.lista{list-style:none; padding:0; margin:0; display:flex; flex-direction:colu
 ul.lista li{padding-left:18px; position:relative; color:var(--tekst2); font-size:.94rem}
 ul.lista li::before{content:""; position:absolute; left:0; top:.62em;
   width:6px; height:6px; border-radius:2px; background:var(--linia)}
+.sukces{background:var(--plyta2); color:var(--akcent2); border:1px solid var(--akcent2);
+  border-radius:7px; padding:11px 14px; font-size:.9rem; margin:0 0 16px}
+.znacznik.ok{background:var(--plyta2); color:var(--akcent2)}
+.mono{font-family:ui-monospace,"Cascadia Code",monospace; font-size:.82rem}
+.etykieta{font-size:.72rem; letter-spacing:.07em; text-transform:uppercase; color:var(--przygaszony); margin-bottom:3px}
+.rzad{display:flex; flex-wrap:wrap; gap:16px; align-items:center; justify-content:space-between}
+.akcje{display:flex; gap:8px; align-items:center}
+a.przycisk{display:inline-block; background:var(--akcent); color:#fff; text-decoration:none;
+  font-weight:600; padding:11px 20px; border-radius:7px}
+a.przycisk:hover{filter:brightness(1.08)}
+.filtry{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 14px}
+.filtry label{margin:0; font-size:.8rem}
+.filtry select{font:inherit; padding:7px 10px; border-radius:6px; border:1px solid var(--linia);
+  background:var(--plyta); color:var(--tekst)}
+.tabela{overflow-x:auto; background:var(--plyta); border:1px solid var(--linia);
+  border-radius:10px; box-shadow:var(--cien)}
+table{border-collapse:collapse; width:100%; font-size:.9rem; min-width:620px}
+th{text-align:left; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--przygaszony); padding:10px 14px; border-bottom:1px solid var(--linia);
+  background:var(--plyta2); white-space:nowrap}
+td{padding:11px 14px; border-bottom:1px solid var(--linia); vertical-align:top; color:var(--tekst2)}
+tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>

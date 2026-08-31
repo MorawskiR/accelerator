@@ -226,8 +226,15 @@
       **Zniknięte Flow są oznaczane, nie kasowane** — kaskada zabrałaby ze sobą
       wygenerowane przypadki testowe. **13 testów**, w tym paginacja, brak duplikatów
       przy ponownym imporcie i konwersja daty ISO na format MySQL.
-- [ ] 🟢 Widok listy Flow z filtrem po typie i statusie
-- [ ] 🟢 Czytelny komunikat przy rozłączonej org (nie błąd 500)
+- [x] 🟢 Widok listy Flow z filtrem po typie i statusie — ✅ 2026-08-31, `flows.twig`.
+      Trasy: `/org/connect`, `/oauth/callback`, `/org/disconnect`, `/flows`, `/flows/sync`.
+      Filtry sprawdzone na danych: typ `Flow` zwraca 2 z 6, „nieaktywne” zwraca 1.
+      `RecordTriggerType` widoczny w kolumnie wyzwalacza.
+- [x] 🟢 Czytelny komunikat przy rozłączonej org — ✅ 2026-08-31, **nie błąd 500**.
+      Sprawdzone: import bez podłączonej org daje 302 i komunikat „Najpierw podlacz org.”.
+      Każdy wyjątek z `ApiClient`/`OAuthService` jest przechwytywany i pokazywany
+      użytkownikowi — wygasły refresh token, cofnięty dostęp czy błąd SOQL kończą się
+      zdaniem na ekranie, a nie stroną błędu.
 - [ ] **Gotowe, gdy:** lista Flow w apce zgadza się z Setup → Process Automation → Flows
 
 ---

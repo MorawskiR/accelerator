@@ -1,0 +1,114 @@
+{% extends "layout.twig" %}
+{% block tytul %}Flow — Flownatic{% endblock %}
+
+{% block pasek %}
+<div class="pasek">
+  <span class="marka">Flownatic</span>
+  <span class="kto">
+    {% if polaczona %}<span class="znacznik ok">org podłączona</span>{% endif %}
+    <form method="post" action="{{ u.wyloguj }}" style="margin:0">
+      <button type="submit" class="cichy">Wyloguj</button>
+    </form>
+  </span>
+</div>
+{% endblock %}
+
+{% block tresc %}
+<h1>Flow w org</h1>
+
+{% if blad %}<div class="blad">{{ blad }}</div>{% endif %}
+{% if ok %}<div class="sukces">{{ ok }}</div>{% endif %}
+
+{% if not polaczona %}
+  <div class="karta">
+    <h2 style="margin-top:0">Org nie jest podłączona</h2>
+    <p>Połącz się z Salesforce, żeby pobrać listę Flow. Zostaniesz przekierowany do logowania
+    w swojej organizacji — Flownatic nie widzi Twojego hasła.</p>
+    <p><a class="przycisk" href="{{ u.connect }}">Połącz z Salesforce</a></p>
+  </div>
+{% else %}
+  <div class="karta">
+    <div class="rzad">
+      <div>
+        <div class="etykieta">Podłączona organizacja</div>
+        <div class="mono">{{ instancja }}</div>
+      </div>
+      <div class="akcje">
+        <form method="post" action="{{ u.sync }}" style="margin:0">
+          <button type="submit">Pobierz Flow</button>
+        </form>
+        <form method="post" action="{{ u.disconnect }}" style="margin:0"
+              onsubmit="return confirm('Rozłączyć org? Tokeny zostaną usunięte z bazy.')">
+          <button type="submit" class="cichy">Rozłącz</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% if flows is empty %}
+    <div class="karta">
+      <p style="margin:0">Brak Flow w bazie. Kliknij <strong>Pobierz Flow</strong>, żeby zaciągnąć
+      inwentarz z org.</p>
+    </div>
+  {% else %}
+    <form method="get" action="{{ u.flows }}" class="filtry">
+      <label for="typ">Typ</label>
+      <select name="typ" id="typ" onchange="this.form.submit()">
+        <option value="">wszystkie</option>
+        {% for t in typy %}
+          <option value="{{ t }}" {{ t == wybranyTyp ? 'selected' : '' }}>{{ t }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="stan">Stan</label>
+      <select name="stan" id="stan" onchange="this.form.submit()">
+        <option value="">wszystkie</option>
+        <option value="aktywne" {{ wybranyStan == 'aktywne' ? 'selected' : '' }}>aktywne</option>
+        <option value="nieaktywne" {{ wybranyStan == 'nieaktywne' ? 'selected' : '' }}>nieaktywne</option>
+      </select>
+
+      <noscript><button type="submit">Filtruj</button></noscript>
+      <span class="przygaszone">{{ flows|length }} z inwentarza</span>
+    </form>
+
+    <div class="tabela">
+      <table>
+        <thead>
+          <tr>
+            <th>Nazwa</th>
+            <th>Typ</th>
+            <th>Obiekt</th>
+            <th>Wyzwalacz</th>
+            <th>Wersja</th>
+            <th>Stan</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for f in flows %}
+          <tr>
+            <td>
+              <strong>{{ f.label ?: f.api_name }}</strong>
+              <div class="mono przygaszone">{{ f.api_name }}</div>
+            </td>
+            <td>{{ f.process_type ?: '—' }}</td>
+            <td>{{ f.trigger_object ?: '—' }}</td>
+            <td>
+              {{ f.trigger_type ?: '—' }}
+              {% if f.record_trigger_type %}<div class="przygaszone">{{ f.record_trigger_type }}</div>{% endif %}
+            </td>
+            <td class="mono">{{ f.version_number ?: '—' }}</td>
+            <td>
+              {% if f.is_active %}
+                <span class="znacznik ok">aktywny</span>
+              {% else %}
+                <span class="znacznik">nieaktywny</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endif %}
+{% endblock %}
