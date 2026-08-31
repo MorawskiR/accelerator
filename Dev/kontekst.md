@@ -179,46 +179,60 @@ publiczny, nie nasze autorstwo.
 
 ## 7. Gdzie jesteśmy i co dalej
 
-**Stan na koniec sesji 2026-08-28.** Faza 0: **11 punktów zamkniętych, 5 otwartych** —
-ale **żaden z otwartych nie blokuje Fazy 1**. Faza 1: **2 z 14**.
+**Stan na koniec sesji 2026-08-31.**
+**Faza 0: 13/15** (2 świadomie odłożone) · **Faza 1: 18/18 — ZAMKNIĘTA** · Faza 2: nierozpoczęta.
 
-### Co działa i jest sprawdzone
+### Aplikacja działa na produkcji
 
-| Element | Stan |
+**https://dobo.com.pl/ftf/** → logowanie → dashboard. Kryterium „Gotowe, gdy" Fazy 1 spełnione
+i zweryfikowane na żywo: `/health` zwraca PHP 8.4.21 i `"baza":"tak"`, niezalogowany dostaje 302
+na `/login`, złe hasło odrzucone, poprawne wpuszcza na dashboard ze znacznikiem `production`.
+
+**Dane logowania:** `%USERPROFILE%\.flownatic-login.txt` (e-mail `rafal@dobo.com.pl`).
+Hasło zahashowane lokalnie — jawne nigdy nie trafiło na serwer ani do rozmowy.
+
+⚠️ **Firmowa sieć blokuje `dobo.com.pl`** filtrem Infoblox. Aplikacja działa, ale z tego laptopa
+w przeglądarce zobaczysz stronę blokady. Testować z telefonu albo spoza sieci firmowej;
+z linii poleceń wymuszać IP przez `curl --resolve`.
+
+### Co powstało w Fazie 1
+
+| Warstwa | Pliki |
 |---|---|
-| Adres produkcyjny | `https://dobo.com.pl/ftf/` — ważny certyfikat, HTTP 200 |
-| Callback OAuth (Faza 2) | `https://dobo.com.pl/ftf/oauth/callback` — **przesądzony**, nie zmieniać |
-| Baza | `qekbnopwvk_flownatic`, MariaDB 10.6.27, `utf8mb4_unicode_ci`, pusta |
-| Playground | `resilient-narwhal-j9207g-dev-ed.trailblaze.my.salesforce.com`, API v67.0, profil admina |
-| Lokalnie | Laragon, **PHP 8.3.33** (produkcja 8.4.21), Composer 2.10.2, `ext-zip` włączony ręcznie |
-| Baza lokalna | **MySQL 8.4.3**, baza `flownatic`, root bez hasła — produkcja to **MariaDB 10.6.27** |
-| `vendor/` | wdrożony do `~/flownatic-app/vendor/`, **autoloader zweryfikowany na produkcji** |
-| Deploy | `deploy.ps1 -UploadZip` — 3738 plików w **1,4 s** zamiast 16–60 minut |
+| Support | `Config`, `Db`, `Crypto` (AES-256-GCM), `Migrator` |
+| HTTP | `Routes`, `AuthMiddleware`, trzy szablony Twig |
+| Wejście | `public_html/index.php`, oba `.htaccess` |
+| Narzędzia | `bin/genkey.php`, `bin/adduser.php`, `bin/migrate.php` |
+| Baza | `001_init.sql` — 6 tabel + rejestr migracji |
 
-### Otwarte punkty Fazy 0 — żaden nie blokuje
+Około 900 linii PHP. Każda warstwa testowana na działającym środowisku: Config 13 przypadków,
+Crypto 12 (w tym wykrywanie podmiany szyfrogramu i obcego klucza), Db 9 na prawdziwej bazie
+(w tym odporność na wstrzyknięcie SQL), schemat 10 na pełnym łańcuchu danych.
 
-- **Doładowanie konta Anthropic** — klucz jest ważny, ale saldo zerowe. Potrzebne dopiero w **Fazie 4**.
-  Ścieżka: `platform.claude.com/settings/billing` (komunikat API myli, mówiąc „Plans & Billing”).
-- **Flow w playgroundzie** — Rafał robi je 2026-08-28. Specyfikacja w `task.md`: cztery typy
-  (RT-/SF-/SCH-/AL-) plus jeden celowo wadliwy z **czterema** wadami naraz, bo tylu reguł
-  szuka `RiskScanner`. Potrzebne w **Fazie 2–3**.
-- **Certyfikat SSL subdomeny** i **PHP 8.4 lokalnie** — świadome decyzje o odłożeniu, nie dług.
+### Trzy pułapki z wdrożenia — zapisane w `deploy.md`
 
-### Następny krok
+1. **DirectAdmin zostawia `index.html`** w katalogu subdomeny, a Apache serwuje go **przed**
+   `index.php`. Aplikacja się nie pokaże, dopóki placeholder nie zniknie.
+2. **Nie pakować `app/` w całości** — poleciałby lokalny `.env` i nadpisał produkcyjny.
+   Paczkę budować z katalogu tymczasowego i sprawdzać zawartość przed wysłaniem.
+3. **Migracje bez powłoki** — logika siedzi w `Support\Migrator`, uruchamiana jednorazowym
+   skryptem przez HTTP, który kasuje sam siebie.
 
-**Faza 1, reszta plików:** `public_html/index.php`, oba `.htaccess` (z kanonicznym 301 na
-`dobo.com.pl/ftf/`), `Config`/`Db`/`Crypto`, `Routes` + `AuthMiddleware`, `001_init.sql`
-+ `migrate.php`, szablony Twig, `.env.example`, `deploy.md`.
-Kryterium „Gotowe, gdy”: wejście na `https://dobo.com.pl/ftf/` → logowanie → dashboard.
+### Następny krok: Faza 2 — OAuth i inwentarz Flow
+
+- 🔵 **External Client App** w playgroundzie — to jedyna rzecz blokująca start.
+  Instrukcja w `tools/sf-oauth/README.md`, dwa Callback URL, PKCE, scopes
+  `api`/`refresh_token`/`offline_access`. Salesforce propaguje ją **do 30 minut**.
+- 🟢 Spike `tools/sf-oauth/sfoauth.php` czeka napisany, **nieuruchomiony** — po Consumer Key
+  da realne nazwy pól `FlowDefinitionView`, na których oprzemy SOQL.
+- Flow w playgroundzie są gotowe: pięć poprawnych plus jeden celowo wadliwy.
+  Lista w `task.md` jako wzorzec do porównania — kryterium „Gotowe, gdy" Fazy 2.
 
 ### Rzeczy, o których łatwo zapomnieć
 
-- **Migracje pisz w przenośnym SQL-u** — lokalnie MySQL 8.4.3, na produkcji MariaDB 10.6.27.
-  Unikać składni specyficznej dla jednego z nich; trzymać się zwykłego `CREATE TABLE`,
-  `utf8mb4_unicode_ci` i typów obecnych w obu.
-- **Pisz jawne `?Typ`**, nie `Typ $x = null` — PHP 8.4 na produkcji uznaje to drugie za przestarzałe,
-  a lokalne 8.3 tego nie pokaże.
-- **Spike OAuth** (`tools/sf-oauth/`) jest napisany, ale **nieuruchomiony** — czeka na Fazę 2
-  i na Consumer Key z External Client App.
-- **Hasła i klucze nigdy przez terminal** — 2026-08-27 hasło do bazy wylądowało jako nazwa pliku
-  w katalogu publicznego repo. Zawsze Notatnik, do pliku poza repozytorium.
+- **Callback OAuth jest przesądzony:** `https://dobo.com.pl/ftf/oauth/callback`. Zmiana po
+  rejestracji Connected App wymaga poprawki po stronie Salesforce.
+- **Pisz jawne `?Typ`** — lokalne PHP 8.3 nie pokaże deprecjacji z produkcyjnego 8.4.
+- **Migracje w przenośnym SQL-u** — lokalnie MySQL 8.4.3, na produkcji MariaDB 10.6.27.
+- **`APP_KEY` na produkcji jest inny niż lokalny.** Jego zmiana unieważni zapisane tokeny SF.
+- **Hasła i klucze nigdy przez terminal ani do rozmowy** — zawsze plik poza repozytorium.
