@@ -1,0 +1,39 @@
+{
+  "label": "Czysty",
+  "processType": "AutoLaunchedFlow",
+  "status": "Active",
+  "start": {
+    "object": "Account",
+    "triggerType": "RecordAfterSave",
+    "recordTriggerType": "Update",
+    "filters": [
+      {
+        "field": "Rating",
+        "operator": "EqualTo",
+        "value": {
+          "stringValue": "Hot"
+        }
+      }
+    ],
+    "connector": {
+      "targetReference": "Update_Jeden"
+    }
+  },
+  "recordUpdates": [
+    {
+      "name": "Update_Jeden",
+      "label": "Jeden zapis",
+      "object": "Account",
+      "faultConnector": {
+        "targetReference": "Blad"
+      }
+    }
+  ],
+  "screens": [
+    {
+      "name": "Blad",
+      "label": "Blad",
+      "fields": []
+    }
+  ]
+}

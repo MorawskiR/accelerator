@@ -1,0 +1,20 @@
+{
+  "label": "Bez filtrow",
+  "processType": "Flow",
+  "status": "Active",
+  "start": {
+    "triggerType": null,
+    "connector": {
+      "targetReference": "Wszystkie_Konta"
+    }
+  },
+  "recordLookups": [
+    {
+      "name": "Wszystkie_Konta",
+      "label": "Pobierz wszystkie konta",
+      "object": "Account",
+      "filters": [],
+      "getFirstRecordOnly": false
+    }
+  ]
+}
