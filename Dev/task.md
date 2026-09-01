@@ -251,23 +251,32 @@
 
 ## FAZA 3 — Metadane Flow i Flow Digest
 
-- [ ] 🟢 `app/src/Flow/MetadataFetcher.php` — `Flow.Metadata` po jednym rekordzie (ograniczenie API)
-- [ ] 🟢 Cache po `metadata_hash` — nie odpytywać niezmienionych Flow
-- [ ] 🟢 **Import partiami** (~5 Flow na żądanie) — wymuszone przez `max_execution_time = 180 s`
+- [x] 🟢 `app/src/Flow/MetadataFetcher.php` — ✅ 2026-09-01. N+1 wywołań, bo API inaczej nie pozwala
+      (potwierdzone komunikatem `MALFORMED_QUERY`). Lista wersji **bez** pola `Metadata` idzie
+      jednym zapytaniem — ograniczenie dotyczy wyłącznie `Metadata` i `FullName`.
+- [x] 🟢 Cache po `metadata_hash` — ✅ 2026-09-01, **dwustopniowy**: najpierw `LastModifiedDate`
+      z inwentarza (zero wywołań API na niezmienionych Flow), potem `sha256` metadanych.
+      Niezmieniony Flow dostaje tylko nowy `fetched_at` — digest i ryzyka zostają.
+- [x] 🟢 **Import partiami** — ✅ 2026-09-01, domyślnie 5 Flow na żądanie, wznawialny.
+      `oczekujace()` wybiera Flow bez zapisanej wersji albo zmienione po ostatnim pobraniu.
 - [ ] 🟢 Pasek postępu odpytywany AJAX-em, import wznawialny po przerwaniu
-- [ ] 🟢 **`app/src/Flow/DigestBuilder.php`** — najważniejszy plik w projekcie:
-  - [ ] typ i trigger (obiekt, before/after save, create/update/delete)
-  - [ ] entry criteria w czytelnej formie
-  - [ ] `decisions` — gałęzie z warunkami
-  - [ ] operacje DML — co, na czym
-  - [ ] pętle + flaga „DML wewnątrz pętli"
-  - [ ] dla każdego elementu: czy ma `faultConnector`
-  - [ ] ekrany, pola, walidacje (Screen Flow)
-- [ ] 🟢 **`app/src/Flow/RiskScanner.php`** — reguły deterministyczne, zero AI:
-  - [ ] DML w pętli → `Too many DML statements: 151`
-  - [ ] DML bez fault path → TC-015
-  - [ ] After Save bez entry criteria → ryzyko rekursji (RT-004)
-  - [ ] `Get Records` bez filtrów → nadmiar rekordów
+- [x] 🟢 `app/src/Flow/DigestBuilder.php` — ✅ 2026-09-01, 415 linii.
+      Na realnych metadanych: **4375 B → 1180 B**. Sednem jest przejście grafu od
+      `nextValueConnector` — tylko ono odróżnia DML **w** pętli od DML **po** pętli:
+  - [x] typ i trigger (obiekt, before/after save, create/update/delete)
+  - [x] entry criteria w czytelnej formie
+  - [x] `decisions` — gałęzie z warunkami
+  - [x] operacje DML — co, na czym
+  - [x] pętle + flaga „DML wewnątrz pętli"
+  - [x] dla każdego elementu: czy ma `faultConnector`
+  - [x] ekrany, pola, walidacje (Screen Flow)
+- [x] 🟢 `app/src/Flow/RiskScanner.php` — ✅ 2026-09-01, cztery reguły, zero AI.
+      Każde ryzyko wskazuje element, pozycję checklisty, skutek, sposób naprawy
+      **i sposób przetestowania**:
+  - [x] DML w pętli → `Too many DML statements: 151`
+  - [x] DML bez fault path → TC-015
+  - [x] After Save bez entry criteria → ryzyko rekursji (RT-004)
+  - [x] `Get Records` bez filtrów → nadmiar rekordów
 - [ ] 🟢 Widok struktury Flow + lista wykrytych ryzyk
 - [ ] **Gotowe, gdy:** na celowo zepsutym Flow zapala się „DML w pętli" i „brak fault path"
 
