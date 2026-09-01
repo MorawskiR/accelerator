@@ -235,7 +235,17 @@
       Każdy wyjątek z `ApiClient`/`OAuthService` jest przechwytywany i pokazywany
       użytkownikowi — wygasły refresh token, cofnięty dostęp czy błąd SOQL kończą się
       zdaniem na ekranie, a nie stroną błędu.
-- [ ] **Gotowe, gdy:** lista Flow w apce zgadza się z Setup → Process Automation → Flows
+- [x] **Gotowe, gdy:** ✅ **2026-09-01 — FAZA 2 ZAMKNIĘTA.**
+      Import na żywej org zwrócił **9 Flow** z kompletem pól: typ, obiekt wyzwalający,
+      `TriggerType`, `RecordTriggerType`, wersja i stan.
+      Filtr działa jak zamierzono: z **79** Flow w org odsiał 70 pozycji z pakietów
+      zarządzanych i szablonów Salesforce, zostawiając 9 należących do org.
+      To więcej niż pięć utworzonych ręcznie, bo doszły: `RT- Acount queue`
+      oraz dwie ankiety zakładane przez Salesforce automatycznie
+      (`Customer Satisfaction`, `Net Promoter Score`).
+      Dane potwierdzają poprawność migracji `002` — `RecordTriggerType` wypełniony
+      (`Create`, `Update`, `CreateAndUpdate`), a `RT-Currency change` ma
+      `RecordBeforeSave`, co odróżnia go od pozostałych.
 
 ---
 

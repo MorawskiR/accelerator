@@ -18,7 +18,7 @@
 |---|---|---|
 | 0 | Fundament i weryfikacja hostingu | ✅ Zakończona (2 punkty świadomie odłożone) |
 | 1 | Szkielet aplikacji + deploy na produkcję | ✅ **Zakończona 2026-08-31** |
-| 2 | OAuth do Salesforce + automatyczny inwentarz Flow | ⬜ Nie rozpoczęta |
+| 2 | OAuth do Salesforce + automatyczny inwentarz Flow | ✅ **Zakończona 2026-09-01** |
 | 3 | Metadane Flow + Flow Digest + RiskScanner | ⬜ Nie rozpoczęta |
 | 4 | Warstwa AI — generowanie przypadków testowych | ⬜ Nie rozpoczęta |
 | 5 | Edycja i eksport do .xlsx | ⬜ Nie rozpoczęta |

@@ -88,3 +88,36 @@ FROM FlowDefinitionView
 WHERE IsTemplate = false AND ManageableState = 'unmanaged'
 ORDER BY Label
 ```
+
+## Realne dane z org — import 2026-09-01
+
+Pierwszy udany import zwrócił **9 Flow** (z 79 w org; filtr odsiał 70 pozycji
+z pakietów zarządzanych i szablonów Salesforce).
+
+| Label | ProcessType | Obiekt | TriggerType | RecordTriggerType | Stan |
+|---|---|---|---|---|---|
+| AL-Closed Won Opportunities | AutoLaunchedFlow | Opportunity | RecordAfterSave | CreateAndUpdate | aktywny |
+| RT- Acount queue | AutoLaunchedFlow | Account | RecordAfterSave | Create | nieaktywny |
+| RT- Flownatic_Bad_Example | AutoLaunchedFlow | Account | RecordAfterSave | Update | aktywny |
+| RT-Currency change | AutoLaunchedFlow | Contact | **RecordBeforeSave** | Update | aktywny |
+| SCH- Task on not closed opp | AutoLaunchedFlow | Opportunity | Scheduled | — | aktywny |
+| SF-Add Contact | Flow | — | — | — | nieaktywny |
+| SF-Create Case for Contact | Flow | — | — | — | aktywny |
+| Customer Satisfaction | Survey | — | — | — | aktywny |
+| Net Promoter Score | Survey | — | — | — | aktywny |
+
+### Obserwacje istotne dla Fazy 3 i 4
+
+**`ProcessType` nie wystarczy do rozpoznania typu Flow.** Record-Triggered Flow mają
+`ProcessType = AutoLaunchedFlow`, tak samo jak Scheduled. Rozróżnia je dopiero
+`TriggerType`: `RecordAfterSave` / `RecordBeforeSave` kontra `Scheduled`.
+Prefiksy `RT-`/`SCH-`/`AL-` w eksporcie trzeba wyprowadzać z **obu** pól, nie z samego
+`ProcessType`.
+
+**`RecordBeforeSave` kontra `RecordAfterSave` to inne przypadki testowe.** Before-save
+nie może robić DML na własnym rekordzie ani wywoływać innych Flow — checklista musi
+to uwzględniać. W org mamy po jednym przykładzie każdego rodzaju.
+
+**Dwie ankiety (`Survey`) zakłada Salesforce automatycznie.** Nie są dziełem testera,
+ale są `unmanaged`, więc filtr ich nie odsiewa. W Fazie 6 warto je pominąć przy liczeniu
+czasu ręcznego kontra aplikacja, żeby nie zaniżyć wyniku.
