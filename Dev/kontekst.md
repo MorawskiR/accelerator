@@ -179,59 +179,61 @@ publiczny, nie nasze autorstwo.
 
 ## 7. Gdzie jesteśmy i co dalej
 
-**Stan na koniec sesji 2026-08-31** (17 commitów tego dnia — dwie fazy).
-**Faza 1: 18/18 ZAMKNIĘTA** · **Faza 2: 10/11** · Gałąź: `feature/faza-2-oauth-salesforce`.
+**Stan na koniec sesji 2026-09-01.**
+**Faza 0 ✅ · Faza 1 ✅ · Faza 2 ✅ ZAMKNIĘTA · Faza 3: 5 z 8.**
+Gałąź: `feature/faza-3-flow-digest`. Kod: 14 klas, ~2300 linii w `app/src/`.
 
-### Aplikacja działa na produkcji
+### Aplikacja działa na produkcji i czyta prawdziwą org
 
-**https://dobo.com.pl/ftf/** → logowanie → dashboard → **Flow**.
-Dane logowania: `%USERPROFILE%\.flownatic-login.txt` (`rafal@dobo.com.pl`).
+**https://dobo.com.pl/ftf/** → logowanie → Flow → **Połącz z Salesforce** → **Pobierz Flow**.
+Import zwraca **9 Flow** (z 79 w org; filtr odsiewa pakiety zarządzane i szablony).
+Dane logowania: `%USERPROFILE%\.flownatic-login.txt`.
 
-⚠️ **Firmowa sieć blokuje `dobo.com.pl`** filtrem Infoblox — testować z telefonu
-albo spoza sieci firmowej. Z linii poleceń wymuszać IP przez `curl --resolve`.
+⚠️ Firmowa sieć blokuje `dobo.com.pl` — testować z telefonu albo `curl --resolve`.
 
-### Faza 2 — co powstało
+### Faza 3 — rdzeń gotowy i przetestowany na realnych danych
 
-| Klasa | Rola | Testy |
-|---|---|---|
-| `Salesforce\ApiClient` | REST i Tooling, retry, odświeżanie sesji | 15 |
-| `Salesforce\OAuthService` | Web Server Flow z PKCE, szyfrowane tokeny | 20 |
-| `Salesforce\HttpTransport` | interfejs transportu — **umożliwia testy bez org** | — |
-| `Flow\FlowImporter` | inwentarz z paginacją | 13 |
+| Klasa | Rola |
+|---|---|
+| `Flow\MetadataFetcher` | N+1 wywołań (API inaczej nie pozwala), cache dwustopniowy, partie po 5 |
+| `Flow\DigestBuilder` | 415 linii, **4375 B → 1180 B** na realnym Flow |
+| `Flow\RiskScanner` | cztery reguły deterministyczne, zero AI |
 
-Trasy: `/org/connect`, `/oauth/callback`, `/org/disconnect`, `/flows`, `/flows/sync`.
-Widok `flows.twig` z filtrami po typie i stanie.
+**Na `RT- Flownatic_Bad_Example` wykryte 5 ryzyk:** 3 wysokie, 2 średnie —
+DML w pętli (×2), brak fault path (×2), After Save bez kryteriów wejścia.
 
-**Spike OAuth przeszedł na żywej org** — PKCE działa, `refresh_token` wraca.
-Realne pola `FlowDefinitionView` (34) zapisane w `Dev/reference/flowdefinitionview.md`.
-Ujawniły **trzy błędy w schemacie z Fazy 1**, poprawione migracją `002`.
+**Najważniejsza decyzja projektowa:** wykrywanie DML w pętli robi **przejście grafu**
+od `nextValueConnector`, a nie zliczanie elementów. Naiwne „Flow ma pętlę i ma DML"
+zgłaszałoby poprawne Flow jako błędne. Osobny test na fałszywy alarm: Flow z DML
+**po** pętli, z fault path i kryteriami → **zero ryzyk**.
 
-### Zostało do zamknięcia Fazy 2
+### Zostały 3 punkty Fazy 3
 
-**Jeden punkt — kryterium „Gotowe, gdy":** Rafał loguje się na produkcji, klika
-**Połącz z Salesforce**, potem **Pobierz Flow**, i lista pokazuje **sześć pozycji**
-zgodnych z Setup → Process Automation → Flows. Wzorzec do porównania jest w `task.md`.
+- 🟢 pasek postępu odpytywany AJAX-em (import wznawialny już działa po stronie klasy)
+- 🟢 widok struktury Flow + lista wykrytych ryzyk
+- **Gotowe, gdy:** na wadliwym Flow w przeglądarce zapala się „DML w pętli" i „brak fault path"
 
-Wszystko jest wdrożone i gotowe — brakuje wyłącznie przejścia przez logowanie w przeglądarce.
+### Do zrobienia po stronie Rafała 🔵
 
-### Pułapki wykryte przy wdrażaniu — nie powtarzać
+**Dodać do `RT- Flownatic_Bad_Example` drugi `Get Records` bez żadnych filtrów.**
+Obecny (`Get_Related_Contact`) ma filtr `AccountId = $Record.Id`, więc czwarta reguła
+nie ma na czym się zapalić na realnym Flow. Przetestowana jest tylko syntetycznie.
 
-1. **DirectAdmin zostawia `index.html`** w katalogu subdomeny; Apache serwuje go **przed**
-   `index.php`. Skasować przy pierwszym wdrożeniu.
-2. **Twig nie odświeżał szablonów na produkcji.** Domyślnie wiąże `auto_reload` z `debug`,
-   więc przy `APP_DEBUG=false` serwował skompilowane stare wersje. Naprawione na stałe:
-   `auto_reload => true`. **Bez tego każda zmiana widoku byłaby niewidoczna.**
-3. **Nie pakować `app/` w całości** — poleciałby lokalny `.env`. Paczkę budować z katalogu
-   tymczasowego i sprawdzać zawartość przed wysłaniem.
-4. **Aktualizując `.env` na produkcji podmieniać linie, nie nadpisywać pliku** — inaczej
-   traci się `APP_KEY`, którego nie ma lokalnie.
+**Promocja Faz 1 i 2** na `uat` i `main` — polecenia w `git-workflow.md`.
+Gałęzie kolejnych faz wychodzą z bieżącego stanu, więc nic nie ginie, ale kolejność się rozjeżdża.
+Uwaga: deploy na UAT to nie jedna linia — środowisko nie ma `vendor/`, `.env` ani bazy.
+
+### Dokumentacja badań — czytać przed zmianami w Fazie 3 i 4
+
+- `Dev/reference/flowdefinitionview.md` — 34 realne pola inwentarza + obserwacje
+- `Dev/reference/flow-metadata.md` — struktura `Flow.Metadata`, graf połączeń, ograniczenie API
 
 ### Rzeczy, o których łatwo zapomnieć
 
-- **Faza 1 nie została promowana** na `uat`/`main`. Gałąź Fazy 2 wyszła z bieżącego stanu,
-  więc nic nie ginie, ale promocję trzeba domknąć zgodnie z `git-workflow.md`.
+- **`ProcessType` nie wystarcza do rozpoznania typu Flow** — Record-Triggered i Scheduled
+  mają tę samą wartość `AutoLaunchedFlow`. Rozróżnia je `TriggerType`.
+- **`Metadata` tylko przy jednym rekordzie** — inaczej `MALFORMED_QUERY`.
 - **Pisz jawne `?Typ`** — lokalne PHP 8.3 nie pokaże deprecjacji z produkcyjnego 8.4.
-- **Migracje w przenośnym SQL-u** — lokalnie MySQL 8.4.3, na produkcji MariaDB 10.6.27.
-- **SOQL wymaga pojedynczych cudzysłowów** — podwójne dają `MALFORMED_QUERY`.
-- **Hasła i klucze nigdy przez terminal ani do rozmowy** — zawsze plik poza repozytorium.
-  Sekrety w `.flownatic-db.txt`, `.flownatic-sf.txt`, `.flownatic-login.txt`, `.flownatic-anthropic.txt`.
+- **SOQL wymaga pojedynczych cudzysłowów.**
+- **Twig ma `auto_reload => true`** — bez tego zmiany szablonów są niewidoczne na produkcji.
+- **Hasła i klucze nigdy do rozmowy** — pliki `.flownatic-*.txt` poza repozytorium.
