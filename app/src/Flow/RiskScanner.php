@@ -219,7 +219,11 @@ final class RiskScanner
                 'skutek'    => $tylkoPierwszy
                     ? 'Przypadkowy rekord zamiast zamierzonego'
                     : 'Too many query rows: 50001 przy większym wolumenie danych',
-                'checklist' => 'TC-020',
+                // TC-010 "Get Records pobiera wlasciwe rekordy z poprawnymi filtrami".
+                // Do 2026-09-07 stalo tu TC-020, czyli "profil uzytkownika
+                // standardowego" - kod wpisany z pamieci, bez zajrzenia do arkusza.
+                // Zrodlo prawdy siedzi teraz w Generator\Framework.
+                'checklist' => 'TC-010',
                 'jak_naprawic' => 'Dodać warunki zawężające zapytanie albo ustawić limit liczby rekordów.',
                 'jak_testowac' => 'Uruchomić Flow w org z dużą liczbą rekordów ' . $obiekt
                     . ', nie na kilku testowych.',
