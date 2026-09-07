@@ -259,7 +259,17 @@
       Niezmieniony Flow dostaje tylko nowy `fetched_at` — digest i ryzyka zostają.
 - [x] 🟢 **Import partiami** — ✅ 2026-09-01, domyślnie 5 Flow na żądanie, wznawialny.
       `oczekujace()` wybiera Flow bez zapisanej wersji albo zmienione po ostatnim pobraniu.
-- [ ] 🟢 Pasek postępu odpytywany AJAX-em, import wznawialny po przerwaniu
+- [x] 🟢 Pasek postępu odpytywany AJAX-em, import wznawialny po przerwaniu — ✅ 2026-09-07.
+      Trzy trasy: `POST /flows/metadane/partia` (JSON, jedna partia), `GET /flows/metadane/stan`
+      (stan kolejki) i `POST /flows/metadane` — **wariant bez JavaScriptu**, gdzie jedno
+      kliknięcie to jedna partia. Skrypt tylko przejmuje ten formularz i klika w pętli.
+  - [x] Wznawialność: stan kolejki siedzi w bazie (`oczekujace()`), więc zamknięcie karty
+        w połowie niczego nie psuje — kolejne wejście podejmuje od miejsca zatrzymania
+  - [x] Zatrzymanie na braku postępu: partia bez ani jednego pobranego Flow kończy pętlę,
+        zamiast powtarzać ten sam błąd 200 razy i zjadać limit API playgrounda
+  - [x] `MetadataFetcher::stanKolejki()` + `oczekujace()`/`ileOczekuje()` jako statyczne —
+        liczenie kolejki nie dotyka API, więc lista Flow nie musi budować klienta Salesforce
+        (a więc i odświeżać tokenu) przy każdym wejściu na stronę
 - [x] 🟢 `app/src/Flow/DigestBuilder.php` — ✅ 2026-09-01, 415 linii.
       Na realnych metadanych: **4375 B → 1180 B**. Sednem jest przejście grafu od
       `nextValueConnector` — tylko ono odróżnia DML **w** pętli od DML **po** pętli:
@@ -291,6 +301,9 @@
 - [x] 🟢 `tests/widok-flow.php` — ✅ 2026-09-07. Renderuje `flow.twig` na czterech fixture'ach
       bez bazy i bez org (`php tests/widok-flow.php`). Pilnuje obu ryzyk z kryterium poniżej
       **oraz braku fałszywych alarmów** na `po-petli.json` i `czysty.json`. Podgląd: `tests/out/`
+  - [x] lista Flow w dwóch stanach: import w toku (pasek na 67%) i kolejka pusta
+  - [x] rozstrzyganie tras — czy `/flows/metadane/partia` nie wpada w `/flows/{id}/metadane`;
+        obie są POST i obie mają trzy segmenty, więc kolizja byłaby cicha
 - [ ] **Gotowe, gdy:** na celowo zepsutym Flow zapala się „DML w pętli" i „brak fault path"
       ⚠️ **Przechodzi lokalnie** na realnych metadanych `RT- Flownatic_Bad_Example`
       (5 ryzyk: 3 wysokie, 2 średnie — oba wymagane widoczne). Do odznaczenia brakuje

@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 3 — widok struktury i ryzyk działa
+**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 3 gotowa kodowo — czeka na deploy i regresję
 
 ---
 
@@ -50,7 +50,7 @@ twardych liczb do obrony tego zgłoszenia.
 
 | Element | Stan |
 |---|---|
-| PHP | **8.4.21**, LiteSpeed, Linux |
+| PHP | **8.4.24**, LiteSpeed, Linux (2026-08-27 było 8.4.21 — hosting podbija sam) |
 | Rozszerzenia | Wszystkie wymagane obecne, w tym krytyczny **`zip`** (przesądza o Fazie 5) |
 | `max_execution_time` | **180 s** — twarde ograniczenie, patrz sekcja 4 |
 | `memory_limit` | 128 MB |
@@ -180,7 +180,7 @@ publiczny, nie nasze autorstwo.
 ## 7. Gdzie jesteśmy i co dalej
 
 **Stan na koniec sesji 2026-09-07.**
-**Faza 0 ✅ · Faza 1 ✅ · Faza 2 ✅ ZAMKNIĘTA · Faza 3: 7 z 8.**
+**Faza 0 ✅ · Faza 1 ✅ · Faza 2 ✅ ZAMKNIĘTA · Faza 3: 8 z 8, kodowo zamknięta.**
 Gałąź: `feature/faza-3-widok` (wyszła z `feature/faza-3-flow-digest`, zawiera całą jej historię).
 Kod: 15 klas, ~2600 linii w `app/src/`.
 
@@ -234,12 +234,43 @@ fixture'ach. Na `bad-example.json` (realne metadane `RT- Flownatic_Bad_Example`)
 z kryterium fazy, a na `po-petli.json` i `czysty.json` **zero fałszywych alarmów**. Podgląd HTML
 ląduje w `tests/out/` (poza repo).
 
-### Został 1 punkt Fazy 3
+### Import metadanych partiami z paskiem postępu — gotowy 2026-09-07
 
-- 🟢 pasek postępu odpytywany AJAX-em (import wznawialny już działa po stronie klasy)
-- **Gotowe, gdy:** na wadliwym Flow **w przeglądarce** zapala się „DML w pętli" i „brak fault path"
-  — lokalnie przechodzi, brakuje potwierdzenia po deployu (firmowa sieć blokuje `dobo.com.pl`,
-  więc sprawdzenie idzie z telefonu)
+Trzy trasy zamiast jednej, bo **formularz musi działać bez JavaScriptu**:
+`POST /flows/metadane` robi jedną partię i wraca z komunikatem, `POST /flows/metadane/partia`
+robi to samo w JSON-ie, a `GET /flows/metadane/stan` zwraca stan kolejki. Skrypt na liście Flow
+tylko przejmuje ten formularz i klika go w pętli, rysując pasek.
+
+Dlaczego tak, a nie jedno długie żądanie: `max_execution_time` to 180 s, a import to N+1 wywołań
+API. Każda partia jest osobnym żądaniem, więc żadne nie zbliża się do limitu.
+
+**Wznawialność wychodzi z bazy, nie z sesji.** Kolejkę wyznacza `MetadataFetcher::oczekujace()`
+— Flow bez zapisanej wersji albo zmienione po ostatnim pobraniu. Zamknięcie karty w połowie
+niczego nie psuje: kolejne wejście podejmuje od miejsca zatrzymania.
+
+**Zatrzymanie na braku postępu.** Partia, w której ani jeden Flow się nie pobrał, kończy pętlę
+zamiast powtarzać ten sam błąd do wyczerpania licznika — inaczej zerwana org albo wygasły token
+zjadałyby limit API playgrounda 200 razy pod rząd.
+
+`oczekujace()`, `ileOczekuje()` i nowe `stanKolejki()` są statyczne: liczenie kolejki nie dotyka
+API, więc lista Flow nie musi budować klienta Salesforce (a więc i odświeżać tokenu) tylko po to,
+żeby pokazać licznik.
+
+### Faza 3 zamknięta kodowo — zostaje promocja
+
+Wszystkie 8 punktów odhaczonych. **Kryterium „Gotowe, gdy" czeka na potwierdzenie w przeglądarce**,
+a to wymaga deployu — dlatego zostaje nieodznaczone.
+
+⚠️ **Produkcja stoi na stanie z 31 sierpnia (koniec Fazy 2).** Sprawdzone 2026-09-07 przez FTP
+i `curl`: zdalny `flownatic-app/src/Flow/` zawiera **wyłącznie `FlowImporter.php`**, brak
+`flow.twig` w szablonach, `GET /ftf/flows/1` → **404**. Czyli nie tylko dzisiejsza praca, ale
+**cała Faza 3 z 1 września nigdy nie została wgrana**. `/ftf/health` odpowiada, baza `tak`,
+PHP na produkcji to dziś **8.4.24** (kontekst mówił 8.4.21 — wersja podskoczyła sama).
+
+Do wgrania jest 8 plików: `src/Flow/{MetadataFetcher,DigestBuilder,RiskScanner,FlowAnalyzer}.php`,
+`src/Http/Routes.php`, `templates/{flow,flows,layout}.twig`. **Migracja bazy nie jest potrzebna** —
+`digest_json`, `risks_json` i `digested_at` istnieją od `001_init.sql`, tylko dotąd nikt ich nie
+wypełniał. `vendor/` bez zmian.
 
 ### Do zrobienia po stronie Rafała 🔵
 
