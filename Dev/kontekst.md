@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 3 wgrana na produkcję — czeka na potwierdzenie w przeglądarce
+**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 3 ZAMKNIĘTA — analizator działa na produkcji
 
 ---
 
@@ -180,7 +180,7 @@ publiczny, nie nasze autorstwo.
 ## 7. Gdzie jesteśmy i co dalej
 
 **Stan na koniec sesji 2026-09-07.**
-**Faza 0 ✅ · Faza 1 ✅ · Faza 2 ✅ ZAMKNIĘTA · Faza 3: 8 z 8, kodowo zamknięta.**
+**Faza 0 ✅ · Faza 1 ✅ · Faza 2 ✅ · Faza 3 ✅ ZAMKNIĘTA.**
 Gałąź: `feature/faza-3-widok` (wyszła z `feature/faza-3-flow-digest`, zawiera całą jej historię).
 Kod: 15 klas, ~2600 linii w `app/src/`.
 
@@ -256,10 +256,30 @@ zjadałyby limit API playgrounda 200 razy pod rząd.
 API, więc lista Flow nie musi budować klienta Salesforce (a więc i odświeżać tokenu) tylko po to,
 żeby pokazać licznik.
 
-### Faza 3 zamknięta kodowo — zostaje promocja
+### ✅ FAZA 3 ZAMKNIĘTA — 2026-09-07
 
-Wszystkie 8 punktów odhaczonych. **Kryterium „Gotowe, gdy" czeka na potwierdzenie w przeglądarce**,
-a to wymaga deployu — dlatego zostaje nieodznaczone.
+Wszystkie 8 punktów odhaczonych, **kryterium „Gotowe, gdy" potwierdzone w przeglądarce na
+produkcji**: `RT- Flownatic_Bad_Example` pokazuje **„Wykryte ryzyka (5) — 3 × wysokie,
+2 × średnie"**. Te liczby składają się tylko w jeden sposób — DML w pętli ×2 i After Save bez
+kryteriów (wysokie) plus brak fault path ×2 (średnie) — bo reguła After Save zgłasza najwyżej
+jedno ryzyko na Flow.
+
+Analizator działa więc od początku do końca na żywej org, **bez jednej linijki AI**. To był cały sens
+kolejności: Faza 4 dostaje mały, czysty opis zamiast surowego JSON-a.
+
+**Regresja:** R6 i R7 potwierdzone ręcznie. **R8 czeka** — wznawialność jest zaimplementowana,
+ale nie była przeklikana (zamknąć kartę w trakcie importu, wejść ponownie, sprawdzić, czy pasek
+podejmuje od miejsca zatrzymania i czy liczba Flow się nie zmienia).
+
+### Zanim ruszy Faza 4 — trzy rzeczy do uprzątnięcia
+
+1. 🔵 **Poskładać gita:** `uat` ← `feature/faza-3-widok`, `main` ← `uat`, tag `faza-3`, potem
+   skasować gałąź feature. Dziś `main` nie ma kodu, a produkcja żyje z gałęzi feature.
+2. 🔵 **Postawić UAT** (`deploy.md`, sekcja 8) — pominięcie go było świadomym jednorazowym
+   wyjątkiem, nie zmianą procesu. Faza 4 wprowadza koszty API, więc regresja na produkcji
+   przestaje być tania.
+3. 🔵 **Doładować konto Anthropic** — klucz jest ważny, ale saldo zerowe, `/v1/messages`
+   zwraca `credit balance is too low`. Bez tego Faza 4 nie ruszy.
 
 **Deploy wykonany 2026-09-07 — produkcja ma Fazę 3.** Decyzja Rafała: **pomijamy UAT ten jeden
 raz**, żeby zobaczyć efekt od razu. UAT stawiamy przed Fazą 4 — procedura i pułapki czekają

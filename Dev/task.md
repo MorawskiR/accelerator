@@ -315,11 +315,25 @@
         szablony na miejscu, cache Twiga zapisywalny, a `DigestBuilder` + `RiskScanner` zwracają
         na testowym Flow dokładnie `dml_w_petli`, `dml_bez_fault_path`, `after_save_bez_kryteriow`.
         Plik skasowany zaraz po odczycie (`/ftf/_check-faza3.php` → 404)
-- [ ] **Gotowe, gdy:** na celowo zepsutym Flow zapala się „DML w pętli" i „brak fault path"
-      ⚠️ Kod przechodzi lokalnie i na produkcji, ale **ostatni krok wymaga zalogowania** 🔵 —
-      hasła nie biorę do rozmowy. Wejdź na `https://dobo.com.pl/ftf/` z telefonu (firmowa sieć
-      blokuje tę domenę), zaloguj się, **Pobierz metadane**, a potem otwórz
-      `RT- Flownatic_Bad_Example`. Spodziewane: 5 ryzyk — 3 wysokie, 2 średnie
+- [x] **Gotowe, gdy:** na celowo zepsutym Flow zapala się „DML w pętli" i „brak fault path"
+      ✅ **2026-09-07 potwierdzone w przeglądarce na produkcji.** Rafał zalogował się na
+      `https://dobo.com.pl/ftf/`, pobrał metadane i otworzył `RT- Flownatic_Bad_Example`:
+      **„Wykryte ryzyka (5) — 3 × wysokie, 2 × średnie"**, zgodnie z oczekiwaniem.
+      Te liczby składają się tylko w jeden sposób: DML w pętli ×2 i After Save bez kryteriów
+      (wysokie) plus brak fault path ×2 (średnie) — reguła After Save zgłasza najwyżej jedno ryzyko.
+
+---
+
+## ✅ FAZA 3 ZAMKNIĘTA — 2026-09-07
+
+Analizator Flow działa na żywej org: pobiera metadane partiami, sprowadza je do digestu,
+wykrywa ryzyka regułami i pokazuje jedno i drugie w przeglądarce. **Zero AI** — to wszystko
+jest deterministyczne i powtarzalne. Faza 4 dostaje gotowy, mały opis zamiast surowego JSON-a.
+
+Regresja: **R6 i R7 potwierdzone ręcznie** na produkcji. **R8** (import przerwany w połowie da się
+wznowić i nie duplikuje danych) jest zaimplementowany i pokryty testem tras, ale **nie był jeszcze
+przeklikany** — do sprawdzenia przy najbliższej okazji: zamknąć kartę w trakcie pobierania metadanych,
+wejść ponownie i zobaczyć, czy pasek podejmuje od miejsca zatrzymania, a liczba Flow się nie zmienia.
 
 ---
 
