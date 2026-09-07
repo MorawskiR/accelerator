@@ -20,7 +20,7 @@
 | 1 | Szkielet aplikacji + deploy na produkcję | ✅ **Zakończona 2026-08-31** |
 | 2 | OAuth do Salesforce + automatyczny inwentarz Flow | ✅ **Zakończona 2026-09-01** |
 | 3 | Metadane Flow + Flow Digest + RiskScanner | ✅ **Zakończona 2026-09-07** |
-| 4 | Generator przypadków testowych (bez kosztów API) | ⬜ Nie rozpoczęta |
+| 4 | Generator przypadków testowych (bez kosztów API) | ✅ **Zakończona 2026-09-07** |
 | 5 | Edycja i eksport do .xlsx | ⬜ Nie rozpoczęta |
 | 6 | Walidacja pomysłu (Ideal validation) | ⬜ Nie rozpoczęta |
 

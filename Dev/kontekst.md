@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 4 kompletna kodowo, oba silniki na produkcji
+**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 4 ZAMKNIĘTA — ruszamy z Fazą 5 (eksport .xlsx)
 
 ---
 
@@ -302,8 +302,18 @@ w płotku markdown, JSON po zdaniu wstępnym modelu, opakowanie w obiekt, priory
 Nieznany `checklist_ref` podmienia na kod ogólny zamiast odrzucać przypadek — jedna literówka
 modelu nie może kasować wklejonej pracy.
 
-**Faza 4 jest kompletna kodowo i w całości na produkcji.** Do zamknięcia brakuje potwierdzenia
-kryterium „Gotowe, gdy” w przeglądarce oraz uprzątnięcia gita.
+### ✅ FAZA 4 ZAMKNIĘTA — 2026-09-07
+
+Kryterium potwierdzone na produkcji: kliknięcie „Generuj testy” na `RT- Flownatic_Bad_Example`
+zwróciło **„Wygenerowano 16 przypadków testowych. Dopiski własne pozostały nietknięte.”** — liczba
+zgadza się z lokalnym testem, a druga część komunikatu dowodzi, że nadpisywanie działa per źródło.
+
+**Git uporządkowany tego samego dnia.** `main` (379b92b) ma po raz pierwszy komplet Faz 1–4
+i odpowiada temu, co działa na produkcji. Zdalnie zostały dwie gałęzie — `main` i `uat` — plus
+tagi `faza-3` i `faza-4`. Siedem gałęzi feature skasowanych.
+
+**Następna faza: 5 — edycja przypadków i eksport do .xlsx** w układzie sześciu arkuszy frameworku.
+Gałąź `feature/faza-5-eksport-xlsx` wychodzi z czystego `main`.
 
 ### Zanim ruszy Faza 4 — trzy rzeczy do uprzątnięcia
 

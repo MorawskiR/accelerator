@@ -419,9 +419,24 @@ Pomijamy UAT tak samo jak w Fazie 3 — to nadal ten sam świadomy wyjątek, nie
 · ~~prompt caching, structured outputs, guard na `refusal`~~ — dotyczyły płatnego API
 · `generation_runs` zostaje w schemacie z kosztem 0 — gdyby kiedyś doszedł silnik API
 
-- [ ] **Gotowe, gdy:** dla Record-Triggered Flow dostajemy TC na trigger, każdą gałąź Decision,
-      bulk 200, brak fault path — **kryterium bez zmian**, bo digest z Fazy 3 ma wszystko,
-      czego do tego trzeba
+- [x] **Gotowe, gdy:** dla Record-Triggered Flow dostajemy TC na trigger, każdą gałąź Decision,
+      bulk 200, brak fault path — ✅ **2026-09-07 potwierdzone na produkcji.** Rafał kliknął
+      „Generuj testy” na `RT- Flownatic_Bad_Example` i dostał komunikat: **„Wygenerowano 16
+      przypadków testowych. Dopiski własne pozostały nietknięte.”** Liczba zgadza się co do sztuki
+      z tym, co generator produkuje lokalnie na tych samych metadanych, a druga część komunikatu
+      potwierdza, że nadpisywanie działa **per źródło**.
+
+---
+
+## ✅ FAZA 4 ZAMKNIĘTA — 2026-09-07
+
+Akcelerator dowozi swój produkt: z metadanych Flow powstaje **16 konkretnych przypadków**
+z odwołaniami do frameworku, a most przez schowek daje prozę modelu bez złotówki na API.
+**Koszt działania: 0 USD.**
+
+Regresja: **R9 przechodzi** (15–30 przypadków z `checklist_ref`). **R10 do przeklikania** —
+ponowne generowanie nadpisuje zamiast duplikować (komunikat to potwierdza) oraz wklejony
+wynik o złym formacie daje czytelny błąd.
 
 ---
 
