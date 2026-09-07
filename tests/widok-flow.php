@@ -1,0 +1,191 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Sprawdzenie widoku Flow bez bazy i bez org.
+ *
+ * Uruchomienie:  php tests/widok-flow.php
+ *
+ * Renderuje flow.twig na zapisanych metadanych z tests/fixtures i sprawdza,
+ * ze na celowo zepsutym Flow widac oba ryzyka z kryterium "Gotowe, gdy"
+ * Fazy 3: DML w petli i brak fault path.
+ *
+ * Nie dotyka bazy - DigestBuilder i RiskScanner sa czystymi funkcjami, a
+ * szablon dostaje dane wprost. Dzieki temu regresje w widoku wychodza tutaj,
+ * a nie dopiero na produkcji.
+ *
+ * Wynik HTML laduje do tests/out/ - mozna go otworzyc w przegladarce
+ * i obejrzec dokladnie to, co zobaczy tester.
+ */
+
+// ── Autoloader ───────────────────────────────────────────────────
+// Szukamy w gore, bo vendor/ nie jest w repozytorium: przy pracy w worktree
+// lezy w glownym katalogu roboczym, kilka poziomow wyzej.
+$autoload = null;
+
+for ($i = 1; $i <= 6; $i++) {
+    $kandydat = dirname(__DIR__, $i) . '/app/vendor/autoload.php';
+
+    if (is_file($kandydat)) {
+        $autoload = $kandydat;
+        break;
+    }
+}
+
+if ($autoload === null) {
+    fwrite(STDERR, 'Nie znalazlem app/vendor/autoload.php. Uruchom composer install.' . PHP_EOL);
+    exit(1);
+}
+
+require $autoload;
+
+// Klasy aplikacji bierzemy z TEGO katalogu roboczego, nie z tego, na ktory
+// wskazuje autoloader - inaczej w worktree testowalibysmy cudzy kod.
+require_once __DIR__ . '/../app/src/Flow/DigestBuilder.php';
+require_once __DIR__ . '/../app/src/Flow/RiskScanner.php';
+
+use Flownatic\Flow\DigestBuilder;
+use Flownatic\Flow\RiskScanner;
+use Twig\Environment;
+use Twig\Loader\FilesystemLoader;
+
+$twig = new Environment(new FilesystemLoader(__DIR__ . '/../app/templates'), ['debug' => true]);
+
+$wyjscie = __DIR__ . '/out';
+
+if (!is_dir($wyjscie)) {
+    mkdir($wyjscie, 0777, true);
+}
+
+/**
+ * Renderuje widok dla jednego pliku z metadanymi.
+ *
+ * @return array{html:string, ryzyka:list<array<string,mixed>>}
+ */
+function renderuj(Environment $twig, string $plik): array
+{
+    $meta = json_decode((string) file_get_contents($plik), true);
+
+    if (!is_array($meta)) {
+        throw new RuntimeException('Nieczytelny fixture: ' . $plik);
+    }
+
+    $digest = (new DigestBuilder())->build($meta);
+    $ryzyka = (new RiskScanner())->scan($digest);
+
+    // Ta sama kolejnosc, ktora ustawia FlowAnalyzer: najgrozniejsze na gorze.
+    $wagi = [RiskScanner::WAGA_WYSOKA => 0, RiskScanner::WAGA_SREDNIA => 1, RiskScanner::WAGA_NISKA => 2];
+    usort($ryzyka, static fn (array $a, array $b): int
+        => ($wagi[$a['waga']] ?? 9) <=> ($wagi[$b['waga']] ?? 9));
+
+    $html = $twig->render('flow.twig', [
+        'flow' => [
+            'id'                  => 1,
+            'label'               => $digest['etykieta'] ?? basename($plik, '.json'),
+            'api_name'            => basename($plik, '.json'),
+            'process_type'        => $digest['typ'] ?? null,
+            'trigger_object'      => $digest['wyzwalacz']['obiekt'] ?? null,
+            'record_trigger_type' => $digest['wyzwalacz']['operacje'] ?? null,
+            'version_number'      => 1,
+            'is_active'           => 1,
+            'description'         => $digest['opis'] ?? null,
+        ],
+        'wersja'       => ['version_number' => 1, 'status' => $digest['status'] ?? null,
+                           'fetched_at' => '2026-09-07 10:00:00', 'digested_at' => '2026-09-07 10:00:01'],
+        'digest'       => $digest,
+        'ryzyka'       => $ryzyka,
+        'podsumowanie' => RiskScanner::podsumuj($ryzyka),
+        'polaczona'    => true,
+        'blad'         => null,
+        'ok'           => null,
+        'u'            => ['flows' => '/flows', 'metadane' => '/flows/1/metadane',
+                           'connect' => '/org/connect', 'wyloguj' => '/logout'],
+    ]);
+
+    return ['html' => $html, 'ryzyka' => $ryzyka];
+}
+
+/** @var list<array{plik:string, zawiera:list<string>, niezawiera:list<string>, ryzyk:?int}> $przypadki */
+$przypadki = [
+    [
+        'plik'       => 'bad-example.json',
+        'zawiera'    => ['DML wewnątrz pętli', 'Brak fault path przy zapisie', 'TC-018', 'TC-015'],
+        'niezawiera' => ['Struktura nie jest jeszcze pobrana'],
+        'ryzyk'      => null,   // liczba nie jest tu istotna, wazne ze sa oba
+    ],
+    [
+        // Ten sam Flow, ale DML jest PO petli, ma fault path i kryteria wejscia.
+        // Zaden falszywy alarm nie ma prawa sie tu zapalic.
+        'plik'       => 'po-petli.json',
+        'zawiera'    => ['Żadna z reguł nie zapaliła się'],
+        'niezawiera' => ['DML wewnątrz pętli'],
+        'ryzyk'      => 0,
+    ],
+    [
+        'plik'       => 'czysty.json',
+        'zawiera'    => ['Żadna z reguł nie zapaliła się'],
+        'niezawiera' => ['waga wysokie'],
+        'ryzyk'      => 0,
+    ],
+    [
+        'plik'       => 'bez-filtrow.json',
+        'zawiera'    => ['Pobranie rekordów bez filtrów', 'TC-020'],
+        'niezawiera' => [],
+        'ryzyk'      => null,
+    ],
+];
+
+$bledy = 0;
+
+foreach ($przypadki as $p) {
+    $sciezka = __DIR__ . '/fixtures/' . $p['plik'];
+
+    try {
+        $wynik = renderuj($twig, $sciezka);
+    } catch (\Throwable $e) {
+        echo '[BLAD] ' . $p['plik'] . ' - ' . $e->getMessage() . PHP_EOL;
+        $bledy++;
+        continue;
+    }
+
+    file_put_contents($wyjscie . '/' . basename($p['plik'], '.json') . '.html', $wynik['html']);
+
+    $lokalne = 0;
+
+    foreach ($p['zawiera'] as $tekst) {
+        if (!str_contains($wynik['html'], $tekst)) {
+            echo '[BLAD] ' . $p['plik'] . ' - brak w widoku: ' . $tekst . PHP_EOL;
+            $lokalne++;
+        }
+    }
+
+    foreach ($p['niezawiera'] as $tekst) {
+        if (str_contains($wynik['html'], $tekst)) {
+            echo '[BLAD] ' . $p['plik'] . ' - falszywy alarm, widok zawiera: ' . $tekst . PHP_EOL;
+            $lokalne++;
+        }
+    }
+
+    if ($p['ryzyk'] !== null && count($wynik['ryzyka']) !== $p['ryzyk']) {
+        echo '[BLAD] ' . $p['plik'] . ' - ryzyk: ' . count($wynik['ryzyka'])
+            . ', oczekiwano ' . $p['ryzyk'] . PHP_EOL;
+        $lokalne++;
+    }
+
+    $bledy += $lokalne;
+
+    printf(
+        "%-20s %s  ryzyk: %d%s" . PHP_EOL,
+        $p['plik'],
+        $lokalne === 0 ? '[OK] ' : '[BLAD]',
+        count($wynik['ryzyka']),
+        $lokalne === 0 ? '' : '  (' . $lokalne . ' problemow)'
+    );
+}
+
+echo PHP_EOL . ($bledy === 0
+    ? 'Wszystko sie zgadza. Podglad HTML: tests/out/' . PHP_EOL
+    : $bledy . ' problemow.' . PHP_EOL);
+
+exit($bledy === 0 ? 0 : 1);

@@ -130,49 +130,13 @@ final class MetadataFetcher
         $bledy = [];
 
         foreach ($this->oczekujace($connectionId, $partia) as $flow) {
-            $def = (string) ($flow['durable_id'] ?? '');
-            $rec = $wersje[$def] ?? null;
+            $wynik = $this->przetworzFlow($flow, $wersje);
 
-            if ($rec === null) {
-                // Flow jest w inwentarzu, ale Tooling go nie widzi - np. typ
-                // nieobslugiwany przez obiekt Flow. Zapisujemy pusta wersje,
-                // zeby nie probowac go w kolko przy kazdej partii.
-                $this->zapisz((int) $flow['id'], (int) ($flow['version_number'] ?? 0), null, null, null);
-                $bledy[] = (string) $flow['label'] . ': brak w Tooling API';
-                continue;
-            }
-
-            try {
-                $meta = $this->metadaneJednego((string) $rec['Id']);
-            } catch (\Throwable $e) {
-                $bledy[] = (string) $flow['label'] . ': ' . $e->getMessage();
-                continue;
-            }
-
-            $json = (string) json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            $hash = hash('sha256', $json);
-
-            $stara = Db::one(
-                'SELECT id, metadata_hash FROM flow_versions WHERE flow_id = ? AND version_number = ?',
-                [(int) $flow['id'], (int) $rec['VersionNumber']]
-            );
-
-            if ($stara !== null && $stara['metadata_hash'] === $hash) {
-                // Nic sie nie zmienilo - tylko odswiezamy znacznik czasu,
-                // zeby ten Flow nie wracal w kolejnych partiach.
-                Db::query('UPDATE flow_versions SET fetched_at = NOW() WHERE id = ?', [(int) $stara['id']]);
-                $bezZmian++;
-                continue;
-            }
-
-            $this->zapisz(
-                (int) $flow['id'],
-                (int) $rec['VersionNumber'],
-                (string) ($rec['Status'] ?? ''),
-                $json,
-                $hash
-            );
-            $pobrane++;
+            match ($wynik['stan']) {
+                'pobrane'   => $pobrane++,
+                'bez_zmian' => $bezZmian++,
+                default     => $bledy[] = (string) $wynik['blad'],
+            };
         }
 
         return [
@@ -181,6 +145,83 @@ final class MetadataFetcher
             'bledy'      => $bledy,
             'pozostalo'  => $this->ileOczekuje($connectionId),
         ];
+    }
+
+    /**
+     * Metadane jednego Flow z inwentarza, niezaleznie od kolejki partii.
+     *
+     * Widok pojedynczego Flow nie moze czekac, az partie dojda do tego
+     * konkretnego - tester klika w Flow, ktory go interesuje, i chce zobaczyc
+     * jego strukture od razu.
+     *
+     * @return array{stan:string, blad:?string}
+     */
+    public function pobierzJeden(int $flowId): array
+    {
+        $flow = Db::one(
+            'SELECT id, durable_id, api_name, label, version_number FROM flows WHERE id = ?',
+            [$flowId]
+        );
+
+        if ($flow === null) {
+            throw new RuntimeException('Nie ma takiego Flow w bazie.');
+        }
+
+        return $this->przetworzFlow($flow, $this->listaWersji());
+    }
+
+    /**
+     * Pobranie i zapis metadanych jednego Flow.
+     *
+     * @param array<string,mixed> $flow wiersz z tabeli flows
+     * @param array<string,array<string,mixed>> $wersje wynik listaWersji()
+     * @return array{stan:string, blad:?string} stan: pobrane | bez_zmian | blad
+     */
+    private function przetworzFlow(array $flow, array $wersje): array
+    {
+        $def = (string) ($flow['durable_id'] ?? '');
+        $rec = $wersje[$def] ?? null;
+
+        if ($rec === null) {
+            // Flow jest w inwentarzu, ale Tooling go nie widzi - np. typ
+            // nieobslugiwany przez obiekt Flow. Zapisujemy pusta wersje,
+            // zeby nie probowac go w kolko przy kazdej partii.
+            $this->zapisz((int) $flow['id'], (int) ($flow['version_number'] ?? 0), null, null, null);
+
+            return ['stan' => 'blad', 'blad' => (string) $flow['label'] . ': brak w Tooling API'];
+        }
+
+        try {
+            $meta = $this->metadaneJednego((string) $rec['Id']);
+        } catch (\Throwable $e) {
+            return ['stan' => 'blad', 'blad' => (string) $flow['label'] . ': ' . $e->getMessage()];
+        }
+
+        $json = (string) json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $hash = hash('sha256', $json);
+
+        $stara = Db::one(
+            'SELECT id, metadata_hash FROM flow_versions WHERE flow_id = ? AND version_number = ?',
+            [(int) $flow['id'], (int) $rec['VersionNumber']]
+        );
+
+        if ($stara !== null && $stara['metadata_hash'] === $hash) {
+            // Nic sie nie zmienilo - tylko odswiezamy znacznik czasu,
+            // zeby ten Flow nie wracal w kolejnych partiach.
+            Db::query('UPDATE flow_versions SET fetched_at = NOW() WHERE id = ?', [(int) $stara['id']]);
+
+            return ['stan' => 'bez_zmian', 'blad' => null];
+        }
+
+        $this->zapisz(
+            (int) $flow['id'],
+            (int) $rec['VersionNumber'],
+            (string) ($rec['Status'] ?? ''),
+            $json,
+            $hash
+        );
+
+        return ['stan' => 'pobrane', 'blad' => null];
     }
 
     private function zapisz(int $flowId, int $wersja, ?string $status, ?string $json, ?string $hash): void

@@ -81,13 +81,14 @@
             <th>Wyzwalacz</th>
             <th>Wersja</th>
             <th>Stan</th>
+            <th>Ryzyka</th>
           </tr>
         </thead>
         <tbody>
         {% for f in flows %}
           <tr>
             <td>
-              <strong>{{ f.label ?: f.api_name }}</strong>
+              <strong><a href="{{ u.flows }}/{{ f.id }}">{{ f.label ?: f.api_name }}</a></strong>
               <div class="mono przygaszone">{{ f.api_name }}</div>
             </td>
             <td>{{ f.process_type ?: '—' }}</td>
@@ -102,6 +103,20 @@
                 <span class="znacznik ok">aktywny</span>
               {% else %}
                 <span class="znacznik">nieaktywny</span>
+              {% endif %}
+            </td>
+            <td>
+              {% set r = ryzyka[f.id] ?? null %}
+              {% if r is null %}
+                <span class="przygaszone">metadane niepobrane</span>
+              {% elseif r.razem == 0 %}
+                <span class="znacznik ok">czysto</span>
+              {% else %}
+                <div class="chipy" style="margin:0">
+                  {% if r.ryzyka.wysokie > 0 %}<span class="waga wysokie">{{ r.ryzyka.wysokie }}</span>{% endif %}
+                  {% if r.ryzyka.srednie > 0 %}<span class="waga srednie">{{ r.ryzyka.srednie }}</span>{% endif %}
+                  {% if r.ryzyka.niskie  > 0 %}<span class="waga niskie">{{ r.ryzyka.niskie }}</span>{% endif %}
+                </div>
               {% endif %}
             </td>
           </tr>

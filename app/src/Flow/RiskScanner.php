@@ -66,9 +66,9 @@ final class RiskScanner
                 'waga'        => self::WAGA_WYSOKA,
                 'element'     => $el['nazwa'] ?? '?',
                 'etykieta'    => $el['etykieta'] ?? null,
-                'tytul'       => 'Operacja zapisu wewnatrz petli',
+                'tytul'       => 'DML wewnątrz pętli',
                 'opis'        => sprintf(
-                    'Element %s (%s) wykonuje zapis w kazdym obiegu petli %s. '
+                    'Element %s (%s) wykonuje zapis w każdym obiegu pętli %s. '
                     . 'Przy 200 rekordach to 200 operacji DML, a limit wynosi 150.',
                     (string) ($el['etykieta'] ?? $el['nazwa'] ?? '?'),
                     (string) ($el['operacja'] ?? 'DML'),
@@ -76,9 +76,9 @@ final class RiskScanner
                 ),
                 'skutek'      => 'Too many DML statements: 151',
                 'checklist'   => 'TC-018',
-                'jak_naprawic' => 'Zbierac rekordy do zmiennej kolekcyjnej wewnatrz petli, '
-                    . 'a zapis wykonac raz, po petli.',
-                'jak_testowac' => 'Uruchomic Flow na zestawie co najmniej 200 rekodow '
+                'jak_naprawic' => 'Zbierać rekordy do zmiennej kolekcyjnej wewnątrz pętli, '
+                    . 'a zapis wykonać raz, po pętli.',
+                'jak_testowac' => 'Uruchomić Flow na zestawie co najmniej 200 rekordów '
                     . '(import albo masowa aktualizacja), nie na pojedynczym rekordzie.',
             ];
         }
@@ -110,18 +110,18 @@ final class RiskScanner
                 'waga'      => self::WAGA_SREDNIA,
                 'element'   => $el['nazwa'] ?? '?',
                 'etykieta'  => $el['etykieta'] ?? null,
-                'tytul'     => 'Zapis bez obslugi bledu',
+                'tytul'     => 'Brak fault path przy zapisie',
                 'opis'      => sprintf(
-                    'Element %s nie ma sciezki bledu. Nieudany zapis przerwie Flow '
-                    . 'bez czytelnego komunikatu dla uzytkownika.',
+                    'Element %s nie ma ścieżki błędu. Nieudany zapis przerwie Flow '
+                    . 'bez czytelnego komunikatu dla użytkownika.',
                     (string) ($el['etykieta'] ?? $el['nazwa'] ?? '?')
                 ),
-                'skutek'    => 'Flow przerywa sie, uzytkownik widzi blad systemowy',
+                'skutek'    => 'Flow przerywa się, użytkownik widzi błąd systemowy',
                 'checklist' => 'TC-015',
-                'jak_naprawic' => 'Dodac fault path prowadzacy do ekranu bledu albo do '
-                    . 'elementu zapisujacego blad.',
-                'jak_testowac' => 'Wymusic niepowodzenie zapisu - regula walidacji na obiekcie '
-                    . 'albo odebranie uprawnien do pola - i sprawdzic, co zobaczy uzytkownik.',
+                'jak_naprawic' => 'Dodać fault path prowadzący do ekranu błędu albo do '
+                    . 'elementu zapisującego błąd.',
+                'jak_testowac' => 'Wymusić niepowodzenie zapisu — reguła walidacji na obiekcie '
+                    . 'albo odebranie uprawnień do pola — i sprawdzić, co zobaczy użytkownik.',
             ];
         }
 
@@ -165,18 +165,18 @@ final class RiskScanner
             'waga'      => self::WAGA_WYSOKA,
             'element'   => 'start',
             'etykieta'  => 'Wyzwalacz',
-            'tytul'     => 'After Save bez kryteriow wejscia',
+            'tytul'     => 'After Save bez kryteriów wejścia',
             'opis'      => sprintf(
-                'Flow uruchamia sie po kazdym zapisie rekordu %s i sam wykonuje zapisy. '
-                . 'Bez kryteriow wejscia moze wywolac sam siebie.',
+                'Flow uruchamia się po każdym zapisie rekordu %s i sam wykonuje zapisy. '
+                . 'Bez kryteriów wejścia może wywołać sam siebie.',
                 $obiekt
             ),
-            'skutek'    => 'Rekursja, przekroczenie limitu zagniezdzen, zbedne zuzycie limitow',
+            'skutek'    => 'Rekursja, przekroczenie limitu zagnieżdżeń, zbędne zużycie limitów',
             'checklist' => 'RT-004',
-            'jak_naprawic' => 'Dodac kryteria wejscia zawezajace uruchomienie, np. tylko gdy '
-                . 'konkretne pole faktycznie sie zmienilo.',
-            'jak_testowac' => 'Zaktualizowac rekord ' . $obiekt . ' i sprawdzic w logach debug, '
-                . 'ile razy Flow sie uruchomil.',
+            'jak_naprawic' => 'Dodać kryteria wejścia zawężające uruchomienie, np. tylko gdy '
+                . 'konkretne pole faktycznie się zmieniło.',
+            'jak_testowac' => 'Zaktualizować rekord ' . $obiekt . ' i sprawdzić w logach debug, '
+                . 'ile razy Flow się uruchomił.',
         ]];
     }
 
@@ -209,19 +209,19 @@ final class RiskScanner
                 'waga'      => $tylkoPierwszy ? self::WAGA_NISKA : self::WAGA_SREDNIA,
                 'element'   => $el['nazwa'] ?? '?',
                 'etykieta'  => $el['etykieta'] ?? null,
-                'tytul'     => 'Pobranie rekordow bez filtrow',
+                'tytul'     => 'Pobranie rekordów bez filtrów',
                 'opis'      => sprintf(
-                    'Element %s pobiera rekordy %s bez zadnych warunkow%s.',
+                    'Element %s pobiera rekordy %s bez żadnych warunków%s.',
                     (string) ($el['etykieta'] ?? $el['nazwa'] ?? '?'),
                     $obiekt,
                     $tylkoPierwszy ? ' (ograniczone do pierwszego rekordu)' : ''
                 ),
                 'skutek'    => $tylkoPierwszy
                     ? 'Przypadkowy rekord zamiast zamierzonego'
-                    : 'Too many query rows: 50001 przy wiekszym wolumenie danych',
+                    : 'Too many query rows: 50001 przy większym wolumenie danych',
                 'checklist' => 'TC-020',
-                'jak_naprawic' => 'Dodac warunki zawezajace zapytanie albo ustawic limit liczby rekordow.',
-                'jak_testowac' => 'Uruchomic Flow w org z duza liczba rekordow ' . $obiekt
+                'jak_naprawic' => 'Dodać warunki zawężające zapytanie albo ustawić limit liczby rekordów.',
+                'jak_testowac' => 'Uruchomić Flow w org z dużą liczbą rekordów ' . $obiekt
                     . ', nie na kilku testowych.',
             ];
         }

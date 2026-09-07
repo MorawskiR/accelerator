@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Flownatic\Http;
 
+use Flownatic\Flow\FlowAnalyzer;
 use Flownatic\Flow\FlowImporter;
+use Flownatic\Flow\MetadataFetcher;
 use Flownatic\Salesforce\OAuthService;
 use Flownatic\Support\Config;
 use Flownatic\Support\Db;
@@ -184,8 +186,9 @@ final class Routes
             $typ  = trim((string) ($q['typ'] ?? ''));
             $stan = trim((string) ($q['stan'] ?? ''));
 
-            $flows = [];
-            $typy  = [];
+            $flows  = [];
+            $typy   = [];
+            $ryzyka = [];
 
             if ($pol !== null) {
                 $warunki = ['connection_id = ?'];
@@ -204,6 +207,10 @@ final class Routes
                     'SELECT DISTINCT process_type FROM flows WHERE connection_id = ? AND process_type IS NOT NULL ORDER BY process_type',
                     [(int) $pol['id']]
                 ), 'process_type');
+
+                // Liczniki ryzyk przy kazdym Flow - bez tego lista nie mowi,
+                // ktory Flow warto otworzyc jako pierwszy.
+                $ryzyka = (new FlowAnalyzer())->podsumowania((int) $pol['id']);
             }
 
             return Twig::fromRequest($request)->render($response, 'flows.twig', [
@@ -211,6 +218,7 @@ final class Routes
                 'instancja'   => $pol['instance_url'] ?? null,
                 'flows'       => $flows,
                 'typy'        => $typy,
+                'ryzyka'      => $ryzyka,
                 'wybranyTyp'  => $typ,
                 'wybranyStan' => $stan,
                 'blad'        => self::pobierzKomunikat(),
@@ -221,6 +229,79 @@ final class Routes
                     'sync'       => self::url($app, '/flows/sync'),
                     'flows'      => self::url($app, '/flows'),
                     'wyloguj'    => self::url($app, '/logout'),
+                ],
+            ]);
+        })->add($auth);
+
+        // Pobranie metadanych jednego Flow. Osobno od partii, bo tester
+        // otwiera konkretny Flow i nie ma powodu czekac na cala kolejke.
+        $app->post('/flows/{id}/metadane', function (Request $request, Response $response, array $args) use ($app): Response {
+            $id  = (int) ($args['id'] ?? 0);
+            $uid = (int) $_SESSION['user_id'];
+
+            if (self::flowUzytkownika($id, $uid) === null) {
+                return self::zKomunikatem($response, $app, 'Nie ma takiego Flow.', '/flows');
+            }
+
+            $svc = new OAuthService();
+            $pol = $svc->connection($uid);
+
+            if ($pol === null) {
+                return self::zKomunikatem($response, $app, 'Najpierw podlacz org.', '/flows/' . $id);
+            }
+
+            try {
+                $wynik = (new MetadataFetcher($svc->apiClient($uid)))->pobierzJeden($id);
+            } catch (\Throwable $e) {
+                return self::zKomunikatem($response, $app, $e->getMessage(), '/flows/' . $id);
+            }
+
+            if ($wynik['stan'] === 'blad') {
+                return self::zKomunikatem($response, $app, (string) $wynik['blad'], '/flows/' . $id);
+            }
+
+            $_SESSION['komunikat_ok'] = $wynik['stan'] === 'bez_zmian'
+                ? 'Metadane bez zmian - analiza jest aktualna.'
+                : 'Metadane pobrane. Struktura i ryzyka przeliczone.';
+
+            return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
+        })->add($auth);
+
+        // Widok jednego Flow: struktura z DigestBuilder i ryzyka z RiskScanner.
+        $app->get('/flows/{id}', function (Request $request, Response $response, array $args) use ($app): Response {
+            $id   = (int) ($args['id'] ?? 0);
+            $uid  = (int) $_SESSION['user_id'];
+            $flow = self::flowUzytkownika($id, $uid);
+
+            if ($flow === null) {
+                return self::zKomunikatem($response, $app, 'Nie ma takiego Flow.', '/flows');
+            }
+
+            $blad = self::pobierzKomunikat();
+
+            try {
+                $analiza = (new FlowAnalyzer())->analiza($id);
+            } catch (\Throwable $e) {
+                // Uszkodzone metadane nie moga konczyc sie strona bledu 500 -
+                // tester ma zobaczyc, ze da sie je pobrac ponownie.
+                $analiza = null;
+                $blad ??= 'Nie moge przeliczyc struktury: ' . $e->getMessage();
+            }
+
+            return Twig::fromRequest($request)->render($response, 'flow.twig', [
+                'flow'         => $flow,
+                'wersja'       => $analiza['wersja'] ?? null,
+                'digest'       => $analiza['digest'] ?? null,
+                'ryzyka'       => $analiza['ryzyka'] ?? [],
+                'podsumowanie' => $analiza['podsumowanie'] ?? [],
+                'polaczona'    => (new OAuthService())->connection($uid) !== null,
+                'blad'         => $blad,
+                'ok'           => self::pobierzKomunikatOk(),
+                'u'            => [
+                    'flows'    => self::url($app, '/flows'),
+                    'metadane' => self::url($app, '/flows/' . $id . '/metadane'),
+                    'connect'  => self::url($app, '/org/connect'),
+                    'wyloguj'  => self::url($app, '/logout'),
                 ],
             ]);
         })->add($auth);
@@ -244,6 +325,29 @@ final class Routes
         $base = rtrim($app->getBasePath(), '/');
 
         return $base . $sciezka;
+    }
+
+    /**
+     * Flow razem ze sprawdzeniem, czy nalezy do org tego uzytkownika.
+     *
+     * POC ma jedno konto i jedna org, ale identyfikator Flow wchodzi tu
+     * z adresu URL - bez tego zlaczenia wystarczyloby podmienic numer,
+     * zeby zobaczyc cudze dane, gdy kont bedzie wiecej.
+     *
+     * @return array<string,mixed>|null
+     */
+    private static function flowUzytkownika(int $flowId, int $userId): ?array
+    {
+        if ($flowId <= 0) {
+            return null;
+        }
+
+        return Db::one(
+            'SELECT f.* FROM flows f
+             JOIN sf_connections c ON c.id = f.connection_id
+             WHERE f.id = ? AND c.user_id = ?',
+            [$flowId, $userId]
+        );
     }
 
     private static function csrfToken(): string
