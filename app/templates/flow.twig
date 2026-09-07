@@ -136,6 +136,17 @@
     {% endif %}
   </div>
 
+  {% if stanTestow.nieaktualne %}
+    {# Metadane Flow zmieniły się po wygenerowaniu tych przypadków. Nie kasujemy
+       ich po cichu — tester ma zobaczyć ostrzeżenie i sam zdecydować. #}
+    <div class="blad">
+      <strong>Te przypadki opisują poprzednią wersję Flow.</strong>
+      Struktura została przeliczona {{ wersja.digested_at }}, a przypadki wygenerowano
+      {{ stanTestow.wygenerowano }}. Kliknij <strong>Generuj ponownie</strong>, żeby odświeżyć
+      je na podstawie aktualnych metadanych.
+    </div>
+  {% endif %}
+
   {% for t in testy %}
     <div class="karta">
       <div class="rzad">

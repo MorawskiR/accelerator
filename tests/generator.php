@@ -274,6 +274,43 @@ foreach (['bad-example.json', 'bez-filtrow.json'] as $plik) {
 $bledy += $lokalne;
 printf("%-22s %s\n", 'RiskScanner/kody', $lokalne === 0 ? '[OK] ' : '[BLAD]');
 
+// ── Nieaktualnosc przypadkow ─────────────────────────────────────
+// Gdy Flow zmieni sie w org, digest przelicza sie sam, a przypadki zostaja
+// i opisuja poprzednia wersje. Porownanie znacznikow jest wydzielone wlasnie
+// po to, zeby dalo sie je sprawdzic bez bazy.
+require_once __DIR__ . '/../app/src/Generator/TestCaseRepository.php';
+
+use Flownatic\Generator\TestCaseRepository;
+
+$lokalne = 0;
+
+/** @var list<array{wygenerowano:?string, przeliczono:?string, oczekiwane:bool, opis:string}> $sytuacje */
+$sytuacje = [
+    ['wygenerowano' => '2026-09-07 12:00:00', 'przeliczono' => '2026-09-07 12:05:00',
+     'oczekiwane' => true,  'opis' => 'digest przeliczony PO wygenerowaniu'],
+    ['wygenerowano' => '2026-09-07 12:05:00', 'przeliczono' => '2026-09-07 12:00:00',
+     'oczekiwane' => false, 'opis' => 'przypadki nowsze niz digest'],
+    ['wygenerowano' => '2026-09-07 12:00:00', 'przeliczono' => '2026-09-07 12:00:00',
+     'oczekiwane' => false, 'opis' => 'ta sama sekunda liczy sie jako aktualne'],
+    ['wygenerowano' => null, 'przeliczono' => '2026-09-07 12:00:00',
+     'oczekiwane' => false, 'opis' => 'brak przypadkow - nie ma czego uniewazniac'],
+    ['wygenerowano' => '2026-09-07 12:00:00', 'przeliczono' => null,
+     'oczekiwane' => false, 'opis' => 'brak digestu - nie ma z czym porownac'],
+];
+
+foreach ($sytuacje as $s) {
+    $wynikPorownania = TestCaseRepository::czyPrzeterminowane($s['wygenerowano'], $s['przeliczono']);
+
+    if ($wynikPorownania !== $s['oczekiwane']) {
+        echo '[BLAD] nieaktualnosc: ' . $s['opis'] . ' - dostalem '
+            . var_export($wynikPorownania, true) . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+$bledy += $lokalne;
+printf("%-22s %s\n", 'nieaktualnosc', $lokalne === 0 ? '[OK] ' : '[BLAD]');
+
 echo PHP_EOL . ($bledy === 0
     ? 'Wszystko sie zgadza. Podglad: tests/out/tc-*.txt' . PHP_EOL
     : $bledy . ' problemow.' . PHP_EOL);

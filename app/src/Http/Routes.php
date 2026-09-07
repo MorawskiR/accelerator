@@ -403,14 +403,19 @@ final class Routes
                 $blad ??= 'Nie moge przeliczyc struktury: ' . $e->getMessage();
             }
 
-            $testy   = [];
-            $zrodla  = [];
+            $testy    = [];
+            $zrodla   = [];
+            $stanTest = ['nieaktualne' => false, 'wygenerowano' => null];
             $wersjaId = (int) ($analiza['wersja']['id'] ?? 0);
 
             if ($wersjaId > 0) {
-                $repo   = new TestCaseRepository();
-                $testy  = $repo->dla($wersjaId);
-                $zrodla = $repo->podsumowanie($wersjaId);
+                $repo     = new TestCaseRepository();
+                $testy    = $repo->dla($wersjaId);
+                $zrodla   = $repo->podsumowanie($wersjaId);
+                $stanTest = $repo->stanAktualnosci(
+                    $wersjaId,
+                    isset($analiza['wersja']['digested_at']) ? (string) $analiza['wersja']['digested_at'] : null
+                );
             }
 
             return Twig::fromRequest($request)->render($response, 'flow.twig', [
@@ -421,6 +426,7 @@ final class Routes
                 'podsumowanie' => $analiza['podsumowanie'] ?? [],
                 'testy'        => $testy,
                 'zrodla'       => $zrodla,
+                'stanTestow'   => $stanTest,
                 'polaczona'    => (new OAuthService())->connection($uid) !== null,
                 'blad'         => $blad,
                 'ok'           => self::pobierzKomunikatOk(),

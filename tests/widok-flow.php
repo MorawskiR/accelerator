@@ -98,6 +98,7 @@ function renderuj(Environment $twig, string $plik): array
         'podsumowanie' => RiskScanner::podsumuj($ryzyka),
         'testy'        => $GLOBALS['testy'] ?? [],
         'zrodla'       => $GLOBALS['zrodla'] ?? [],
+        'stanTestow'   => $GLOBALS['stanTestow'] ?? ['nieaktualne' => false, 'wygenerowano' => null],
         'polaczona'    => true,
         'blad'         => null,
         'ok'           => null,
@@ -235,8 +236,41 @@ $bledy += $lokalne;
 printf('%-20s %s  przypadkow: %d' . PHP_EOL, 'flow.twig/testy',
     $lokalne === 0 ? '[OK] ' : '[BLAD]', count($GLOBALS['testy']));
 
-$GLOBALS['testy']  = [];
-$GLOBALS['zrodla'] = [];
+// Ten sam widok, ale metadane zmienily sie po wygenerowaniu przypadkow.
+// Tester musi to zobaczyc - inaczej wykona testy opisujace poprzednia wersje.
+$GLOBALS['stanTestow'] = [
+    'nieaktualne'  => true,
+    'wygenerowano' => '2026-09-07 12:00:00',
+];
+
+$przeterminowane = renderuj($twig, __DIR__ . '/fixtures/bad-example.json');
+file_put_contents($wyjscie . '/bad-example-nieaktualne.html', $przeterminowane['html']);
+
+$lokalne = 0;
+
+foreach (['Te przypadki opisują poprzednią wersję Flow', '2026-09-07 12:00:00'] as $tekst) {
+    if (!str_contains($przeterminowane['html'], $tekst)) {
+        echo '[BLAD] widok nieaktualnych - brak: ' . $tekst . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+// Bez ostrzezenia, gdy wszystko jest swieze - falszywy alarm byloby gorszy
+// niz brak alarmu, bo nauczylby testera ignorowac ten baner.
+$GLOBALS['stanTestow'] = ['nieaktualne' => false, 'wygenerowano' => '2026-09-07 12:00:00'];
+$swieze = renderuj($twig, __DIR__ . '/fixtures/bad-example.json');
+
+if (str_contains($swieze['html'], 'opisują poprzednią wersję Flow')) {
+    echo '[BLAD] falszywy alarm o nieaktualnosci na swiezych przypadkach' . PHP_EOL;
+    $lokalne++;
+}
+
+$bledy += $lokalne;
+printf('%-20s %s' . PHP_EOL, 'flow.twig/nieakt.', $lokalne === 0 ? '[OK] ' : '[BLAD]');
+
+$GLOBALS['testy']      = [];
+$GLOBALS['zrodla']     = [];
+$GLOBALS['stanTestow'] = ['nieaktualne' => false, 'wygenerowano' => null];
 
 // ── Lista Flow ───────────────────────────────────────────────────
 // Osobno, bo liczniki ryzyk na liscie biora sie z innego miejsca niz widok

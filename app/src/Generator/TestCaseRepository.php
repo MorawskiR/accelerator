@@ -110,6 +110,67 @@ final class TestCaseRepository
         return $wynik;
     }
 
+    /**
+     * Czy przypadki opisuja juz nieaktualna strukture Flow.
+     *
+     * Problem, ktory to rozwiazuje: gdy Flow zmieni sie w org, MetadataFetcher
+     * nadpisuje metadane i zeruje digest_json oraz risks_json, wiec struktura
+     * i ryzyka przeliczaja sie same. Ale przypadki testowe **zostaja** - opisuja
+     * poprzednia wersje i nic o tym nie mowia. Nazwy elementow zwykle sie nie
+     * zmieniaja, wiec na oko wszystko wyglada dobrze.
+     *
+     * Sygnalem jest digested_at, a NIE fetched_at: fetched_at odswieza sie
+     * takze wtedy, gdy metadane byly bez zmian, wiec kazde ponowne pobranie
+     * falszywie unieważniałoby liste. digested_at zmienia sie wylacznie po
+     * faktycznej zmianie metadanych, bo tylko wtedy digest jest liczony od nowa.
+     *
+     * Nie kasujemy przypadkow po cichu - tester ma zobaczyc ostrzezenie
+     * i sam zdecydowac. Ciche kasowanie wyglada jak zgubienie pracy.
+     *
+     * @return array{nieaktualne:bool, wygenerowano:?string}
+     */
+    public function stanAktualnosci(int $flowVersionId, ?string $przeliczono): array
+    {
+        $wygenerowano = Db::one(
+            'SELECT MAX(created_at) AS ostatni FROM test_cases WHERE flow_version_id = ? AND source = ?',
+            [$flowVersionId, self::ZRODLO_REGULY]
+        )['ostatni'] ?? null;
+
+        return [
+            'nieaktualne'  => self::czyPrzeterminowane(
+                $wygenerowano === null ? null : (string) $wygenerowano,
+                $przeliczono
+            ),
+            'wygenerowano' => $wygenerowano === null ? null : (string) $wygenerowano,
+        ];
+    }
+
+    /**
+     * Czyste porownanie dwoch znacznikow czasu - wydzielone, zeby dalo sie
+     * je sprawdzic testem bez bazy.
+     *
+     * Rownosc traktujemy jako "aktualne". Oba znaczniki stawia MySQL z NOW(),
+     * a DATETIME ma dokladnosc do sekundy, wiec wygenerowanie i przeliczenie
+     * w tej samej sekundzie jest mozliwe. Wtedy przypadki powstaly z digestu,
+     * ktory wlasnie policzono - a nie przed nim.
+     */
+    public static function czyPrzeterminowane(?string $wygenerowano, ?string $przeliczono): bool
+    {
+        // Nie ma przypadkow albo nie ma digestu - nie ma czego uniewazniac.
+        if ($wygenerowano === null || $przeliczono === null) {
+            return false;
+        }
+
+        $a = strtotime($wygenerowano);
+        $b = strtotime($przeliczono);
+
+        if ($a === false || $b === false) {
+            return false;
+        }
+
+        return $a < $b;
+    }
+
     public function policz(int $flowVersionId): int
     {
         return (int) (Db::one(
