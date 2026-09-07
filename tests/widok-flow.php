@@ -187,9 +187,10 @@ foreach ($przypadki as $p) {
 // ── Lista Flow ───────────────────────────────────────────────────
 // Osobno, bo liczniki ryzyk na liscie biora sie z innego miejsca niz widok
 // szczegolu: z FlowAnalyzer::podsumowania(), a nie z pelnej analizy.
-$listaHtml = $twig->render('flows.twig', [
+$daneListy = [
     'polaczona'   => true,
     'instancja'   => 'https://przyklad.my.salesforce.com',
+    'stan'        => ['wszystkie' => 3, 'pozostalo' => 1, 'gotowe' => 2, 'procent' => 67],
     'flows'       => [
         ['id' => 1, 'label' => 'RT- Flownatic_Bad_Example', 'api_name' => 'RT_Bad',
          'process_type' => 'AutoLaunchedFlow', 'trigger_object' => 'Account',
@@ -215,15 +216,24 @@ $listaHtml = $twig->render('flows.twig', [
     'blad'        => null,
     'ok'          => null,
     'u'           => ['connect' => '/org/connect', 'disconnect' => '/org/disconnect',
-                      'sync' => '/flows/sync', 'flows' => '/flows', 'wyloguj' => '/logout'],
-]);
+                      'sync' => '/flows/sync', 'flows' => '/flows', 'metadane' => '/flows/metadane',
+                      'partia' => '/flows/metadane/partia', 'stan' => '/flows/metadane/stan',
+                      'wyloguj' => '/logout'],
+];
+
+$listaHtml = $twig->render('flows.twig', $daneListy);
 
 file_put_contents($wyjscie . '/lista.html', $listaHtml);
 
 $oczekiwaneNaLiscie = [
-    'href="/flows/1"',              // nazwa jest linkiem do szczegolu
-    'metadane niepobrane',          // Flow bez wersji nie udaje przeanalizowanego
-    'czysto',                       // zero ryzyk to informacja, nie pusta komorka
+    'href="/flows/1"',                      // nazwa jest linkiem do szczegolu
+    'metadane niepobrane',                  // Flow bez wersji nie udaje przeanalizowanego
+    'czysto',                               // zero ryzyk to informacja, nie pusta komorka
+    'action="/flows/metadane"',             // import dziala takze bez JavaScriptu
+    'data-partia="/flows/metadane/partia"', // adres partii dla skryptu
+    'width:67%',                            // pasek odwzorowuje stan kolejki
+    'zostało 1',                            // licznik mowi wprost, ile brakuje
+    '<noscript>',                           // i co robic, gdy nie ma JavaScriptu
 ];
 
 $lokalne = 0;
@@ -238,6 +248,71 @@ foreach ($oczekiwaneNaLiscie as $tekst) {
 $bledy += $lokalne;
 
 printf('%-20s %s' . PHP_EOL, 'flows.twig', $lokalne === 0 ? '[OK] ' : '[BLAD]');
+
+// Kolejka pusta - przycisk nie ma czego pobierac i musi to powiedziec.
+$daneListy['stan'] = ['wszystkie' => 3, 'pozostalo' => 0, 'gotowe' => 3, 'procent' => 100];
+$pustaHtml = $twig->render('flows.twig', $daneListy);
+
+file_put_contents($wyjscie . '/lista-kolejka-pusta.html', $pustaHtml);
+
+$lokalne = 0;
+
+foreach (['Metadane pobrane', 'disabled', 'width:100%'] as $tekst) {
+    if (!str_contains($pustaHtml, $tekst)) {
+        echo '[BLAD] flows.twig (kolejka pusta) - brak: ' . $tekst . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+$bledy += $lokalne;
+
+printf('%-20s %s' . PHP_EOL, 'flows.twig/pusta', $lokalne === 0 ? '[OK] ' : '[BLAD]');
+
+// ── Trasy ────────────────────────────────────────────────────────
+// Rejestracja tras nie dotyka bazy ani API, wiec da sie ja sprawdzic tutaj.
+// Rzecz, o ktora naprawde chodzi: czy /flows/metadane/partia nie wpada
+// przypadkiem w /flows/{id}/metadane - obie sa POST i obie maja trzy segmenty.
+require_once __DIR__ . '/../app/src/Http/Routes.php';
+
+$slim = \Slim\Factory\AppFactory::create();
+\Flownatic\Http\Routes::register($slim);
+
+$kolektor = $slim->getRouteCollector();
+$lokalne  = 0;
+
+/** @var array<string,string> $rozstrzygniecia adres i metoda => oczekiwany wzorzec */
+$rozstrzygniecia = [
+    'GET /flows'                    => '/flows',
+    'GET /flows/7'                  => '/flows/{id}',
+    'GET /flows/metadane/stan'      => '/flows/metadane/stan',
+    'POST /flows/metadane'          => '/flows/metadane',
+    'POST /flows/metadane/partia'   => '/flows/metadane/partia',
+    'POST /flows/7/metadane'        => '/flows/{id}/metadane',
+    'POST /flows/sync'              => '/flows/sync',
+];
+
+foreach ($rozstrzygniecia as $zadanie => $wzorzec) {
+    [$metoda, $sciezka] = explode(' ', $zadanie, 2);
+
+    try {
+        $wynik = $slim->getRouteResolver()->computeRoutingResults($sciezka, $metoda);
+        $trafiony = $kolektor->lookupRoute((string) $wynik->getRouteIdentifier())->getPattern();
+    } catch (\Throwable $e) {
+        echo '[BLAD] trasa ' . $zadanie . ' - ' . $e->getMessage() . PHP_EOL;
+        $lokalne++;
+        continue;
+    }
+
+    if ($trafiony !== $wzorzec) {
+        echo '[BLAD] trasa ' . $zadanie . ' trafia w ' . $trafiony
+            . ', oczekiwano ' . $wzorzec . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+$bledy += $lokalne;
+
+printf('%-20s %s' . PHP_EOL, 'trasy', $lokalne === 0 ? '[OK] ' : '[BLAD]');
 
 echo PHP_EOL . ($bledy === 0
     ? 'Wszystko sie zgadza. Podglad HTML: tests/out/' . PHP_EOL

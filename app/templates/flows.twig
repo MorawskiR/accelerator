@@ -51,6 +51,48 @@
       inwentarz z org.</p>
     </div>
   {% else %}
+    {# Import metadanych partiami. Formularz działa sam z siebie — jedno
+       kliknięcie to jedna partia. JavaScript tylko go przejmuje i klika
+       za nas w pętli, pokazując postęp. #}
+    <div class="karta" id="metadane"
+         data-partia="{{ u.partia }}" data-stan="{{ u.stan }}"
+         data-pozostalo="{{ stan.pozostalo }}" data-wszystkie="{{ stan.wszystkie }}">
+      <div class="rzad">
+        <div>
+          <div class="etykieta">Metadane Flow</div>
+          <div class="przygaszone" id="metadane-opis">
+            {% if stan.wszystkie == 0 %}
+              Brak Flow w inwentarzu.
+            {% elseif stan.pozostalo == 0 %}
+              Wszystkie {{ stan.wszystkie }} Flow mają pobrane metadane.
+            {% else %}
+              Pobrane {{ stan.gotowe }} z {{ stan.wszystkie }} · zostało {{ stan.pozostalo }}
+            {% endif %}
+          </div>
+        </div>
+        <div class="akcje">
+          <form method="post" action="{{ u.metadane }}" style="margin:0" id="metadane-form">
+            <button type="submit" id="metadane-start" {% if stan.pozostalo == 0 %}disabled{% endif %}>
+              {{ stan.pozostalo == 0 ? 'Metadane pobrane' : 'Pobierz metadane' }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="postep" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+           aria-valuenow="{{ stan.procent }}" id="metadane-pasek">
+        <div class="postep-slupek" id="metadane-slupek" style="width:{{ stan.procent }}%"></div>
+      </div>
+
+      <ul class="lista" id="metadane-log" hidden style="margin-top:12px"></ul>
+
+      <noscript>
+        <p class="przygaszone" style="margin:10px 0 0">Bez JavaScriptu jedno kliknięcie pobiera
+        jedną partię (do 5 Flow). Klikaj, aż licznik dojdzie do zera — postęp jest zapisywany
+        w bazie, więc nic nie przepada.</p>
+      </noscript>
+    </div>
+
     <form method="get" action="{{ u.flows }}" class="filtry">
       <label for="typ">Typ</label>
       <select name="typ" id="typ" onchange="this.form.submit()">
@@ -126,4 +168,119 @@
     </div>
   {% endif %}
 {% endif %}
+
+<script>
+// Pasek postepu importu metadanych.
+//
+// Formularz obok dziala bez tego skryptu - jedno klikniecie to jedna partia.
+// Tutaj tylko przejmujemy go i klikamy w petli, pokazujac postep. Kazda partia
+// to osobne zadanie HTTP, wiec zadne z nich nie zbliza sie do limitu 180 s,
+// a przerwanie w polowie nie psuje niczego: stan kolejki siedzi w bazie.
+(function () {
+    var karta = document.getElementById('metadane');
+
+    if (!karta || !window.fetch) {
+        return;
+    }
+
+    var form   = document.getElementById('metadane-form');
+    var start  = document.getElementById('metadane-start');
+    var opis   = document.getElementById('metadane-opis');
+    var slupek = document.getElementById('metadane-slupek');
+    var pasek  = document.getElementById('metadane-pasek');
+    var log    = document.getElementById('metadane-log');
+
+    var MAKS_PARTII = 200;   // zabezpieczenie przed petla bez konca
+
+    function dopisz(tekst) {
+        var li = document.createElement('li');
+        li.textContent = tekst;
+        log.appendChild(li);
+        log.hidden = false;
+    }
+
+    function pokaz(stan) {
+        if (typeof stan.procent === 'number') {
+            slupek.style.width = stan.procent + '%';
+            pasek.setAttribute('aria-valuenow', stan.procent);
+        }
+
+        opis.textContent = stan.pozostalo > 0
+            ? 'Pobrane ' + stan.gotowe + ' z ' + stan.wszystkie + ' · zostalo ' + stan.pozostalo
+            : 'Wszystkie ' + stan.wszystkie + ' Flow maja pobrane metadane.';
+    }
+
+    function koniec(komunikat, udane) {
+        karta.classList.remove('pracuje');
+        start.disabled = false;
+
+        if (komunikat) {
+            dopisz(komunikat);
+        }
+
+        if (udane) {
+            // Przeladowanie, zeby tabela pokazala liczniki ryzyk dla nowych metadanych.
+            window.setTimeout(function () { window.location.reload(); }, 700);
+        } else {
+            start.textContent = 'Wznow pobieranie';
+        }
+    }
+
+    function partia(licznik) {
+        if (licznik >= MAKS_PARTII) {
+            koniec('Przerwane po ' + MAKS_PARTII + ' partiach. Kliknij, zeby wznowic.', false);
+            return;
+        }
+
+        fetch(karta.dataset.partia, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        }).then(function (odp) {
+            return odp.json().then(function (dane) {
+                return { ok: odp.ok, dane: dane };
+            });
+        }).then(function (wynik) {
+            if (!wynik.ok) {
+                koniec(wynik.dane.blad || 'Blad pobierania. Postep jest zapisany.', false);
+                return;
+            }
+
+            var dane = wynik.dane;
+            pokaz(dane);
+
+            if (dane.bledy && dane.bledy.length) {
+                dane.bledy.forEach(dopisz);
+            }
+
+            if (dane.pozostalo === 0) {
+                koniec('Gotowe. Odswiezam liste...', true);
+                return;
+            }
+
+            // Partia bez jednego pobranego Flow, a kolejka stoi w miejscu:
+            // dalsze petle powtorzylyby ten sam blad i tylko zjadly limit API.
+            if (dane.pobrane === 0 && dane.bez_zmian === 0) {
+                koniec('Import stanal - zadnego Flow nie udalo sie pobrac. '
+                    + 'Popraw przyczyne i kliknij, zeby wznowic.', false);
+                return;
+            }
+
+            partia(licznik + 1);
+        }).catch(function () {
+            // Zerwane polaczenie albo zamknieta sesja - postep i tak jest w bazie.
+            koniec('Polaczenie przerwane. Postep jest zapisany, kliknij, zeby wznowic.', false);
+        });
+    }
+
+    form.addEventListener('submit', function (zdarzenie) {
+        zdarzenie.preventDefault();
+        start.disabled = true;
+        log.innerHTML = '';
+        log.hidden = true;
+        karta.classList.add('pracuje');
+        partia(0);
+    });
+}());
+</script>
 {% endblock %}

@@ -189,6 +189,7 @@ final class Routes
             $flows  = [];
             $typy   = [];
             $ryzyka = [];
+            $stan   = ['wszystkie' => 0, 'pozostalo' => 0, 'gotowe' => 0, 'procent' => 0];
 
             if ($pol !== null) {
                 $warunki = ['connection_id = ?'];
@@ -211,6 +212,7 @@ final class Routes
                 // Liczniki ryzyk przy kazdym Flow - bez tego lista nie mowi,
                 // ktory Flow warto otworzyc jako pierwszy.
                 $ryzyka = (new FlowAnalyzer())->podsumowania((int) $pol['id']);
+                $stan   = MetadataFetcher::stanKolejki((int) $pol['id']);
             }
 
             return Twig::fromRequest($request)->render($response, 'flows.twig', [
@@ -219,6 +221,7 @@ final class Routes
                 'flows'       => $flows,
                 'typy'        => $typy,
                 'ryzyka'      => $ryzyka,
+                'stan'        => $stan,
                 'wybranyTyp'  => $typ,
                 'wybranyStan' => $stan,
                 'blad'        => self::pobierzKomunikat(),
@@ -228,9 +231,78 @@ final class Routes
                     'disconnect' => self::url($app, '/org/disconnect'),
                     'sync'       => self::url($app, '/flows/sync'),
                     'flows'      => self::url($app, '/flows'),
+                    'metadane'   => self::url($app, '/flows/metadane'),
+                    'partia'     => self::url($app, '/flows/metadane/partia'),
+                    'stan'       => self::url($app, '/flows/metadane/stan'),
                     'wyloguj'    => self::url($app, '/logout'),
                 ],
             ]);
+        })->add($auth);
+
+        // ── Metadane partiami ──────────────────────────────────────
+        // Import metadanych to N+1 wywolan API, a max_execution_time wynosi
+        // 180 s. Jedno zadanie bierze wiec ~5 Flow, a przegladarka wola je
+        // w petli. Stan kolejki siedzi w bazie, wiec zamkniecie karty w
+        // polowie niczego nie psuje - kolejne wejscie podejmuje od miejsca,
+        // w ktorym import stanal.
+
+        $app->get('/flows/metadane/stan', function (Request $request, Response $response) use ($app): Response {
+            $pol = (new OAuthService())->connection((int) $_SESSION['user_id']);
+
+            if ($pol === null) {
+                return self::json($response, ['blad' => 'Org nie jest podlaczona.'], 409);
+            }
+
+            return self::json($response, MetadataFetcher::stanKolejki((int) $pol['id']));
+        })->add($auth);
+
+        $app->post('/flows/metadane/partia', function (Request $request, Response $response) use ($app): Response {
+            $svc = new OAuthService();
+            $uid = (int) $_SESSION['user_id'];
+            $pol = $svc->connection($uid);
+
+            if ($pol === null) {
+                return self::json($response, ['blad' => 'Org nie jest podlaczona.'], 409);
+            }
+
+            try {
+                $wynik = (new MetadataFetcher($svc->apiClient($uid)))->pobierzPartie((int) $pol['id']);
+            } catch (\Throwable $e) {
+                // Przerwana partia nie cofa wczesniejszych - to, co juz zapisane,
+                // zostaje w bazie i nie bedzie pobierane drugi raz.
+                return self::json($response, ['blad' => $e->getMessage()], 500);
+            }
+
+            return self::json($response, $wynik + MetadataFetcher::stanKolejki((int) $pol['id']));
+        })->add($auth);
+
+        // Ten sam import bez JavaScriptu: jedno klikniecie to jedna partia.
+        // Wolniej, ale dziala i jest tak samo wznawialne.
+        $app->post('/flows/metadane', function (Request $request, Response $response) use ($app): Response {
+            $svc = new OAuthService();
+            $uid = (int) $_SESSION['user_id'];
+            $pol = $svc->connection($uid);
+
+            if ($pol === null) {
+                return self::zKomunikatem($response, $app, 'Najpierw podlacz org.', '/flows');
+            }
+
+            try {
+                $wynik = (new MetadataFetcher($svc->apiClient($uid)))->pobierzPartie((int) $pol['id']);
+            } catch (\Throwable $e) {
+                return self::zKomunikatem($response, $app, $e->getMessage(), '/flows');
+            }
+
+            $_SESSION['komunikat_ok'] = sprintf(
+                'Partia gotowa: %d pobranych, %d bez zmian. Pozostalo %d.',
+                $wynik['pobrane'], $wynik['bez_zmian'], $wynik['pozostalo']
+            );
+
+            if ($wynik['bledy'] !== []) {
+                $_SESSION['komunikat'] = 'Pominiete: ' . implode(' · ', $wynik['bledy']);
+            }
+
+            return $response->withHeader('Location', self::url($app, '/flows'))->withStatus(302);
         })->add($auth);
 
         // Pobranie metadanych jednego Flow. Osobno od partii, bo tester
@@ -325,6 +397,22 @@ final class Routes
         $base = rtrim($app->getBasePath(), '/');
 
         return $base . $sciezka;
+    }
+
+    /**
+     * Odpowiedz JSON dla wywolan z przegladarki.
+     *
+     * @param array<string,mixed> $dane
+     */
+    private static function json(Response $response, array $dane, int $status = 200): Response
+    {
+        $response->getBody()->write(
+            (string) json_encode($dane, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
+
+        return $response
+            ->withHeader('Content-Type', 'application/json; charset=utf-8')
+            ->withStatus($status);
     }
 
     /**

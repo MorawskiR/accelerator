@@ -117,6 +117,18 @@ a.cichy:hover{text-decoration:underline}
 @media (max-width:560px){ .para{grid-template-columns:1fr; gap:2px 0} .para dd{margin-bottom:8px} }
 .chipy{display:flex; flex-wrap:wrap; gap:7px; margin:10px 0 0}
 .pusto{color:var(--przygaszony); font-size:.9rem; margin:0}
+
+/* ── Pasek postępu importu ──────────────────────────────── */
+.postep{height:8px; border-radius:999px; background:var(--plyta2); overflow:hidden; margin:14px 0 0}
+.postep-slupek{height:100%; width:0; border-radius:999px;
+  background:linear-gradient(96deg,var(--akcent),var(--akcent2));
+  transition:width .35s ease}
+.pracuje .postep-slupek{animation:pulsuje 1.4s ease-in-out infinite}
+@keyframes pulsuje{0%,100%{opacity:1} 50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){
+  .postep-slupek{transition:none}
+  .pracuje .postep-slupek{animation:none}
+}
 .blok{margin:0 0 10px}
 .blok:last-child{margin-bottom:0}
 .blok .etykieta{margin-bottom:4px}

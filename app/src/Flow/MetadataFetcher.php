@@ -90,9 +90,13 @@ final class MetadataFetcher
      * pobraniu. Porownujemy LastModifiedDate z FlowDefinitionView, ktory mamy
      * juz w bazie - to oszczedza wywolanie API na kazdym niezmienionym Flow.
      *
+     * Statyczna, bo samo liczenie kolejki nie dotyka API - a widok listy Flow
+     * musi znac stan postepu, nie majac powodu budowac klienta Salesforce
+     * (co oznaczaloby odswiezenie tokenu przy kazdym wejsciu na strone).
+     *
      * @return list<array<string,mixed>>
      */
-    public function oczekujace(int $connectionId, ?int $limit = null): array
+    public static function oczekujace(int $connectionId, ?int $limit = null): array
     {
         $sql =
             'SELECT f.id, f.durable_id, f.api_name, f.label, f.version_number, f.last_modified_date
@@ -112,9 +116,32 @@ final class MetadataFetcher
         return Db::all($sql, [$connectionId]);
     }
 
-    public function ileOczekuje(int $connectionId): int
+    public static function ileOczekuje(int $connectionId): int
     {
-        return count($this->oczekujace($connectionId));
+        return count(self::oczekujace($connectionId));
+    }
+
+    /**
+     * Stan kolejki do paska postepu.
+     *
+     * @return array{wszystkie:int, pozostalo:int, gotowe:int, procent:int}
+     */
+    public static function stanKolejki(int $connectionId): array
+    {
+        $wszystkie = (int) (Db::one(
+            'SELECT COUNT(*) AS ile FROM flows WHERE connection_id = ?',
+            [$connectionId]
+        )['ile'] ?? 0);
+
+        $pozostalo = self::ileOczekuje($connectionId);
+        $gotowe    = max(0, $wszystkie - $pozostalo);
+
+        return [
+            'wszystkie' => $wszystkie,
+            'pozostalo' => $pozostalo,
+            'gotowe'    => $gotowe,
+            'procent'   => $wszystkie > 0 ? (int) round($gotowe / $wszystkie * 100) : 0,
+        ];
     }
 
     /**
@@ -129,7 +156,7 @@ final class MetadataFetcher
         $bezZmian = 0;
         $bledy = [];
 
-        foreach ($this->oczekujace($connectionId, $partia) as $flow) {
+        foreach (self::oczekujace($connectionId, $partia) as $flow) {
             $wynik = $this->przetworzFlow($flow, $wersje);
 
             match ($wynik['stan']) {
@@ -143,7 +170,7 @@ final class MetadataFetcher
             'pobrane'    => $pobrane,
             'bez_zmian'  => $bezZmian,
             'bledy'      => $bledy,
-            'pozostalo'  => $this->ileOczekuje($connectionId),
+            'pozostalo'  => self::ileOczekuje($connectionId),
         ];
     }
 
