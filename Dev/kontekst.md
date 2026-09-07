@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 3 ZAMKNIĘTA · Faza 4 przeredagowana na wariant bez kosztów API
+**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 4 — silnik A (generator z reguł) działa na produkcji
 
 ---
 
@@ -270,6 +270,32 @@ kolejności: Faza 4 dostaje mały, czysty opis zamiast surowego JSON-a.
 **Regresja:** R6 i R7 potwierdzone ręcznie. **R8 czeka** — wznawialność jest zaimplementowana,
 ale nie była przeklikana (zamknąć kartę w trakcie importu, wejść ponownie, sprawdzić, czy pasek
 podejmuje od miejsca zatrzymania i czy liczba Flow się nie zmienia).
+
+### Silnik A Fazy 4 działa na produkcji — 2026-09-07
+
+`GET /flows/{id}` ma sekcję **Przypadki testowe** i przycisk „Generuj testy”.
+`TemplateGenerator` instancjonuje checklistę nazwami z digestu; na realnym
+`RT- Flownatic_Bad_Example` wychodzi **16 przypadków**. Zero wywołań płatnego API.
+
+**Kluczowa zmiana porządkowa: `Generator\Framework`.** Kody TC-001…TC-026 i przypadki per typ
+Flow są przepisane z arkusza do kodu i weryfikowalne metodą `znany()`. Do tej pory wpisywaliśmy je
+z pamięci — i tak powstał błąd, który ta zmiana naprawia: `RiskScanner` odsyłał „Get Records bez
+filtrów” do **TC-020**, czyli do profilu użytkownika standardowego. Właściwy kod to **TC-010**.
+Potwierdzone na produkcji: ryzyka zwracają dziś TC-018, TC-015, RT-004, TC-010.
+
+**Gdzie żyją przypadki:** generator jest czystą funkcją i nie dotyka bazy (zero `Db::`), a zapisem
+zajmuje się `TestCaseRepository` → tabela `test_cases`, wpięta w **`flow_version_id`**, nie w `flow_id`.
+Ponowne generowanie nadpisuje wyłącznie w obrębie tego samego `source`, więc dopiski `manual` przetrwają.
+
+**Luka znaleziona przy okazji i naprawiona:** zmiana Flow w org zerowała digest i ryzyka, ale
+`test_cases` zostawały i po cichu opisywały poprzednią wersję. Widok pokazuje teraz baner
+z obiema datami. Sygnałem jest `digested_at`, **nie** `fetched_at` — to drugie odświeża się także
+przy metadanych bez zmian i fałszywie unieważniałoby listę po każdym pobraniu.
+
+Wgrane 7 plików, bez migracji — `test_cases` istnieje od `001_init.sql`. Diagnostyka na produkcyjnym
+PHP 8.4.24 potwierdziła: klasy się ładują, 15 przypadków na testowym Flow, **zero nieznanych odwołań**.
+
+**Został silnik B** — most przez schowek (`PromptBuilder`, „Kopiuj prompt”, „Wklej wynik”).
 
 ### Zanim ruszy Faza 4 — trzy rzeczy do uprzątnięcia
 
