@@ -15,90 +15,413 @@
 - [x] 🟢 Sprawdź rozszerzenia PHP — wszystkie OK, w tym krytyczny `zip`
 - [x] 🟢 Ustal drogę wgrywania plików — SSH nieużywalny, **FTPS działa**, `tools/deploy.ps1`
 - [x] 🔵 Utwórz `%USERPROFILE%\.ftp-dobo.txt` z danymi FTP (poza repo)
-- [ ] 🔵 **Subdomena `ftf.dobo.com.pl`** — DirectAdmin → Subdomeny → dodaj `ftf` do `dobo.com.pl`
-- [ ] 🔵 **Certyfikat SSL** — DirectAdmin → Certyfikaty SSL → Let's Encrypt dla `ftf.dobo.com.pl`
-- [ ] 🔵 **Baza MySQL** — utwórz bazę i użytkownika, zapisz dane
-- [ ] 🔵 **Playground org** — zaloguj się, potwierdź uprawnienia admina
-- [ ] 🔵 **Klucz Anthropic** — `ANTHROPIC_API_KEY` z console.anthropic.com
-- [ ] 🔵 **Środowisko lokalne** — zainstaluj Laragon (PHP 8.x + MySQL + Composer); obecnie **nic nie ma**
-- [ ] 🔵 **Flow w playgroundzie** — utwórz 3–5 różnych typów (Record-Triggered, Screen, Scheduled)
-- [ ] 🔵 **Jeden Flow celowo wadliwy** — DML wewnątrz Loop, bez fault path
-      *(bez tego nie ma jak udowodnić, że RiskScanner z Fazy 3 działa)*
-
+- [x] 🔵 **Subdomena `ftf.dobo.com.pl`** — ✅ 2026-08-27, vhost odpowiada HTTP 200.
+      ⚠️ DocumentRoot wyszedł jako `domains/dobo.com.pl/public_html/ftf/`, **nie** `domains/ftf.dobo.com.pl/`
+      — czyli wewnątrz `public_html` domeny głównej. Konsekwencja: `app/` **nie może** stanąć obok,
+      musi trafić poza drzewo domen (`~/flownatic-app/`). Szczegóły w `kontekst.md`, sekcja 4 punkt 7.
+- [x] 🔵 **Usuń zbędną subdomenę `ftp.dobo.com.pl`** — ✅ 2026-08-27, vhost zniknął (HTTP 403).
+      ⚠️ Zostały pliki: `domains/dobo.com.pl/public_html/ftp/` nadal istnieje i odpowiada 200
+      pod `dobo.com.pl/ftp/`. DirectAdmin kasuje pliki jako osobną opcję — patrz punkt niżej
+- [x] 🟢 **Skasuj osierocony katalog `public_html/ftp/`** — ✅ 2026-08-27, `dobo.com.pl/ftp/` zwraca 404.
+      Zamiast Menedżera plików: `deploy.ps1` dostał `-RemoveDir` (rekurencyjnie, `DELE` + `RMD`).
+      Bez `-Force` pokazuje wyłącznie plan; odmawia ścieżek krótszych niż dwa segmenty
+- [ ] 🔵 **Certyfikat SSL dla `ftf.dobo.com.pl`** — ⚪ **już nie blokuje, opcjonalne.**
+      Adresem produkcyjnym jest `https://dobo.com.pl/ftf/`, który ma ważny certyfikat.
+      Ten punkt daje wyłącznie ładniejszy adres; zrobić, jeśli certyfikat się pojawi.
+      Kontekst historyczny — stan z 2026-08-27: Wymuszanie HTTPS jest włączone (HTTP → 301),
+      ale jedyny certyfikat na serwerze to `CN=dobo.com.pl` (SAN: `dobo.com.pl`, `www.dobo.com.pl`,
+      wystawca cyber_Folks). `ftf.dobo.com.pl` nie jest nim objęte → w przeglądarce ostrzeżenie
+      o certyfikacie przed jakąkolwiek treścią. Do czasu wydania certyfikatu subdomena nie działa.
+      ✅ **Droga dla ACME sprawdzona 2026-08-27 — nic nie blokuje.** Plik testowy w katalogu
+      subdomeny serwuje się (`/probe.txt` → 200), więc `.htaccess` domeny głównej nie przeszkadza.
+      `/.well-known/` zwraca 403 (katalog istnieje), a `/.well-known/acme-challenge/` zwraca 404
+      nawet dla pliku fizycznie tam leżącego — czyli serwer **przechwytuje tę ścieżkę** i obsługuje
+      wyzwanie sam. To normalne zachowanie DirectAdmin i oznacza, że walidacja powinna przejść
+- [x] 🔵 **Baza MySQL** — ✅ 2026-08-27, połączenie zweryfikowane z produkcji.
+      MariaDB 10.6.27, baza pusta (0 tabel), użytkownik ma `ALL PRIVILEGES` na swojej bazie.
+      ⚠️ **Panel założył bazę w `utf8mb3`, nie `utf8mb4`** — mimo że o to prosiliśmy.
+      Poprawione `ALTER DATABASE` przy pustej bazie; jest `utf8mb4` / `utf8mb4_unicode_ci`.
+      Gdyby kiedyś zakładać kolejną bazę — panel prawdopodobnie znów da `utf8mb3`, sprawdzić.
+      Dane w `%USERPROFILE%\.flownatic-db.txt`, poza repo.
+      Oryginalne parametry (do wglądu): DirectAdmin → Zarządzanie kontem → Bazy danych MySQL
+      | nazwa bazy | `flownatic` → panel utworzy `qekbnopwvk_flownatic` |
+      | użytkownik | `flownatic` → `qekbnopwvk_flownatic`, pełne uprawnienia do tej bazy |
+      | hasło | wygenerowane przez panel, silne |
+      | host | `localhost` — aplikacja stoi na tym samym serwerze |
+      | **kodowanie** | **`utf8mb4` / `utf8mb4_unicode_ci`** — nie `utf8`! |
+      ⚠️ `utf8` w MySQL to trzybajtowy wariant, który **gubi emoji i część znaków** —
+      metadane Flow z Salesforce potrafią je zawierać. Zmiana kodowania po zapisaniu
+      danych jest bolesna, więc trzeba ustawić to od razu.
+      🔑 Dane zapisz w `%USERPROFILE%\.flownatic-db.txt` — **poza repozytorium**,
+      w formacie `host=` / `dbname=` / `user=` / `pass=`, tak jak `.ftp-dobo.txt`.
+      Hasło nie trafia do rozmowy ani do commita
+- [x] 🔵 **Playground org** — ✅ 2026-08-27, org odpowiada, certyfikat ważny.
+      `resilient-narwhal-j9207g-dev-ed.trailblaze.my.salesforce.com`
+      API do **v67.0 (Summer '26)** — zgodne z tym, co zakłada `plan.md`.
+      ✅ Profil **System Administrator** potwierdzony 2026-08-27 — Connected App w Fazie 2
+      jest wykonalna
+- [x] 🔵 **Klucz Anthropic** — ✅ 2026-08-28, klucz utworzony i **ważny**.
+      `GET /v1/models` zwraca 200, `claude-opus-5` jest na liście dostępnych modeli.
+      Przechowywany w `%USERPROFILE%\.flownatic-anthropic.txt`, poza repo.
+- [x] 🔵 **Środowisko lokalne** — ✅ 2026-08-28, Laragon w `C:\laragon`.
+      Jest Composer, MySQL, Apache, Node, HeidiSQL. Laragon dodany do PATH.
+      ⚠️ **Zainstalowany PHP to 8.3.33, nie 8.4** — `bin/php/` zawiera tylko tę wersję,
+      więc przełącznik w menu nie miał czego zaoferować. Produkcja stoi na **8.4.21**.
+      Nie blokuje: `composer.json` ma `config.platform.php = 8.4.21`, więc Composer
+      rozwiązuje zależności pod PHP produkcji niezależnie od wersji lokalnej.
+      Różnica dotyczy wyłącznie lokalnego uruchamiania kodu.
+- [ ] ⏸️ **Opcjonalnie: PHP 8.4 lokalnie — ODLOZONE, decyzja 2026-08-28.**
+      Pierwotny cel (zgodnosc z produkcja przy budowaniu `vendor/`) **odpadl**: Composer
+      rozwiazuje zaleznosci pod 8.4.21 dzieki `config.platform.php`, a autoloader zostal
+      zweryfikowany **na produkcji**, pod prawdziwym PHP 8.4.21.
+      Zostaje jedna realna roznica: **PHP 8.4 uznaje za przestarzale niejawnie nullowalne
+      parametry** (`f(Foo $x = null)`). Na 8.3 przechodzi cicho, na 8.4 sypie ostrzezeniami.
+      Tansze lekarstwo niz drugi PHP: **pisac jawne `?Typ` od poczatku** — i tak lepszy styl,
+      a `composer.json` deklaruje `php ^8.2`, wiec kod ma byc zgodny z szerszym zakresem.
+      Lokalne 8.3 dziala przy okazji jak straznik: skladnia dostepna tylko w 8.4 wywali sie
+      od razu, zamiast przejsc lokalnie i zaskoczyc na produkcji.
+      **Wrocic, gdy:** trafimy na zachowanie rozniace sie miedzy wersjami, albo w Fazie 6,
+      gdzie mierzymy realne czasy i srodowisko powinno odpowiadac produkcji co do wersji.
+- [x] 🔵 **Flow w playgroundzie** — ✅ 2026-08-29, wszystkie cztery typy pokryte.
+      **Wzorzec do porównania w Fazie 2** — inwentarz w apce ma zwrócić dokładnie te pozycje:
+      | # | Nazwa | Typ |
+      |---|---|---|
+      | 1 | `SF-Create Case for Contact` | Screen Flow |
+      | 2 | `SF-Add Contact` | Screen Flow |
+      | 3 | `AL-Closed Won Opportunities` | Autolaunched |
+      | 4 | `SCH- Task on not closed opp` | Scheduled |
+      | 5 | `RT-Currency change` | Record-Triggered |
+      ⚠️ Nazwy przepisane od Rafała, **niezweryfikowane przez API** — spike OAuth nie był
+      jeszcze uruchomiony. Przy pierwszym imporcie sprawdzić pisownię, zwłaszcza spację
+      w `SCH- Task` i wielkość liter — API zwraca `DeveloperName` bez spacji i myślników.
+- [x] 🔵 **Jeden Flow celowo wadliwy** — ✅ 2026-08-31, utworzony przez Rafała.
+      Nazwa **do potwierdzenia przy pierwszym imporcie** — nie została podana, a bez OAuth
+      nie da się jej odczytać z API.
+      To on jest dowodem, że `RiskScanner` z Fazy 3 cokolwiek wykrywa. Kryterium
+      „Gotowe, gdy” Fazy 3 brzmi: **na tym Flow zapalają się „DML w pętli”
+      i „brak fault path”**. Reguły, których szuka skaner:
+      1. DML wewnątrz pętli → `Too many DML statements: 151`
+      2. DML bez fault path → TC-015
+      3. After Save bez entry criteria → ryzyko rekursji, RT-004
+      4. `Get Records` bez filtrów → nadmiar rekordów
+      ⚠️ Jeśli któraś z wad nie znalazła się w Flow, przetestujemy tylko część skanera.
+      Sprawdzić to przy pierwszym uruchomieniu Fazy 3 i w razie potrzeby dorobić.
 ---
 
 ## FAZA 1 — Szkielet aplikacji i deploy
 
 - [x] 🟢 `tools/deploy.ps1` — wgrywanie przez FTPS (`-Test`, `-ListPath`, `-LocalFile`, `-LocalDir`, `-DeleteRemote`, `-RenameFrom`/`-RenameTo`)
 - [x] 🟢 Strona-wizytówka `site/index.html` na `dobo.com.pl` — dowód, że cała ścieżka deployu działa
-- [ ] 🟢 `composer.json` + instalacja zależności lokalnie (Slim 4, Twig, PhpSpreadsheet, anthropic-ai/sdk)
-- [ ] 🟢 `public_html/index.php` — front controller
-- [ ] 🟢 `public_html/.htaccess` — `RewriteRule ^ index.php [QSA,L]`
-- [ ] 🟢 `app/.htaccess` — `Require all denied` (druga linia obrony)
-- [ ] 🟢 `app/src/Support/Config.php` — odczyt `.env`
-- [ ] 🟢 `app/src/Support/Db.php` — PDO
-- [ ] 🟢 `app/src/Support/Crypto.php` — AES-256-GCM na tokeny Salesforce
-- [ ] 🟢 `app/src/Http/Routes.php` + `AuthMiddleware.php`
-- [ ] 🟢 `app/db/migrations/001_init.sql` + `app/bin/migrate.php`
-- [ ] 🟢 `app/templates/` — `layout.twig`, `login.twig`, `dashboard.twig`
-- [ ] 🟢 `.env.example` do repo · 🔵 prawdziwy `.env` tylko lokalnie i na serwerze
-- [ ] 🟢 `deploy.md` — spisana procedura wgrywania
-- [ ] **Gotowe, gdy:** `https://ftf.dobo.com.pl` → logowanie → dashboard
+- [x] 🟢 `composer.json` + instalacja zależności — ✅ 2026-08-28.
+      Slim 4.15.2, slim/psr7 1.8.0, slim/twig-view 3.4.1, twig 3.28.0,
+      PhpSpreadsheet 5.9.0, anthropic-ai/sdk 0.44.0. Autoloader sprawdzony **na produkcji**:
+      wszystkie klasy się ładują, PHP 8.4.21, `zip` obecny.
+- [x] 🟢 **`deploy.ps1 -UploadZip`** — deploy `vendor/` przez archiwum zamiast plik po pliku.
+      3738 plików → 4,3 MB w jednym transferze, rozpakowanie na serwerze **1,4 s** przy limicie 180 s.
+      Bez tego ten sam deploy trwałby 16–60 minut. `vendor/` leży w `~/flownatic-app/`,
+      poza `domains/` — sprawdzone, że nie da się go otworzyć z przeglądarki.
+- [x] 🟢 `public_html/index.php` — ✅ 2026-08-31. Szuka katalogu aplikacji w dwóch miejscach
+      (`app/` obok lokalnie, `~/flownatic-app/` na serwerze), base path wyliczany ze `SCRIPT_NAME`,
+      więc ten sam plik działa w korzeniu i w podkatalogu `/ftf`.
+- [x] 🟢 `public_html/.htaccess` — ✅ 2026-08-31. Rewrite do front controllera, **kanoniczne 301**
+      z `ftf.dobo.com.pl` na `dobo.com.pl/ftf/`, `Options -Indexes`, blokada serwowania
+      `.env`/`.sql`/`.log`, nagłówki `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`.
+- [x] 🟢 `app/.htaccess` — ✅ 2026-08-31, `Require all denied` jako druga linia obrony.
+- [x] 🟢 `app/src/Support/Config.php` — ✅ 2026-08-31. Bez `phpdotenv`, ta sama ścieżka lokalnie
+      i na serwerze. **13 testów**, w tym `=` w wartości, `#` w cudzysłowie, wcięcia, wyjątki.
+- [x] 🟢 `app/src/Support/Db.php` — ✅ 2026-08-31. PDO, wyjątki, prawdziwe prepared statements,
+      `utf8mb4`. **9 testów na prawdziwej bazie**, w tym odporność na wstrzyknięcie SQL i emoji.
+- [x] 🟢 `app/src/Support/Crypto.php` — ✅ 2026-08-31. AES-256-GCM. **12 testów**, w tym wykrywanie
+      podmiany szyfrogramu, podmiany taga, obcego klucza i złego `APP_KEY`.
+- [x] 🟢 `app/src/Http/Routes.php` + `AuthMiddleware.php` — ✅ 2026-08-31. Logowanie z CSRF,
+      `session_regenerate_id`, jednakowy komunikat przy złym loginie i haśle, trasa `/health`.
+- [x] 🟢 `app/db/migrations/001_init.sql` + `app/bin/migrate.php` — ✅ 2026-08-31. Sześć tabel
+      plus rejestr migracji, przenośny SQL (MySQL lokalnie, MariaDB na produkcji), tryby
+      `--status` i `--dry-run`. **10 testów** na łańcuchu user → połączenie → flow → wersja → TC.
+- [x] 🟢 `app/templates/` — ✅ 2026-08-31, `layout.twig`, `login.twig`, `dashboard.twig`.
+      Dashboard jawnie wypisuje, czego jeszcze nie ma, zamiast udawać gotową aplikację.
+- [x] 🟢 `.env.example` do repo — ✅ 2026-08-31, komplet kluczy aż do Fazy 4.
+      🔵 prawdziwy `.env` tylko lokalnie i na serwerze, nigdy w commicie.
+- [x] 🟢 **Nieplanowane, ale potrzebne:** `app/bin/genkey.php` (generuje `APP_KEY`)
+      oraz `app/bin/adduser.php` (zakłada konto z CLI — rejestracji przez formularz nie ma,
+      bo aplikacja stoi pod publicznym adresem).
+- [x] 🟢 `deploy.md` — ✅ 2026-08-31, spisany **po** pierwszym realnym wdrożeniu,
+      nie z planu. Zawiera pułapki, które faktycznie wystąpiły: placeholder `index.html`
+      serwowany przed `index.php`, konieczność budowania paczki bez lokalnego `.env`
+      oraz uruchamianie migracji bez powłoki. Lista kontrolna po wdrożeniu.
+- [x] 🟢 `app/src/Support/Migrator.php` — logika migracji wyciągnięta z CLI,
+      bo na serwerze nie ma powłoki i te same migracje trzeba uruchomić przez HTTP.
+      Przetestowana na pustej bazie: 7 tabel, idempotencja działa.
+- [x] **Gotowe, gdy:** ✅ **2026-08-31 — FAZA 1 ZAMKNIĘTA.**
+      `https://dobo.com.pl/ftf/` → logowanie → dashboard, `APP_ENV=production`.
+      Zweryfikowane na produkcji: `/health` zwraca PHP 8.4.21 i `"baza":"tak"`,
+      niezalogowany dostaje 302 na `/login`, złe hasło odrzucone, poprawne wpuszcza
+      na dashboard z e-mailem użytkownika. Bezpieczeństwo: wszystkie skrypty jednorazowe
+      zwracają 404, `.env` i listowanie katalogów 403, trzy nagłówki bezpieczeństwa
+      obecne, wizytówka na `dobo.com.pl` nietknięta.
 
 ---
 
 ## FAZA 2 — OAuth do Salesforce i inwentarz Flow
 
-- [ ] 🔵 **Connected App** w playgroundzie — OAuth 2.0 Web Server Flow **z PKCE**,
-      callback `https://ftf.dobo.com.pl/oauth/callback`, scopes: `api`, `refresh_token`, `offline_access`
-- [ ] 🟢 `app/src/Salesforce/OAuthService.php` — authorize → callback → tokeny zaszyfrowane w bazie
-- [ ] 🟢 Automatyczny refresh tokenu przy `401` / `INVALID_SESSION_ID`
-- [ ] 🟢 `app/src/Salesforce/ApiClient.php` — cURL z retry, wspólny dla REST i Tooling
-- [ ] 🟢 **Najpierw** `describe` na `FlowDefinitionView` — sprawdzić realne nazwy pól, nie zgadywać
-- [ ] 🟢 Pobranie inwentarza Flow → tabela `flows`
-- [ ] 🟢 Widok listy Flow z filtrem po typie i statusie
-- [ ] 🟢 Czytelny komunikat przy rozłączonej org (nie błąd 500)
-- [ ] **Gotowe, gdy:** lista Flow w apce zgadza się z Setup → Process Automation → Flows
+> **⏸️ Faza nie rozpoczęta.** Zaczynamy dopiero po zamknięciu kryterium „Gotowe, gdy" Fazy 1.
+> Wyjątkiem jest spike poniżej: kod powstał 2026-08-28, żeby zawczasu zdjąć ryzyko z OAuth,
+> ale **nie został uruchomiony** i świadomie czeka na tę fazę.
+
+- [x] 🟢 **Spike OAuth — kod napisany** (2026-08-28), `tools/sf-oauth/sfoauth.php`.
+      Samodzielny skrypt bez Composera, więc uruchomi się mimo braku Laragona.
+      Sprawdza PKCE, obecność `refresh_token`, **`describe` na `FlowDefinitionView`**
+      (realne nazwy pól zamiast zgadywania) i liczbę Flow w org.
+      ⚠️ **Nieuruchomiony i niezweryfikowany** — brak lokalnego PHP, więc nawet składnia
+      nie została sprawdzona maszynowo, tylko strukturalnie.
+- [x] 🔵 **External Client App** — ✅ 2026-08-31, `Flownatic POC`. Działa, potwierdzone
+      przejściem spike'a: PKCE, dwa Callback URL, scopes `api` i `refresh_token`.
+      Consumer Key i Secret w `%USERPROFILE%\.flownatic-sf.txt`, poza repo.
+      Oryginalna instrukcja (na wypadek zakładania od nowa) — OAuth 2.0 Web Server Flow **z PKCE**.
+      Setup → wyszukaj `external client` → **External Client App Manager** → New.
+      Dwa Callback URL: `https://dobo.com.pl/ftf/sfoauth.php` (spike) oraz
+      `https://dobo.com.pl/ftf/oauth/callback` (aplikacja).
+      Scopes: `api`, `refresh_token`, `offline_access`. Instrukcja: `tools/sf-oauth/README.md`.
+      ⚠️ Salesforce propaguje nową aplikację **do 30 minut**.
+- [x] 🟢 **Uruchom spike** — ✅ 2026-08-31, **OAuth przeszedł**.
+      PKCE (S256) działa, wrócił **`refresh_token`** — automatyczne odnawianie sesji
+      w tej fazie zadziała. `scope: refresh_token api`, token_type Bearer.
+      `describe` zwrócił **34 pola** `FlowDefinitionView` → `Dev/reference/flowdefinitionview.md`.
+      ⚠️ Do zrobienia: skasować `sfoauth.php` i `sf-oauth.php` z serwera.
+- [x] 🟢 `app/src/Salesforce/OAuthService.php` — ✅ 2026-08-31. Web Server Flow z PKCE,
+      napisany **na podstawie przepływu, który faktycznie przeszedł** w spike'u, nie w ciemno.
+      Tokeny trafiają do bazy wyłącznie zaszyfrowane. **20 testów** na prawdziwej bazie:
+      `code_challenge` to faktyczny SHA256 z weryfikatora, zły `state` odrzucony,
+      `org_id` wyciągnięty z identity URL, token w bazie nieczytelny i odszyfrowywalny,
+      brak `refresh_token` w odpowiedzi wykryty od razu z podpowiedzią o scope.
+- [x] 🟢 Automatyczny refresh tokenu przy `401` / `INVALID_SESSION_ID` — ✅ 2026-08-31.
+      `ApiClient` wykrywa wygaśnięcie i woła `OAuthService::refresh()`, po czym powtarza
+      żądanie nowym tokenem. **Odwołany refresh token daje `null`, nie wyjątek** —
+      to nie awaria aplikacji, tylko sygnał „połącz org ponownie”.
+      Świadomie **nie zapisujemy czasu wygaśnięcia**: Salesforce nie zwraca `expires_in`
+      dla tego przepływu, a długość sesji to ustawienie org. Zamiast zgadywać — reagujemy.
+- [x] 🟢 `app/src/Salesforce/ApiClient.php` — ✅ 2026-08-31. cURL z retry, wspólny dla
+      REST i Tooling. Transport wydzielony do interfejsu `HttpTransport`, żeby dało się
+      przetestować **bez żywej org** — inaczej logika ponawiania wyszłaby dopiero w połowie
+      importu Flow. **15 testów** na atrapie: odświeżenie tokenu przy 401/`INVALID_SESSION_ID`
+      i powtórzenie z nowym tokenem, brak zapętlenia przy drugim 401, **brak ponawiania
+      przy 400/403/404** (oszczędza limit API playgrounda), ponawianie przy 5xx i 429,
+      czytelny komunikat z `errorCode` zamiast surowego JSON-a.
+- [x] 🟢 **`describe` na `FlowDefinitionView`** — ✅ 2026-08-31. Opłaciło się:
+      **trzy rozbieżności** wobec schematu z Fazy 1, poprawione migracją `002`.
+      1. `ActiveVersionId`/`LatestVersionId` to **identyfikatory (string)**, nie numery
+         wersji — miałem je jako `INT`. Numer to osobne pole `VersionNumber`.
+      2. Brakowało **`RecordTriggerType`** (Create/Update/Delete) — bez niego nie
+         odróżnimy Flow przy tworzeniu od tego przy aktualizacji, a to inne przypadki testowe.
+      3. Brakowało `DurableId` (stabilna tożsamość), `Description` (zasila prompt Fazy 4)
+         i `LastModifiedDate` (pomijanie niezmienionych Flow bez pobierania metadanych).
+      Zapytanie bazowe SOQL zapisane w `Dev/reference/flowdefinitionview.md`.
+- [x] 🟢 Pobranie inwentarza Flow → tabela `flows` — ✅ 2026-08-31, `Flow\FlowImporter`.
+      SOQL oparty na **realnych polach** z `describe`, nie na dokumentacji.
+      **Paginacja** przez `nextRecordsUrl` — bez niej import po cichu urwałby się na 2000
+      rekordach; playground ma ich kilka, ale realna org może mieć setki.
+      Filtr `IsTemplate = false AND ManageableState = 'unmanaged'` odsiewa szablony
+      i pakiety zarządzane — nie testujemy cudzego kodu, a każdy zbędny rekord to
+      zmarnowany limit API przy pobieraniu metadanych w Fazie 3.
+      **Zniknięte Flow są oznaczane, nie kasowane** — kaskada zabrałaby ze sobą
+      wygenerowane przypadki testowe. **13 testów**, w tym paginacja, brak duplikatów
+      przy ponownym imporcie i konwersja daty ISO na format MySQL.
+- [x] 🟢 Widok listy Flow z filtrem po typie i statusie — ✅ 2026-08-31, `flows.twig`.
+      Trasy: `/org/connect`, `/oauth/callback`, `/org/disconnect`, `/flows`, `/flows/sync`.
+      Filtry sprawdzone na danych: typ `Flow` zwraca 2 z 6, „nieaktywne” zwraca 1.
+      `RecordTriggerType` widoczny w kolumnie wyzwalacza.
+- [x] 🟢 Czytelny komunikat przy rozłączonej org — ✅ 2026-08-31, **nie błąd 500**.
+      Sprawdzone: import bez podłączonej org daje 302 i komunikat „Najpierw podlacz org.”.
+      Każdy wyjątek z `ApiClient`/`OAuthService` jest przechwytywany i pokazywany
+      użytkownikowi — wygasły refresh token, cofnięty dostęp czy błąd SOQL kończą się
+      zdaniem na ekranie, a nie stroną błędu.
+- [x] **Gotowe, gdy:** ✅ **2026-09-01 — FAZA 2 ZAMKNIĘTA.**
+      Import na żywej org zwrócił **9 Flow** z kompletem pól: typ, obiekt wyzwalający,
+      `TriggerType`, `RecordTriggerType`, wersja i stan.
+      Filtr działa jak zamierzono: z **79** Flow w org odsiał 70 pozycji z pakietów
+      zarządzanych i szablonów Salesforce, zostawiając 9 należących do org.
+      To więcej niż pięć utworzonych ręcznie, bo doszły: `RT- Acount queue`
+      oraz dwie ankiety zakładane przez Salesforce automatycznie
+      (`Customer Satisfaction`, `Net Promoter Score`).
+      Dane potwierdzają poprawność migracji `002` — `RecordTriggerType` wypełniony
+      (`Create`, `Update`, `CreateAndUpdate`), a `RT-Currency change` ma
+      `RecordBeforeSave`, co odróżnia go od pozostałych.
 
 ---
 
 ## FAZA 3 — Metadane Flow i Flow Digest
 
-- [ ] 🟢 `app/src/Flow/MetadataFetcher.php` — `Flow.Metadata` po jednym rekordzie (ograniczenie API)
-- [ ] 🟢 Cache po `metadata_hash` — nie odpytywać niezmienionych Flow
-- [ ] 🟢 **Import partiami** (~5 Flow na żądanie) — wymuszone przez `max_execution_time = 180 s`
-- [ ] 🟢 Pasek postępu odpytywany AJAX-em, import wznawialny po przerwaniu
-- [ ] 🟢 **`app/src/Flow/DigestBuilder.php`** — najważniejszy plik w projekcie:
-  - [ ] typ i trigger (obiekt, before/after save, create/update/delete)
-  - [ ] entry criteria w czytelnej formie
-  - [ ] `decisions` — gałęzie z warunkami
-  - [ ] operacje DML — co, na czym
-  - [ ] pętle + flaga „DML wewnątrz pętli"
-  - [ ] dla każdego elementu: czy ma `faultConnector`
-  - [ ] ekrany, pola, walidacje (Screen Flow)
-- [ ] 🟢 **`app/src/Flow/RiskScanner.php`** — reguły deterministyczne, zero AI:
-  - [ ] DML w pętli → `Too many DML statements: 151`
-  - [ ] DML bez fault path → TC-015
-  - [ ] After Save bez entry criteria → ryzyko rekursji (RT-004)
-  - [ ] `Get Records` bez filtrów → nadmiar rekordów
-- [ ] 🟢 Widok struktury Flow + lista wykrytych ryzyk
-- [ ] **Gotowe, gdy:** na celowo zepsutym Flow zapala się „DML w pętli" i „brak fault path"
+- [x] 🟢 `app/src/Flow/MetadataFetcher.php` — ✅ 2026-09-01. N+1 wywołań, bo API inaczej nie pozwala
+      (potwierdzone komunikatem `MALFORMED_QUERY`). Lista wersji **bez** pola `Metadata` idzie
+      jednym zapytaniem — ograniczenie dotyczy wyłącznie `Metadata` i `FullName`.
+- [x] 🟢 Cache po `metadata_hash` — ✅ 2026-09-01, **dwustopniowy**: najpierw `LastModifiedDate`
+      z inwentarza (zero wywołań API na niezmienionych Flow), potem `sha256` metadanych.
+      Niezmieniony Flow dostaje tylko nowy `fetched_at` — digest i ryzyka zostają.
+- [x] 🟢 **Import partiami** — ✅ 2026-09-01, domyślnie 5 Flow na żądanie, wznawialny.
+      `oczekujace()` wybiera Flow bez zapisanej wersji albo zmienione po ostatnim pobraniu.
+- [x] 🟢 Pasek postępu odpytywany AJAX-em, import wznawialny po przerwaniu — ✅ 2026-09-07.
+      Trzy trasy: `POST /flows/metadane/partia` (JSON, jedna partia), `GET /flows/metadane/stan`
+      (stan kolejki) i `POST /flows/metadane` — **wariant bez JavaScriptu**, gdzie jedno
+      kliknięcie to jedna partia. Skrypt tylko przejmuje ten formularz i klika w pętli.
+  - [x] Wznawialność: stan kolejki siedzi w bazie (`oczekujace()`), więc zamknięcie karty
+        w połowie niczego nie psuje — kolejne wejście podejmuje od miejsca zatrzymania
+  - [x] Zatrzymanie na braku postępu: partia bez ani jednego pobranego Flow kończy pętlę,
+        zamiast powtarzać ten sam błąd 200 razy i zjadać limit API playgrounda
+  - [x] `MetadataFetcher::stanKolejki()` + `oczekujace()`/`ileOczekuje()` jako statyczne —
+        liczenie kolejki nie dotyka API, więc lista Flow nie musi budować klienta Salesforce
+        (a więc i odświeżać tokenu) przy każdym wejściu na stronę
+- [x] 🟢 `app/src/Flow/DigestBuilder.php` — ✅ 2026-09-01, 415 linii.
+      Na realnych metadanych: **4375 B → 1180 B**. Sednem jest przejście grafu od
+      `nextValueConnector` — tylko ono odróżnia DML **w** pętli od DML **po** pętli:
+  - [x] typ i trigger (obiekt, before/after save, create/update/delete)
+  - [x] entry criteria w czytelnej formie
+  - [x] `decisions` — gałęzie z warunkami
+  - [x] operacje DML — co, na czym
+  - [x] pętle + flaga „DML wewnątrz pętli"
+  - [x] dla każdego elementu: czy ma `faultConnector`
+  - [x] ekrany, pola, walidacje (Screen Flow)
+- [x] 🟢 `app/src/Flow/RiskScanner.php` — ✅ 2026-09-01, cztery reguły, zero AI.
+      Każde ryzyko wskazuje element, pozycję checklisty, skutek, sposób naprawy
+      **i sposób przetestowania**:
+  - [x] DML w pętli → `Too many DML statements: 151`
+  - [x] DML bez fault path → TC-015
+  - [x] After Save bez entry criteria → ryzyko rekursji (RT-004)
+  - [x] `Get Records` bez filtrów → nadmiar rekordów
+- [x] 🟢 Widok struktury Flow + lista wykrytych ryzyk — ✅ 2026-09-07.
+      `GET /flows/{id}`: ryzyka przed strukturą (to one są powodem wejścia), a niżej wyzwalacz,
+      operacje zapisu, pobrania, pętle, decyzje, ekrany i zmienne. Lista Flow dostała link
+      w nazwie i kolumnę z licznikami ryzyk.
+  - [x] `app/src/Flow/FlowAnalyzer.php` — **brakujące ogniwo**: `MetadataFetcher` zapisywał tylko
+        surowe metadane i zerował `digest_json`/`risks_json`, a nic ich nie liczyło.
+        Liczy leniwie (przy oglądaniu, nie przy imporcie — import ma twarde 180 s) i zapisuje,
+        bo Faza 4 wysyła digest do modelu, a Faza 5 eksportuje ryzyka do .xlsx
+  - [x] `MetadataFetcher::pobierzJeden()` — pobranie metadanych jednego Flow z pominięciem
+        kolejki partii; `pobierzPartie()` i ono dzielą teraz `przetworzFlow()`
+  - [x] Teksty ryzyk z polskimi znakami — trafiają wprost na ekran i do eksportu z Fazy 5
+- [x] 🟢 `tests/widok-flow.php` — ✅ 2026-09-07. Renderuje `flow.twig` na czterech fixture'ach
+      bez bazy i bez org (`php tests/widok-flow.php`). Pilnuje obu ryzyk z kryterium poniżej
+      **oraz braku fałszywych alarmów** na `po-petli.json` i `czysty.json`. Podgląd: `tests/out/`
+  - [x] lista Flow w dwóch stanach: import w toku (pasek na 67%) i kolejka pusta
+  - [x] rozstrzyganie tras — czy `/flows/metadane/partia` nie wpada w `/flows/{id}/metadane`;
+        obie są POST i obie mają trzy segmenty, więc kolizja byłaby cicha
+- [x] 🟢 **Deploy Fazy 3 na produkcję** — ✅ 2026-09-07. Decyzja Rafała: **pomijamy UAT ten jeden
+      raz**, żeby zobaczyć efekt od razu; UAT stawiamy przed Fazą 4 (procedura w `deploy.md`, sekcja 8).
+      Wgrane 9 plików w kolejności bezpiecznej dla żądań w locie: najpierw 4 klasy `Flow/`,
+      potem 3 szablony, na końcu `Routes.php` i `index.php`. Bez migracji — kolumny istnieją
+      od `001_init.sql`. `vendor/` bez zmian.
+  - [x] `/ftf/flows/1` i `/ftf/flows/metadane/stan` zwracają **302 na login** zamiast 404,
+        a nieistniejąca ścieżka nadal 404 — trasy żyją
+  - [x] Diagnostyka na produkcyjnym **PHP 8.4.24** (lokalnie jest 8.3): cztery klasy się ładują,
+        szablony na miejscu, cache Twiga zapisywalny, a `DigestBuilder` + `RiskScanner` zwracają
+        na testowym Flow dokładnie `dml_w_petli`, `dml_bez_fault_path`, `after_save_bez_kryteriow`.
+        Plik skasowany zaraz po odczycie (`/ftf/_check-faza3.php` → 404)
+- [x] **Gotowe, gdy:** na celowo zepsutym Flow zapala się „DML w pętli" i „brak fault path"
+      ✅ **2026-09-07 potwierdzone w przeglądarce na produkcji.** Rafał zalogował się na
+      `https://dobo.com.pl/ftf/`, pobrał metadane i otworzył `RT- Flownatic_Bad_Example`:
+      **„Wykryte ryzyka (5) — 3 × wysokie, 2 × średnie"**, zgodnie z oczekiwaniem.
+      Te liczby składają się tylko w jeden sposób: DML w pętli ×2 i After Save bez kryteriów
+      (wysokie) plus brak fault path ×2 (średnie) — reguła After Save zgłasza najwyżej jedno ryzyko.
 
 ---
 
-## FAZA 4 — Warstwa AI
+## ✅ FAZA 3 ZAMKNIĘTA — 2026-09-07
 
-- [ ] 🟢 `composer require anthropic-ai/sdk`
-- [ ] 🟢 `app/src/Ai/Prompts/system_checklist.md` — TC-001…TC-026 + reguły SF + format wyjścia
-- [ ] 🟢 `app/src/Ai/TestCaseGenerator.php` — model `claude-opus-5`
-- [ ] 🟢 **Prompt caching** — `cacheControl` na bloku `system`, Flow Digest w `messages`
-- [ ] 🟢 **Structured outputs** — JSON Schema, bez parsowania markdownu
-- [ ] 🟢 **Nie ustawiać** `thinking` ani `budgetTokens` (na Opus 5 zwraca 400)
-- [ ] 🟢 Guard na `stopReason === 'refusal'`
-- [ ] 🟢 Mapowanie: `checklist_ref` → TC-001…TC-026, prefiksy `RT-`/`SF-`/`SCH-`/`AL-`
-- [ ] 🟢 Ryzyka z `RiskScanner` jako **obowiązkowe do pokrycia** w promptcie
-- [ ] 🟢 Zapis kosztu w `generation_runs`
-- [ ] **Gotowe, gdy:** dla Record-Triggered Flow dostajemy TC na trigger, każdą gałąź Decision, bulk 200, brak fault path
+Analizator Flow działa na żywej org: pobiera metadane partiami, sprowadza je do digestu,
+wykrywa ryzyka regułami i pokazuje jedno i drugie w przeglądarce. **Zero AI** — to wszystko
+jest deterministyczne i powtarzalne. Faza 4 dostaje gotowy, mały opis zamiast surowego JSON-a.
+
+Regresja: **R6 i R7 potwierdzone ręcznie** na produkcji. **R8** (import przerwany w połowie da się
+wznowić i nie duplikuje danych) jest zaimplementowany i pokryty testem tras, ale **nie był jeszcze
+przeklikany** — do sprawdzenia przy najbliższej okazji: zamknąć kartę w trakcie pobierania metadanych,
+wejść ponownie i zobaczyć, czy pasek podejmuje od miejsca zatrzymania, a liczba Flow się nie zmienia.
+
+---
+
+## FAZA 4 — Generator przypadków testowych (bez kosztów API)
+
+> **Decyzja z 2026-09-07 — Rafał: projekt ma działać bez kosztów.** Doładowanie konta Anthropic
+> wypada z planu. ⚠️ Nie wracać do pomysłu „użyjemy subskrypcji": **subskrypcja Claude i kredyty
+> API to dwa osobne rozliczenia**, a aplikacja PHP wołająca `/v1/messages` obciąża kredyty API
+> niezależnie od sposobu uwierzytelnienia. Uzasadnienie i pełny kształt fazy: `plan.md`.
+
+- [x] 🔵 ~~Doładuj konto Anthropic~~ — **anulowane 2026-09-07**, patrz wyżej
+
+### Wspólny interfejs
+
+- [x] 🟢 `app/src/Generator/TestCaseSource.php` — ✅ 2026-09-07. Do tego `Generator/Framework.php`:
+      **kody TC-001…TC-026 i przypadki per typ Flow przepisane z arkusza**, z metodą `znany()`.
+      ⚠️ Sprawdzenie tych kodów przy realnym arkuszu wykazało **błąd w Fazie 3**: `RiskScanner`
+      odsyłał „Get Records bez filtrów” do `TC-020`, czyli do profilu użytkownika standardowego.
+      Właściwy kod to `TC-010`. Poprawione — **błąd jest na produkcji od deployu 2026-09-07**
+- [x] 🟢 `app/src/Generator/TestCaseRepository.php` — ✅ 2026-09-07. Nadpisuje **wyłącznie w obrębie
+      tego samego źródła**, więc dopiski testera (`manual`) przetrwają każde ponowne generowanie.
+      Całość w transakcji — połowa kompletu byłaby gorsza niż brak
+
+### Silnik A — `TemplateGenerator` (domyślny, deterministyczny, koszt 0)
+
+- [x] 🟢 `app/src/Generator/TemplateGenerator.php` — ✅ 2026-09-07. Na realnym
+      `RT- Flownatic_Bad_Example`: **16 przypadków**
+- [x] 🟢 Treści kroków — ✅ 2026-09-07. **Zostały w `TemplateGenerator`, bez osobnego `szablony.php`**:
+      każdy szablon jest kilkulinijkowy i czyta się razem z regułą, która go wybiera. Osobny plik
+      rozdzielałby te dwie rzeczy bez zysku
+  - [x] TC na każdą operację wyzwalacza (Create / Update / Delete)
+  - [x] TC „rekord spełnia kryteria wejścia" i „nie spełnia"
+  - [x] TC na każdą gałąź `decyzje[].galezie` + gałąź domyślną, z warunkiem w krokach
+  - [x] TC bulk na 200 rekordów, gdy digest pokazuje DML w pętli
+  - [x] TC na wymuszony błąd zapisu, gdy DML nie ma fault path
+  - [x] TC na duży wolumen, gdy `Get Records` jest bez filtrów
+  - [x] TC na walidację pól wymaganych ekranu
+  - [x] TC na rekursję przy After Save bez kryteriów
+- [x] 🟢 Prefiks kodu wg typu Flow: `RT-` / `SF-` / `SCH-` / `AL-`
+- [x] 🟢 Pole `jak_testowac` z `RiskScanner` wchodzi wprost w kroki — **po to je pisaliśmy w Fazie 3**
+- [x] 🟢 Przycisk **„Generuj testy"** na widoku Flow + lista TC pod ryzykami
+- [x] 🟢 **Ostrzeżenie o nieaktualnych przypadkach** — ✅ 2026-09-07. Luka wyszła przy pytaniu
+      o to, gdzie generator trzyma dane: gdy Flow zmieni się w org, `MetadataFetcher` zeruje digest
+      i ryzyka, ale `test_cases` **zostają** i po cichu opisują poprzednią wersję.
+      Sygnałem jest `digested_at`, **nie** `fetched_at` — to drugie odświeża się także przy metadanych
+      bez zmian, więc każde ponowne pobranie fałszywie unieważniałoby listę.
+      Nie kasujemy nic po cichu: widok pokazuje baner z obiema datami, tester decyduje sam
+
+### Silnik B — most przez schowek (jakość modelu, koszt 0)
+
+- [x] 🟢 `app/src/Generator/PromptBuilder.php` — ✅ 2026-09-07. Prompt ma **7,8 KB**: pełna
+      checklista z kodami, przypadki dla typu Flow, digest w JSON, ryzyka z ich `jak_testowac`
+      oraz dokładny opis formatu odpowiedzi — po tamtej stronie nie ma structured outputs,
+      więc całą robotę musi zrobić tekst promptu
+- [x] 🟢 Przycisk **„Kopiuj prompt”** — ✅ 2026-09-07. Bez JavaScriptu treść i tak jest w polu
+      tekstowym i da się ją zaznaczyć ręcznie
+- [x] 🟢 Pole **„Wklej wynik”** + `ClipboardImporter` — ✅ 2026-09-07. Test pokrywa **9 wariantów**
+      tego, co człowiek naprawdę wkleja: czysty JSON, JSON w płotku ```json, JSON po zdaniu
+      wstępnym modelu, opakowanie w obiekt, nieznany `checklist_ref` (podmiana, nie odrzucenie),
+      puste pole, zwykły tekst, brak wymaganego pola i urwany JSON. Priorytety po angielsku
+      (`high`/`medium`) sprowadzane do trzech wartości z arkusza
+
+### Deploy na produkcję
+
+Pomijamy UAT tak samo jak w Fazie 3 — to nadal ten sam świadomy wyjątek, nie zmiana procesu.
+
+- [x] 🟢 **Silnik A** — ✅ 2026-09-07, 14:21. Siedem plików: cztery klasy `Generator`,
+      poprawiony `RiskScanner` (TC-020 → TC-010), `Routes.php`, `flow.twig`. Bez migracji.
+      Sprawdzone: `GET /ftf/flows/1/testy` → **405** (trasa istnieje, przyjmuje tylko POST),
+      diagnostyka na PHP 8.4.24 — 15 przypadków, zero nieznanych odwołań
+- [x] 🟢 **Silnik B** — ✅ 2026-09-07, 18:30. Pięć plików: `PromptBuilder`,
+      `ClipboardImporter`, `Routes.php`, `flow.twig`, `layout.twig`. Bez migracji.
+      Sprawdzone: `GET /ftf/flows/1/testy/wklej` → **405**, a diagnostyka na PHP 8.4.24
+      przepuściła **najtrudniejszy realny wariant** wklejenia — JSON w płotku, po zdaniu
+      wstępnym modelu, z nieznanym kodem `TC-999` (podmieniony na `RT-001`) i priorytetem
+      `high` (sprowadzonym do `Kluczowe`). Śmieci odrzucone zdaniem po polsku, nie wyjątkiem
+
+### Czego świadomie NIE robimy
+
+> To **decyzje**, nie zaległości — dlatego bez kwadratów do odznaczenia.
+
+· ~~`composer require anthropic-ai/sdk`~~ — niepotrzebne, żadnych wywołań API
+· ~~prompt caching, structured outputs, guard na `refusal`~~ — dotyczyły płatnego API
+· `generation_runs` zostaje w schemacie z kosztem 0 — gdyby kiedyś doszedł silnik API
+
+- [ ] **Gotowe, gdy:** dla Record-Triggered Flow dostajemy TC na trigger, każdą gałąź Decision,
+      bulk 200, brak fault path — **kryterium bez zmian**, bo digest z Fazy 3 ma wszystko,
+      czego do tego trzeba
 
 ---
 

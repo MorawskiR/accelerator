@@ -4,7 +4,7 @@
 
 | Gałąź | Rola | Środowisko | Kto wgrywa |
 |---|---|---|---|
-| `main` | **Stabilna wersja aplikacji.** Tylko to, co przeszło pełną regresję | `ftf.dobo.com.pl` (produkcja) | po zatwierdzeniu |
+| `main` | **Stabilna wersja aplikacji.** Tylko to, co przeszło pełną regresję | `dobo.com.pl/ftf/` (produkcja) | po zatwierdzeniu |
 | `uat` | **Weryfikacja i regresja.** Kandydat do wydania | `qekbnopwvk.cfolks.pl` (UAT) | po przejściu testów na feature |
 | `feature/*` | **Bieżąca praca** nad jedną funkcjonalnością. Tymczasowa | lokalnie / brak | na bieżąco |
 
@@ -17,7 +17,7 @@ feature/faza-1-szkielet
       uat  ──►  wgranie na qekbnopwvk.cfolks.pl  ──►  PEŁNA REGRESJA
         │  regresja przechodzi
         ▼
-      main ──►  wgranie na ftf.dobo.com.pl
+      main ──►  wgranie na dobo.com.pl/ftf/
         │
         ▼
   zamknięcie feature brancha, otwarcie nowego
@@ -72,7 +72,7 @@ git merge uat
 git push
 git tag -a faza-2 -m "Faza 2 zakonczona"
 git push --tags
-.\tools\deploy.ps1 -LocalDir .\public_html -RemotePath "domains/ftf.dobo.com.pl/public_html/"
+.\tools\deploy.ps1 -LocalDir .\public_html -RemotePath "domains/dobo.com.pl/public_html/ftf/"
 ```
 
 **Zamknięcie feature brancha:**
@@ -95,7 +95,7 @@ Lista rośnie wraz z projektem — **po każdej zakończonej fazie dopisujemy do
 
 | # | Sprawdzenie | Od fazy |
 |---|---|---|
-| R1 | `https://ftf.dobo.com.pl` odpowiada, logowanie działa, widać dashboard | 1 |
+| R1 | `https://dobo.com.pl/ftf/` odpowiada, logowanie działa, widać dashboard | 1 |
 | R2 | Wylogowanie działa, strony chronione nie wpuszczają bez sesji | 1 |
 | R3 | „Połącz org" → OAuth → powrót z aktywnym połączeniem | 2 |
 | R4 | Lista Flow zgadza się z Setup → Process Automation → Flows | 2 |
@@ -104,7 +104,7 @@ Lista rośnie wraz z projektem — **po każdej zakończonej fazie dopisujemy do
 | R7 | Na celowo wadliwym Flow zapala się „DML w pętli" i „brak fault path" | 3 |
 | R8 | Import przerwany w połowie da się wznowić, nie duplikuje danych | 3 |
 | R9 | Generowanie TC zwraca 15–30 przypadków z `checklist_ref` | 4 |
-| R10 | Drugie generowanie z rzędu: `cacheReadInputTokens > 0` | 4 |
+| R10 | Ponowne generowanie **nadpisuje** przypadki, nie duplikuje ich; wklejony wynik o złym formacie daje czytelny błąd, a nie 500 | 4 |
 | R11 | Edycja TC zapisuje się poprawnie | 5 |
 | R12 | Eksport .xlsx otwiera się i ma układ 6 arkuszy frameworku | 5 |
 
@@ -119,7 +119,7 @@ punkt nie przechodzi — poprawka wraca na gałąź feature, nie łatamy bezpoś
   czy akurat nie jest w połowie przebudowy. Przy projekcie, którego celem jest demo dla firmy,
   to jest istotne.
 - **UAT na osobnej domenie.** `qekbnopwvk.cfolks.pl` już istnieje, nic nie kosztuje i jest całkowicie
-  odizolowana od `ftf.dobo.com.pl`. Regresja na produkcji nie byłaby regresją, tylko ryzykiem.
+  odizolowana od produkcji. Regresja na produkcji nie byłaby regresją, tylko ryzykiem.
 - **Feature kasowany po scaleniu.** Gałąź, która przeżyje swoją fazę, zaczyna zbierać niepowiązane
   zmiany i przestaje cokolwiek znaczyć. Krótkie życie gałęzi to mniej konfliktów przy scalaniu.
 - **Tag na `main` po każdej fazie.** Daje punkt, do którego można wrócić jedną komendą, gdy kolejna

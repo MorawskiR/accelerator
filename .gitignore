@@ -8,6 +8,17 @@
 *.pem
 !.env.example
 
+# Luzne pliki .txt w korzeniu repo. Powod: 2026-08-27 w katalogu projektu
+# wyladowal plik, ktorego NAZWA I TRESC byly haslem do bazy. Nie zdazyl trafic
+# do gita, ale kazde `git add -A` by go zlapalo, a repo jest publiczne.
+# Dokumentacja projektu to .md, wiec ta regula niczego potrzebnego nie blokuje.
+/*.txt
+
+# Wypelniona konfiguracja spike OAuth - zawiera Consumer Secret z Salesforce.
+# Przyklad sf-oauth.example.php commitujemy, wypelniona kopia NIGDY.
+tools/sf-oauth/sf-oauth.php
+app/sf-oauth.php
+
 # ── Zależności (odtwarzalne z composer.json / package.json) ──────
 /app/vendor/
 /vendor/
@@ -40,3 +51,9 @@ desktop.ini
 # Publiczny ebook Salesforce (9,8 MB) — nie nasze autorstwo,
 # do pobrania z sf.com. Usuń tę linię, jeśli ma być w repo.
 Salesforce Go with the Flow Ebook*.pdf
+
+# Podglad HTML z tests/widok-flow.php - generowany, nie wersjonowany
+tests/out/
+
+# Wskaznik katalogu aplikacji - zakladany raz na srodowisko, na serwerze
+public_html/app-dir.php

@@ -1,0 +1,487 @@
+{% extends "layout.twig" %}
+{% block tytul %}{{ flow.label ?: flow.api_name }} — Flownatic{% endblock %}
+
+{% block pasek %}
+<div class="pasek">
+  <span class="marka">Flownatic</span>
+  <span class="kto">
+    {% if polaczona %}<span class="znacznik ok">org podłączona</span>{% endif %}
+    <form method="post" action="{{ u.wyloguj }}" style="margin:0">
+      <button type="submit" class="cichy">Wyloguj</button>
+    </form>
+  </span>
+</div>
+{% endblock %}
+
+{% block tresc %}
+{% set nazwyTriggera = {
+  'RecordBeforeSave':   'Przed zapisem (Before Save)',
+  'RecordAfterSave':    'Po zapisie (After Save)',
+  'RecordBeforeDelete': 'Przed usunięciem',
+  'Scheduled':          'Zaplanowany',
+  'PlatformEvent':      'Zdarzenie platformy',
+  'None':               'Uruchamiany ręcznie'
+} %}
+
+<a class="powrot" href="{{ u.flows }}">← Wszystkie Flow</a>
+
+<h1>{{ flow.label ?: flow.api_name }}</h1>
+<div class="mono przygaszone" style="margin-bottom:12px">{{ flow.api_name }}</div>
+
+<div class="chipy" style="margin-bottom:18px">
+  {% if flow.is_active %}
+    <span class="znacznik ok">aktywny</span>
+  {% else %}
+    <span class="znacznik">nieaktywny</span>
+  {% endif %}
+  {% if flow.process_type %}<span class="znacznik">{{ flow.process_type }}</span>{% endif %}
+  {% if flow.trigger_object %}<span class="znacznik">{{ flow.trigger_object }}</span>{% endif %}
+  {% if flow.record_trigger_type %}<span class="znacznik">{{ flow.record_trigger_type }}</span>{% endif %}
+  {% if flow.version_number %}<span class="znacznik">wersja {{ flow.version_number }}</span>{% endif %}
+</div>
+
+{% if blad %}<div class="blad">{{ blad }}</div>{% endif %}
+{% if ok %}<div class="sukces">{{ ok }}</div>{% endif %}
+
+{% if flow.description %}
+  <p>{{ flow.description }}</p>
+{% endif %}
+
+{% if digest is null %}
+  {# Metadanych jeszcze nie ma. Bez nich nie da sie pokazac ani struktury,
+     ani ryzyk - wiec zamiast pustych sekcji pokazujemy jedna akcje. #}
+  <div class="karta">
+    <h2 style="margin-top:0">Struktura nie jest jeszcze pobrana</h2>
+    <p>Inwentarz zna ten Flow, ale jego metadane nie zostały jeszcze ściągnięte z org.
+    Bez nich nie da się wykryć ryzyk ani opisać struktury.</p>
+    {% if polaczona %}
+      <form method="post" action="{{ u.metadane }}" style="margin:0">
+        <button type="submit">Pobierz metadane</button>
+      </form>
+    {% else %}
+      <p><a class="przycisk" href="{{ u.connect }}">Połącz z Salesforce</a></p>
+    {% endif %}
+  </div>
+{% else %}
+
+  {# ── Ryzyka ────────────────────────────────────────────────────
+     Idą przed strukturą świadomie: to one są powodem, dla którego
+     tester tu wchodzi. Struktura jest dowodem, skąd się wzięły. #}
+  <h2>Wykryte ryzyka
+    {% if ryzyka is not empty %}<span class="przygaszone">({{ ryzyka|length }})</span>{% endif %}
+  </h2>
+
+  {% if ryzyka is empty %}
+    <div class="karta">
+      <p style="margin:0">Żadna z reguł nie zapaliła się na tym Flow. To nie znaczy, że jest
+      bezbłędny — znaczy, że nie ma DML w pętli, brakującej ścieżki błędu, wyzwalacza After Save
+      bez kryteriów wejścia ani pobrania rekordów bez filtrów.</p>
+    </div>
+  {% else %}
+    <div class="chipy" style="margin-bottom:14px">
+      {% if podsumowanie.wysokie > 0 %}<span class="waga wysokie">{{ podsumowanie.wysokie }} × wysokie</span>{% endif %}
+      {% if podsumowanie.srednie > 0 %}<span class="waga srednie">{{ podsumowanie.srednie }} × średnie</span>{% endif %}
+      {% if podsumowanie.niskie  > 0 %}<span class="waga niskie">{{ podsumowanie.niskie }} × niskie</span>{% endif %}
+    </div>
+
+    {% for r in ryzyka %}
+      <div class="ryzyko {{ r.waga }}">
+        <div class="rzad">
+          <h3>{{ r.tytul }}</h3>
+          <span class="waga {{ r.waga }}">{{ r.waga }}</span>
+        </div>
+        <div class="mono przygaszone" style="margin-top:4px">
+          {{ r.etykieta ?: r.element }}{% if r.etykieta and r.element %} · {{ r.element }}{% endif %}
+        </div>
+        <p>{{ r.opis }}</p>
+        <dl class="para">
+          <dt>Skutek</dt><dd>{{ r.skutek }}</dd>
+          <dt>Checklista</dt><dd class="mono">{{ r.checklist }}</dd>
+          <dt>Jak naprawić</dt><dd>{{ r.jak_naprawic }}</dd>
+          <dt>Jak testować</dt><dd>{{ r.jak_testowac }}</dd>
+        </dl>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {# ── Przypadki testowe ─────────────────────────────────────────
+     To jest produkt tego narzędzia. Ryzyka wyżej mówią, na co uważać;
+     tutaj jest gotowa lista do wykonania, z odwołaniami do frameworku. #}
+  <h2>Przypadki testowe
+    {% if testy is not empty %}<span class="przygaszone">({{ testy|length }})</span>{% endif %}
+  </h2>
+
+  <div class="karta">
+    <div class="rzad">
+      <div>
+        {% if testy is empty %}
+          <div class="przygaszone">Jeszcze nie wygenerowane. Powstaną z reguł — bez wywołań płatnego API.</div>
+        {% else %}
+          <div class="przygaszone">
+            {% for zrodlo, ile in zrodla %}
+              {{ ile }} {{ zrodlo == 'reguly' ? 'z reguł' : (zrodlo == 'wklejone' ? 'wklejonych' : 'własnych') }}{% if not loop.last %} · {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+      <form method="post" action="{{ u.testy }}" style="margin:0">
+        <button type="submit" {% if testy is not empty %}class="cichy"{% endif %}>
+          {{ testy is empty ? 'Generuj testy' : 'Generuj ponownie' }}
+        </button>
+      </form>
+    </div>
+    {% if testy is not empty %}
+      <p class="przygaszone" style="margin:12px 0 0">Ponowne generowanie nadpisuje wyłącznie przypadki
+      z reguł — dopiski własne zostają nietknięte.</p>
+    {% endif %}
+  </div>
+
+  {% if stanTestow.nieaktualne %}
+    {# Metadane Flow zmieniły się po wygenerowaniu tych przypadków. Nie kasujemy
+       ich po cichu — tester ma zobaczyć ostrzeżenie i sam zdecydować. #}
+    <div class="blad">
+      <strong>Te przypadki opisują poprzednią wersję Flow.</strong>
+      Struktura została przeliczona {{ wersja.digested_at }}, a przypadki wygenerowano
+      {{ stanTestow.wygenerowano }}. Kliknij <strong>Generuj ponownie</strong>, żeby odświeżyć
+      je na podstawie aktualnych metadanych.
+    </div>
+  {% endif %}
+
+  {% if prompt %}
+    {# Most przez schowek: te same dane, które poszłyby do płatnego API,
+       tyle że przenosi je człowiek. Zwinięty, bo to ścieżka na żądanie —
+       domyślną jest generator z reguł wyżej. #}
+    <details class="karta most">
+      <summary>Most przez schowek — proza modelu, dalej bez kosztów API</summary>
+
+      <p class="przygaszone">Skopiuj prompt, wklej go w Claude.ai albo Claude Code
+      (pokryte subskrypcją), a otrzymaną odpowiedź wklej z powrotem poniżej.
+      Wczytane przypadki dopiszą się obok tych z reguł, nie kasując ich.</p>
+
+      <div class="akcje" style="margin:12px 0">
+        <button type="button" id="kopiuj-prompt">Kopiuj prompt</button>
+        <span class="przygaszone" id="kopiuj-status" role="status"></span>
+      </div>
+
+      <textarea id="prompt-tresc" readonly rows="6"
+                aria-label="Prompt do skopiowania">{{ prompt }}</textarea>
+
+      <form method="post" action="{{ u.wklej }}" style="margin:16px 0 0">
+        <label for="wynik">Wklej wynik z modelu</label>
+        <textarea name="wynik" id="wynik" rows="6" required
+                  placeholder='[ { "checklist_ref": "TC-005", "title": "...", "steps": "1. ...", "expected": "..." } ]'></textarea>
+        <button type="submit" class="cichy" style="margin-top:10px">Wczytaj wynik</button>
+      </form>
+    </details>
+
+    <script>
+    // Kopiowanie promptu. Bez tego skryptu tresc i tak jest widoczna
+    // w polu tekstowym i da sie ja zaznaczyc recznie.
+    (function () {
+        var przycisk = document.getElementById('kopiuj-prompt');
+        var pole     = document.getElementById('prompt-tresc');
+        var status   = document.getElementById('kopiuj-status');
+
+        if (!przycisk || !pole) {
+            return;
+        }
+
+        przycisk.addEventListener('click', function () {
+            var gotowe = function () {
+                status.textContent = 'skopiowane';
+                window.setTimeout(function () { status.textContent = ''; }, 2500);
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(pole.value).then(gotowe, function () {
+                    pole.select();
+                    status.textContent = 'zaznaczone — skopiuj skrótem';
+                });
+
+                return;
+            }
+
+            // Starsze przegladarki: zaznaczamy, uzytkownik kopiuje sam.
+            pole.select();
+            status.textContent = 'zaznaczone — skopiuj skrótem';
+        });
+    }());
+    </script>
+  {% endif %}
+
+  {% for t in testy %}
+    <div class="karta">
+      <div class="rzad">
+        <div>
+          <span class="mono"><strong>{{ t.tc_code }}</strong></span>
+          <span class="znacznik">{{ t.checklist_ref }}</span>
+          {% if t.source != 'reguly' %}
+            <span class="znacznik">{{ t.source == 'wklejone' ? 'wklejone' : 'własne' }}</span>
+          {% endif %}
+        </div>
+        <span class="waga {{ t.priority == 'Kluczowe' ? 'wysokie' : (t.priority == 'Ważne' ? 'srednie' : 'niskie') }}">
+          {{ t.priority }}
+        </span>
+      </div>
+
+      <h3 style="margin:10px 0 0; font-size:1rem">{{ t.title }}</h3>
+
+      <dl class="para">
+        {% if t.preconditions %}
+          <dt>Warunki wstępne</dt><dd>{{ t.preconditions }}</dd>
+        {% endif %}
+        <dt>Kroki</dt>
+        <dd>
+          {% for krok in t.steps|split("\n") %}
+            <div>{{ krok }}</div>
+          {% endfor %}
+        </dd>
+        <dt>Oczekiwany wynik</dt><dd>{{ t.expected }}</dd>
+      </dl>
+    </div>
+  {% endfor %}
+
+  {# ── Struktura ─────────────────────────────────────────────── #}
+  <h2>Struktura</h2>
+
+  <div class="karta">
+    <div class="etykieta">Wyzwalacz</div>
+    <dl class="para" style="margin-top:8px">
+      {% if digest.wyzwalacz.obiekt %}
+        <dt>Obiekt</dt><dd class="mono">{{ digest.wyzwalacz.obiekt }}</dd>
+      {% endif %}
+      {% if digest.wyzwalacz.kiedy %}
+        <dt>Kiedy</dt>
+        <dd>{{ nazwyTriggera[digest.wyzwalacz.kiedy] ?? digest.wyzwalacz.kiedy }}</dd>
+      {% endif %}
+      {% if digest.wyzwalacz.operacje %}
+        <dt>Operacje</dt><dd>{{ digest.wyzwalacz.operacje }}</dd>
+      {% endif %}
+      <dt>Kryteria wejścia</dt>
+      <dd>
+        {% if digest.wyzwalacz.kryteria_wejscia is not empty %}
+          {% for w in digest.wyzwalacz.kryteria_wejscia %}
+            <div class="mono">{{ w }}</div>
+          {% endfor %}
+        {% elseif digest.wyzwalacz.formula_wejscia %}
+          <div class="mono">{{ digest.wyzwalacz.formula_wejscia }}</div>
+        {% else %}
+          <span class="przygaszone">brak — Flow uruchamia się przy każdej zmianie</span>
+        {% endif %}
+      </dd>
+      {% if digest.wyzwalacz.sciezki_czasowe > 0 %}
+        <dt>Ścieżki czasowe</dt><dd>{{ digest.wyzwalacz.sciezki_czasowe }}</dd>
+      {% endif %}
+    </dl>
+  </div>
+
+  {% if digest.podsumowanie is not empty %}
+    <div class="karta">
+      <div class="etykieta">Elementy</div>
+      <div class="chipy">
+        {% for rodzaj, ile in digest.podsumowanie %}
+          <span class="znacznik">{{ rodzaj }}: {{ ile }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if digest.dml is not empty %}
+    <h2>Operacje zapisu</h2>
+    <div class="tabela">
+      <table>
+        <thead>
+          <tr>
+            <th>Element</th><th>Operacja</th><th>Obiekt</th>
+            <th>W pętli</th><th>Ścieżka błędu</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for d in digest.dml %}
+          <tr>
+            <td>
+              <strong>{{ d.etykieta ?: d.nazwa }}</strong>
+              <div class="mono przygaszone">{{ d.nazwa }}</div>
+              {% if d.pola is not empty %}
+                <div class="mono przygaszone" style="margin-top:4px">
+                  {% for p in d.pola %}{{ p }}{% if not loop.last %} · {% endif %}{% endfor %}
+                </div>
+              {% endif %}
+            </td>
+            <td>{{ d.operacja }}</td>
+            <td class="mono">{{ d.obiekt ?: '—' }}</td>
+            <td>
+              {% if d.w_petli is not empty %}
+                <span class="waga wysokie">tak</span>
+                <div class="mono przygaszone" style="margin-top:4px">{{ d.w_petli|join(', ') }}</div>
+              {% else %}
+                <span class="przygaszone">nie</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if d.ma_fault %}
+                <span class="znacznik ok">jest</span>
+              {% else %}
+                <span class="waga srednie">brak</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  {% if digest.zapytania is not empty %}
+    <h2>Pobrania rekordów</h2>
+    <div class="tabela">
+      <table>
+        <thead>
+          <tr><th>Element</th><th>Obiekt</th><th>Filtry</th><th>Zakres</th><th>Ścieżka błędu</th></tr>
+        </thead>
+        <tbody>
+        {% for z in digest.zapytania %}
+          <tr>
+            <td>
+              <strong>{{ z.etykieta ?: z.nazwa }}</strong>
+              <div class="mono przygaszone">{{ z.nazwa }}</div>
+            </td>
+            <td class="mono">{{ z.obiekt ?: '—' }}</td>
+            <td>
+              {% if z.filtry is not empty %}
+                {% for f in z.filtry %}<div class="mono">{{ f }}</div>{% endfor %}
+              {% else %}
+                <span class="waga srednie">brak</span>
+              {% endif %}
+            </td>
+            <td>{{ z.tylko_pierwszy ? 'pierwszy rekord' : 'wszystkie pasujące' }}</td>
+            <td>
+              {% if z.ma_fault %}
+                <span class="znacznik ok">jest</span>
+              {% else %}
+                <span class="przygaszone">brak</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  {% if digest.petle is not empty %}
+    <h2>Pętle</h2>
+    {% for p in digest.petle %}
+      <div class="karta">
+        <div class="rzad">
+          <strong>{{ p.etykieta ?: p.nazwa }}</strong>
+          <span class="mono przygaszone">{{ p.nazwa }}</span>
+        </div>
+        <dl class="para">
+          <dt>Kolekcja</dt><dd class="mono">{{ p.kolekcja ?: '—' }}</dd>
+          <dt>W ciele pętli</dt>
+          <dd>
+            {% if p.w_ciele is not empty %}
+              <span class="mono">{{ p.w_ciele|join(', ') }}</span>
+            {% else %}
+              <span class="przygaszone">pusta</span>
+            {% endif %}
+          </dd>
+          <dt>Po pętli</dt><dd class="mono">{{ p.po_petli ?: '—' }}</dd>
+        </dl>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if digest.decyzje is not empty %}
+    <h2>Decyzje</h2>
+    {% for d in digest.decyzje %}
+      <div class="karta">
+        <div class="rzad">
+          <strong>{{ d.etykieta ?: d.nazwa }}</strong>
+          <span class="mono przygaszone">{{ d.nazwa }}</span>
+        </div>
+        {% for g in d.galezie %}
+          <div class="blok" style="margin-top:12px">
+            <div class="etykieta">{{ g.etykieta ?: g.nazwa }} → {{ g.prowadzi ?: 'koniec' }}</div>
+            {% if g.warunki is not empty %}
+              {% for w in g.warunki %}<div class="mono">{{ w }}</div>{% endfor %}
+            {% else %}
+              <span class="przygaszone">bez warunków</span>
+            {% endif %}
+          </div>
+        {% endfor %}
+        <div class="blok" style="margin-top:12px">
+          <div class="etykieta">{{ d.domyslna ?: 'Domyślna gałąź' }} → {{ d.prowadzi_domyslnie ?: 'koniec' }}</div>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if digest.ekrany is not empty %}
+    <h2>Ekrany</h2>
+    {% for e in digest.ekrany %}
+      <div class="karta">
+        <div class="rzad">
+          <strong>{{ e.etykieta ?: e.nazwa }}</strong>
+          <span class="mono przygaszone">{{ e.nazwa }}</span>
+        </div>
+        {% if e.pola is not empty %}
+          <ul class="lista" style="margin-top:12px">
+            {% for p in e.pola %}
+              <li>
+                <span class="mono">{{ p.nazwa }}</span>
+                <span class="przygaszone">{{ p.rodzaj }}</span>
+                {% if p.wymagane %}<span class="znacznik">wymagane</span>{% endif %}
+                {% if p.walidacja %}<div class="przygaszone">walidacja: {{ p.walidacja }}</div>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="pusto" style="margin-top:10px">Ekran bez pól wejściowych.</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if digest.zmienne is not empty %}
+    <h2>Zmienne</h2>
+    <div class="tabela">
+      <table>
+        <thead><tr><th>Nazwa</th><th>Typ</th><th>Rola</th></tr></thead>
+        <tbody>
+        {% for z in digest.zmienne %}
+          <tr>
+            <td class="mono">{{ z.nazwa }}</td>
+            <td>
+              {{ z.typ }}{% if z.obiekt %} <span class="mono przygaszone">{{ z.obiekt }}</span>{% endif %}
+              {% if z.kolekcja %} <span class="znacznik">kolekcja</span>{% endif %}
+            </td>
+            <td>
+              {% if z.wejsciowa %}<span class="znacznik">wejściowa</span>{% endif %}
+              {% if z.wyjsciowa %}<span class="znacznik">wyjściowa</span>{% endif %}
+              {% if not z.wejsciowa and not z.wyjsciowa %}<span class="przygaszone">wewnętrzna</span>{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  <div class="karta" style="margin-top:24px">
+    <div class="rzad">
+      <div class="przygaszone">
+        Wersja {{ wersja.version_number }}{% if wersja.status %} · {{ wersja.status }}{% endif %}
+        {% if wersja.fetched_at %} · metadane pobrane {{ wersja.fetched_at }}{% endif %}
+        {% if wersja.digested_at %} · przeliczone {{ wersja.digested_at }}{% endif %}
+      </div>
+      {% if polaczona %}
+        <form method="post" action="{{ u.metadane }}" style="margin:0">
+          <button type="submit" class="cichy">Odśwież metadane</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

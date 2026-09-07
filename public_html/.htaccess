@@ -1,0 +1,37 @@
+# Flownatic - katalog publiczny.
+
+# ── Kanoniczny adres ────────────────────────────────────────────
+# Aplikacja odpowiada pod dwoma adresami, bo DocumentRoot subdomeny lezy
+# wewnatrz public_html domeny glownej. Kanoniczny jest podkatalog, bo tylko
+# on ma wazny certyfikat. Callback OAuth dopasowuje sie co do znaku, wiec
+# wejscie zlym hostem zakonczyloby logowanie bledem redirect_uri mismatch.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{HTTP_HOST} ^ftf\.dobo\.com\.pl$ [NC]
+    RewriteRule ^(.*)$ https://dobo.com.pl/ftf/$1 [R=301,L]
+
+    # Wszystko, co nie jest istniejacym plikiem ani katalogiem, idzie
+    # do front controllera.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# ── Higiena ─────────────────────────────────────────────────────
+# Bez listowania katalogow - w assets/ nie ma nic tajnego, ale nie ma
+# tez powodu, zeby pokazywac, co tam lezy.
+Options -Indexes
+
+# Pliki, ktore nigdy nie powinny byc serwowane, gdyby przypadkiem
+# trafily do katalogu publicznego.
+<FilesMatch "^\.env|\.(env|ini|log|sql|md|lock)$">
+    Require all denied
+</FilesMatch>
+
+# ── Naglowki bezpieczenstwa ─────────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "same-origin"
+</IfModule>

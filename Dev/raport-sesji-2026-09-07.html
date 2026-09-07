@@ -1,0 +1,477 @@
+<title>Flownatic — Dzień Szósty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root{
+  --ground:#f7f9fc;
+  --surface:#ffffff;
+  --surface-2:#eef3fa;
+  --ink:#101828;
+  --ink-2:#39445c;
+  --muted:#5a6782;
+  --line:#dde5f0;
+  --line-soft:#e9eff7;
+  --accent:#0b6fc4;
+  --accent-soft:#e4f0fb;
+  --teal:#0b7d6e;
+  --teal-soft:#dff3ef;
+  --warn:#9a6206;
+  --warn-soft:#fbf0d9;
+  --risk:#b23c0a;
+  --risk-soft:#fbe8dd;
+  --shadow:0 1px 2px rgba(16,24,40,.05), 0 8px 24px -16px rgba(16,24,40,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0a0f1d;
+    --surface:#111a2c;
+    --surface-2:#172136;
+    --ink:#e9eefb;
+    --ink-2:#c2ccE2;
+    --muted:#8c99b8;
+    --line:#25314b;
+    --line-soft:#1c2740;
+    --accent:#5cb4ff;
+    --accent-soft:#132741;
+    --teal:#4fd8bf;
+    --teal-soft:#0f2b28;
+    --warn:#e0aa4a;
+    --warn-soft:#2c2314;
+    --risk:#f08050;
+    --risk-soft:#2e1a12;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0a0f1d;
+  --surface:#111a2c;
+  --surface-2:#172136;
+  --ink:#e9eefb;
+  --ink-2:#c2ccE2;
+  --muted:#8c99b8;
+  --line:#25314b;
+  --line-soft:#1c2740;
+  --accent:#5cb4ff;
+  --accent-soft:#132741;
+  --teal:#4fd8bf;
+  --teal-soft:#0f2b28;
+  --warn:#e0aa4a;
+  --warn-soft:#2c2314;
+  --risk:#f08050;
+  --risk-soft:#2e1a12;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Source Serif 4",Georgia,"Times New Roman",serif;
+  font-size:17px;
+  line-height:1.68;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 96px}
+
+/* ─────────── nagłówek ─────────── */
+.masthead{
+  border-bottom:1px solid var(--line);
+  padding:44px 0 30px;
+  margin-bottom:44px;
+  display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;
+}
+.brand{display:flex;flex-direction:column;gap:8px}
+.brand .name{
+  font-family:Archivo,system-ui,sans-serif;
+  font-weight:700;font-size:clamp(2.1rem,5vw,3rem);letter-spacing:-.03em;line-height:1;
+  background:linear-gradient(96deg,var(--accent),var(--teal));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.brand .what{font-family:Archivo,sans-serif;font-size:.95rem;font-weight:500;color:var(--muted);letter-spacing:.01em}
+.meta{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.78rem;color:var(--muted);text-align:right;line-height:1.9}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ─────────── typografia ─────────── */
+h2{
+  font-family:Archivo,system-ui,sans-serif;
+  font-weight:600;font-size:1.42rem;letter-spacing:-.018em;
+  margin:0 0 4px;color:var(--ink);text-wrap:balance;
+}
+h3{
+  font-family:Archivo,system-ui,sans-serif;
+  font-weight:600;font-size:1.02rem;letter-spacing:-.008em;
+  margin:0 0 10px;color:var(--ink);
+}
+p{margin:0 0 16px;max-width:68ch;color:var(--ink-2)}
+p:last-child{margin-bottom:0}
+strong{color:var(--ink);font-weight:600}
+code{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.855em;background:var(--surface-2);color:var(--ink);
+  padding:.1em .38em;border-radius:4px;border:1px solid var(--line-soft);
+}
+
+/* ─────────── sekcje z szyną ─────────── */
+section{
+  display:grid;grid-template-columns:132px minmax(0,1fr);gap:34px;
+  padding:34px 0;border-top:1px solid var(--line-soft);
+}
+section:first-of-type{border-top:none;padding-top:0}
+.rail{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);padding-top:.42em;
+}
+@media (max-width:760px){
+  section{grid-template-columns:1fr;gap:12px}
+  .rail{padding-top:0}
+}
+
+/* ─────────── kafle liczbowe ─────────── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:12px;margin:0}
+.stat{
+  background:var(--surface);border:1px solid var(--line);border-radius:9px;
+  padding:15px 16px;box-shadow:var(--shadow);
+}
+.stat .n{
+  font-family:Archivo,sans-serif;font-weight:700;font-size:1.75rem;letter-spacing:-.03em;
+  color:var(--accent);line-height:1;font-variant-numeric:tabular-nums;
+}
+.stat .l{
+  font-family:"IBM Plex Mono",monospace;font-size:.685rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);margin-top:7px;
+}
+
+/* ─────────── tabele ─────────── */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:9px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:520px}
+th{
+  font-family:Archivo,sans-serif;font-weight:600;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);text-align:left;padding:11px 15px;border-bottom:1px solid var(--line);
+  background:var(--surface-2);white-space:nowrap;
+}
+td{padding:12px 15px;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--ink-2)}
+tr:last-child td{border-bottom:none}
+td:first-child{color:var(--ink);font-weight:600}
+td.mono,th.mono{font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-variant-numeric:tabular-nums}
+
+.pill{
+  display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.68rem;
+  letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap;
+}
+.pill.ok{background:var(--teal-soft);color:var(--teal)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.risk{background:var(--risk-soft);color:var(--risk)}
+.pill.info{background:var(--accent-soft);color:var(--accent)}
+
+/* ─────────── wyróżnienie ─────────── */
+.note{
+  background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:0 9px 9px 0;padding:18px 20px;margin:0 0 18px;box-shadow:var(--shadow);
+}
+.note.risk{border-left-color:var(--risk)}
+.note h3{margin-bottom:7px}
+.note p{font-size:.94rem;margin-bottom:10px}
+
+/* ─────────── oś commitów ─────────── */
+.log{list-style:none;margin:0;padding:0;position:relative}
+.log::before{content:"";position:absolute;left:6px;top:9px;bottom:9px;width:1px;background:var(--line)}
+.log li{position:relative;padding:0 0 17px 27px}
+.log li:last-child{padding-bottom:0}
+.log li::before{
+  content:"";position:absolute;left:1.5px;top:7px;width:10px;height:10px;border-radius:50%;
+  background:var(--ground);border:2px solid var(--accent);
+}
+.log .h{font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--accent);letter-spacing:.02em}
+.log .t{font-family:Archivo,sans-serif;font-weight:500;font-size:.94rem;color:var(--ink);margin-top:1px}
+.log .d{font-size:.86rem;color:var(--muted);margin-top:2px;max-width:62ch;line-height:1.55}
+
+/* ─────────── postęp faz ─────────── */
+.phases{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.ph{
+  flex:1 1 92px;border-radius:7px;padding:10px 11px;border:1px solid var(--line);
+  background:var(--surface);
+}
+.ph.now{border-color:var(--accent);background:var(--accent-soft)}
+.ph .k{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.ph.now .k{color:var(--accent)}
+.ph .v{font-family:Archivo,sans-serif;font-size:.84rem;font-weight:500;color:var(--ink-2);margin-top:3px;line-height:1.35}
+.ph.now .v{color:var(--ink)}
+
+.bar{height:7px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line-soft)}
+.bar span{display:block;height:100%;width:33%;background:linear-gradient(90deg,var(--accent),var(--teal))}
+.barlab{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--muted);margin-top:7px}
+
+ul.clean{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+ul.clean li{padding-left:17px;position:relative;color:var(--ink-2);font-size:.95rem;max-width:66ch}
+ul.clean li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:6px;border-radius:2px;background:var(--accent)}
+ul.clean li b{color:var(--ink);font-weight:600}
+
+footer{
+  border-top:1px solid var(--line);margin-top:44px;padding-top:22px;
+  font-family:"IBM Plex Mono",monospace;font-size:.74rem;color:var(--muted);
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;
+}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+</style>
+
+<style>
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:16px 17px;box-shadow:var(--shadow)}
+.card h3{margin-bottom:6px}
+.card p{font-size:.9rem;margin-bottom:0;color:var(--muted)}
+.cert{font-family:"IBM Plex Mono",monospace;font-size:.79rem;line-height:1.75;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:13px 15px;overflow-x:auto;color:var(--ink-2)}
+.cert b{color:var(--risk);font-weight:500}
+.cert i{color:var(--teal);font-style:normal;font-weight:500}
+.kv{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.tc{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:8px;padding:14px 16px;margin:14px 0}
+.tc .kv{margin-bottom:6px}
+.tc h4{font-family:"Archivo",system-ui,sans-serif;font-size:.98rem;margin:0 0 8px}
+.tc ol{margin:0 0 8px;padding-left:20px;font-size:.93rem;color:var(--ink-2)}
+.tc .exp{font-size:.9rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px;margin:0}
+.wrong{text-decoration:line-through;color:var(--risk)}
+.right{color:var(--teal);font-weight:600}
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="brand">
+      <div class="name">Flownatic</div>
+      <div class="what">Dzień szósty — narzędzie pisze testy, rachunku nie ma</div>
+    </div>
+    <div class="meta">
+      <div><b>2026-09-07</b> · sesja szósta</div>
+      <div>gałąź <b>feature/faza-4-generator-tc</b></div>
+      <div>Faza 3 ✅ · Faza 4 kompletna kodowo</div>
+    </div>
+  </header>
+
+  <section>
+    <div class="rail">Skrót</div>
+    <div>
+      <h2>Dzień, w którym akcelerator zaczął dowozić swój produkt</h2>
+      <p>Do dziś Flownatic potrafił <em>opisać</em> Flow i wytknąć w nim ryzyka. Od dziś
+      <strong>pisze gotowe przypadki testowe</strong> — 16 dla jednego realnego Flow, z nazwami
+      jego pętli, elementów zapisu i gałęzi decyzji, każdy z odwołaniem do checklisty frameworku.</p>
+      <p>Po drodze zapadła decyzja, która zmieniła kształt Fazy 4: <strong>projekt ma działać bez
+      kosztów</strong>. Zamiast płatnego API mamy generator z reguł i most przez schowek — i, co
+      okazało się najciekawsze, <em>nie trzeba było wyrzucić ani jednej linijki wcześniejszej pracy</em>.</p>
+
+      <div class="stats">
+        <div class="stat"><div class="n">17</div><div class="l">commitów</div></div>
+        <div class="stat"><div class="n">4351</div><div class="l">linii w app/src</div></div>
+        <div class="stat"><div class="n">3</div><div class="l">wdrożenia na produkcję</div></div>
+        <div class="stat"><div class="n">0 $</div><div class="l">koszt API</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Odkrycie</div>
+    <div>
+      <h2>Produkcja była tydzień w tyle i nikt o tym nie wiedział</h2>
+      <p>Na pytanie „jak to jest odwzorowane na <code>dobo.com.pl/ftf</code>" odpowiedź brzmiała:
+      <strong>nijak</strong>. Sprawdzenie przez FTP pokazało, że zdalny katalog
+      <code>src/Flow/</code> zawiera <em>wyłącznie</em> <code>FlowImporter.php</code> — czyli
+      cała Faza 3 z 1 września nigdy nie została wgrana. <code>/ftf/flows/1</code> zwracało 404.</p>
+
+      <div class="note">
+        <h3>Wniosek na przyszłość</h3>
+        <p style="margin-bottom:0">Zamknięcie fazy w trackerze i wgranie jej na serwer to dwie
+        różne rzeczy. Od dziś <code>task.md</code> ma osobną sekcję <b>Deploy</b> z datami —
+        żeby ta rozbieżność nie mogła się powtórzyć po cichu.</p>
+      </div>
+
+      <p style="margin-top:16px">Tego samego dnia produkcja dostała trzy wdrożenia: Fazę 3,
+      silnik A Fazy 4 i silnik B. Każde weryfikowane tak samo — kodem odpowiedzi tras oraz
+      tymczasową diagnostyką kasowaną zaraz po odczycie.</p>
+
+      <div class="cert">
+/ftf/flows/1              <b>404</b>  →  <i>302</i> na login   (widok Flow istnieje)
+/ftf/flows/1/testy        <b>404</b>  →  <i>405</i>            (trasa POST-only)
+/ftf/flows/1/testy/wklej  <b>404</b>  →  <i>405</i>            (most przez schowek)
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Decyzja</div>
+    <div>
+      <h2>Rachunku nie będzie</h2>
+      <p>Pytanie o kwotę doładowania konta Anthropic skończyło się decyzją Rafała: <strong>obejdźmy
+      się bez kosztów, subskrypcja powinna wystarczyć</strong>. Wymagało to jednego sprostowania,
+      które warto zapamiętać, żeby nie wracać do tematu:</p>
+
+      <div class="note">
+        <p style="margin-bottom:0"><strong>Subskrypcja Claude i kredyty API to dwa osobne
+        rozliczenia.</strong> Aplikacja PHP wołająca <code>/v1/messages</code> obciąża kredyty API
+        niezależnie od tego, czy uwierzytelni się kluczem, czy profilem OAuth. Wybór był binarny:
+        kredyty albo brak wywołań z serwera.</p>
+      </div>
+
+      <p style="margin-top:16px">Dla porządku policzyliśmy, ile to realnie kosztowałoby
+      (<code>claude-opus-5</code>, 5 $ / 25 $ za milion tokenów): <strong>0,15–0,25 USD za Flow</strong>,
+      czyli 10–20 USD na całą fazę. Kwota nieduża — ale decyzja brzmiała „zero", więc plan poszedł
+      w tę stronę.</p>
+
+      <div class="split">
+        <div class="card">
+          <h3>Silnik A — reguły</h3>
+          <p>Domyślny. Instancjonuje checklistę TC-001…TC-026 nazwami z digestu. Działa zawsze,
+          także bez internetu.</p>
+        </div>
+        <div class="card">
+          <h3>Silnik B — schowek</h3>
+          <p>Prompt do skopiowania, wynik do wklejenia. Proza modelu opłacona subskrypcją,
+          zero wywołań z serwera.</p>
+        </div>
+        <div class="card">
+          <h3>Silnik C — API</h3>
+          <p>Nie istnieje. Interfejs <code>TestCaseSource</code> zostawia na niego miejsce,
+          gdyby kiedyś pojawiły się kredyty.</p>
+        </div>
+      </div>
+
+      <p style="margin-top:18px"><strong>Najciekawsze w tej decyzji:</strong> kryterium „Gotowe, gdy"
+      Fazy 4 nie zmieniło się ani o słowo. Digest z Fazy 3 miał już wszystko, czego generator
+      potrzebuje. Gdyby projekt stał na wrzucaniu surowego JSON-a do modelu, ta sama decyzja
+      kosztowałaby przepisanie połowy aplikacji — a kosztowała przeredagowanie dokumentacji.
+      To jest wymierna wartość kolejności <em>parser przed AI</em>.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Błąd</div>
+    <div>
+      <h2>Kod odsyłał testera donikąd</h2>
+      <p>Zanim powstała pierwsza linijka generatora, zajrzeliśmy do <code>SalesforcCloud_FTF.xlsx</code>
+      po prawdziwe kody checklisty — zamiast wpisywać je z pamięci. I wtedy wyszło, że
+      <code>RiskScanner</code> z Fazy 3 odsyła „Get Records bez filtrów" do kodu, który mówi
+      o czymś zupełnie innym:</p>
+
+      <div class="cert">
+<span class="wrong">TC-020</span>  Flow działa poprawnie dla profilu użytkownika standardowego
+<span class="right">TC-010</span>  Get Records pobiera właściwe rekordy z poprawnymi filtrami
+      </div>
+
+      <p style="margin-top:16px">Błąd był tego samego dnia wgrany na produkcję — i tego samego dnia
+      naprawiony. Lekcja jest jednak szersza niż jedna literówka: <strong>kody wpisywane z pamięci
+      wyglądają poprawnie i prowadzą donikąd</strong>. Stąd nowa klasa <code>Generator\Framework</code>
+      — komplet 26 pozycji checklisty i przypadków per typ Flow przepisany z arkusza do kodu,
+      z metodą <code>znany()</code>. Test nie przepuści już odwołania, którego nie ma w frameworku.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Produkt</div>
+    <div>
+      <h2>Jak wygląda to, co dostaje tester</h2>
+      <p>Poniżej jeden z 16 przypadków wygenerowanych dla <code>RT- Flownatic_Bad_Example</code>.
+      Nazwy nie są przykładowe — pochodzą z metadanych tego Flow.</p>
+
+      <div class="tc">
+        <div class="kv">RT-004 · TC-007 · Ważne</div>
+        <h4>Pętla „Loop Through Contacts" iteruje po właściwej kolekcji</h4>
+        <ol>
+          <li>Przygotuj kolekcję zawierającą co najmniej 3 rekordy.</li>
+          <li>Uruchom Flow.</li>
+          <li>Sprawdź w logach debug liczbę obiegów pętli i wykonania elementów:
+              <code>Update_Contact_In_Loop</code>, <code>second_create</code>.</li>
+        </ol>
+        <p class="exp">Oczekiwany wynik: liczba obiegów odpowiada liczbie elementów kolekcji;
+        każdy element przetworzony dokładnie raz.</p>
+      </div>
+
+      <p>Generator pokrywa operacje wyzwalacza, kryteria wejścia wraz z ich negatywem,
+      <strong>każdą gałąź decyzji z jej warunkiem</strong>, gałąź domyślną, pętle wraz z przypadkiem
+      pustej kolekcji, pobrania i zapisy z listą pól, walidacje ekranów, test masowy na 200 rekordach
+      oraz uprawnienia. Wykryte ryzyka wchodzą wprost — każde ma pole <code>jak_testowac</code>,
+      pisane w Fazie 3 dokładnie pod ten moment.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Most</div>
+    <div>
+      <h2>Proza modelu bez rachunku za API</h2>
+      <p>Przypadki z reguł są poprawne, ale sztampowe językowo. Most przez schowek odzyskuje
+      jakość modelu: aplikacja składa <strong>7,8 KB promptu</strong> (checklista, digest, ryzyka,
+      dokładny format odpowiedzi), Rafał wkleja go w Claude.ai, a wynik wraca do pola obok.</p>
+
+      <p><code>ClipboardImporter</code> jest przygotowany na to, co człowiek naprawdę wkleja —
+      nie na to, co powinien:</p>
+
+      <div class="tw">
+        <table>
+          <thead><tr><th>Co przychodzi</th><th>Co robi importer</th></tr></thead>
+          <tbody>
+            <tr><td>JSON w płotku <code>```json</code></td><td>zdejmuje płotek</td></tr>
+            <tr><td>„Oto przypadki testowe:" przed JSON-em</td><td>bierze fragment od <code>[</code> do <code>]</code></td></tr>
+            <tr><td><code>{"przypadki": [...]}</code></td><td>rozpakowuje obiekt</td></tr>
+            <tr><td>priorytet <code>high</code></td><td>tłumaczy na <code>Kluczowe</code></td></tr>
+            <tr><td>nieznany kod <code>TC-999</code></td><td>podmienia na ogólny, <b>nie odrzuca</b></td></tr>
+            <tr><td>zwykły tekst, urwany JSON</td><td>zdanie po polsku, nie błąd 500</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin-top:16px">Decyzja o podmianie nieznanego kodu zamiast odrzucenia całego
+      przypadku jest świadoma: <strong>jedna literówka modelu nie może kasować wklejonej pracy</strong>.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Luka</div>
+    <div>
+      <h2>Pytanie, które ujawniło cichy błąd</h2>
+      <p>Pytanie „a gdzie generator przechowuje przypadki testowe?" doprowadziło do luki, której
+      nikt by nie zauważył: gdy Flow zmienia się w org, <code>MetadataFetcher</code> zeruje digest
+      i ryzyka, więc przeliczają się same — ale przypadki testowe <strong>zostają</strong> i dalej
+      opisują poprzednią wersję. Nazwy elementów zwykle się nie zmieniają, więc na oko wszystko
+      wygląda dobrze.</p>
+
+      <div class="note">
+        <h3>Dlaczego <code>digested_at</code>, a nie <code>fetched_at</code></h3>
+        <p style="margin-bottom:0"><code>fetched_at</code> odświeża się także wtedy, gdy metadane
+        były bez zmian — każde ponowne „Pobierz metadane" fałszywie unieważniałoby całą listę.
+        <code>digested_at</code> zmienia się wyłącznie po faktycznej zmianie struktury.</p>
+      </div>
+
+      <p style="margin-top:16px">Przypadków nie kasujemy po cichu — widok pokazuje baner z obiema
+      datami i to tester decyduje. Ciche kasowanie wygląda jak zgubienie pracy.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="rail">Dalej</div>
+    <div>
+      <h2>Co zostało</h2>
+      <div class="split">
+        <div class="card">
+          <h3>🔵 Potwierdzenie w przeglądarce</h3>
+          <p>Kliknąć „Generuj testy" na wadliwym Flow i rozwinąć most. To domyka kryterium Fazy 4.</p>
+        </div>
+        <div class="card">
+          <h3>🔵 Uprzątnięcie gita</h3>
+          <p><code>main</code> nadal nie ma kodu aplikacji, a produkcja żyje z gałęzi feature.
+          Do zrobienia: <code>uat</code> ← feature, <code>main</code> ← <code>uat</code>, tagi.</p>
+        </div>
+        <div class="card">
+          <h3>🔵 Drugi Get Records</h3>
+          <p>Czwarta reguła skanera nadal zapaliła się tylko na danych syntetycznych — brakuje
+          w playgroundzie pobrania bez filtrów.</p>
+        </div>
+      </div>
+
+      <p style="margin-top:18px">Potem Faza 5: edycja przypadków i eksport do .xlsx w układzie
+      sześciu arkuszy frameworku. Zasada niezmienna — <strong>jedna faza naraz</strong>, więc
+      Faza 5 czeka, aż Faza 4 przejdzie swoje kryterium.</p>
+    </div>
+  </section>
+
+</div>

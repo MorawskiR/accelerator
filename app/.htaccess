@@ -1,0 +1,11 @@
+# Druga linia obrony.
+#
+# Ten katalog nie powinien byc w ogole osiagalny z sieci - na serwerze lezy
+# w ~/flownatic-app/, poza domains/. Ale gdyby kiedys trafil do drzewa
+# publicznego (blad konfiguracji, przeniesienie, nowa subdomena),
+# ta regula go zaslania.
+#
+# Sa tu: .env z kluczami API i haslem do bazy, kod zrodlowy, szablony
+# oraz vendor/. Zadnego z tych plikow nikt nie powinien pobrac.
+
+Require all denied

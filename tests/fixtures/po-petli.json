@@ -1,0 +1,80 @@
+{
+  "label": "DML po petli",
+  "processType": "AutoLaunchedFlow",
+  "status": "Active",
+  "start": {
+    "object": "Account",
+    "triggerType": "RecordAfterSave",
+    "recordTriggerType": "Update",
+    "filters": [
+      {
+        "field": "Name",
+        "operator": "IsChanged",
+        "value": {
+          "booleanValue": true
+        }
+      }
+    ],
+    "connector": {
+      "targetReference": "Get_Kontakty"
+    }
+  },
+  "recordLookups": [
+    {
+      "name": "Get_Kontakty",
+      "label": "Pobierz",
+      "object": "Contact",
+      "filters": [
+        {
+          "field": "AccountId",
+          "operator": "EqualTo",
+          "value": {
+            "elementReference": "$Record.Id"
+          }
+        }
+      ],
+      "connector": {
+        "targetReference": "Petla"
+      }
+    }
+  ],
+  "loops": [
+    {
+      "name": "Petla",
+      "label": "Petla",
+      "collectionReference": "Get_Kontakty",
+      "nextValueConnector": {
+        "targetReference": "Przypisz"
+      },
+      "noMoreValuesConnector": {
+        "targetReference": "Update_Po_Petli"
+      }
+    }
+  ],
+  "assignments": [
+    {
+      "name": "Przypisz",
+      "label": "Zbierz do kolekcji",
+      "connector": {
+        "targetReference": "Petla"
+      }
+    }
+  ],
+  "recordUpdates": [
+    {
+      "name": "Update_Po_Petli",
+      "label": "Zapis po petli",
+      "inputReference": "kolekcja",
+      "faultConnector": {
+        "targetReference": "Blad"
+      }
+    }
+  ],
+  "screens": [
+    {
+      "name": "Blad",
+      "label": "Blad",
+      "fields": []
+    }
+  ]
+}

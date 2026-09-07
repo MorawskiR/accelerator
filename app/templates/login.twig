@@ -1,0 +1,28 @@
+{% extends "layout.twig" %}
+{% block tytul %}Logowanie — Flownatic{% endblock %}
+
+{% block pasek %}
+<div class="pasek"><span class="marka">Flownatic</span></div>
+{% endblock %}
+
+{% block tresc %}
+<h1>Zaloguj się</h1>
+<p class="przygaszone">Akcelerator do manualnego testowania Salesforce Flow.</p>
+
+{% if blad %}<div class="blad">{{ blad }}</div>{% endif %}
+
+<div class="karta" style="max-width:420px">
+  <form method="post" action="{{ akcja }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="pole">
+      <label for="email">Adres e-mail</label>
+      <input type="email" id="email" name="email" required autocomplete="username" autofocus>
+    </div>
+    <div class="pole">
+      <label for="haslo">Hasło</label>
+      <input type="password" id="haslo" name="haslo" required autocomplete="current-password">
+    </div>
+    <button type="submit">Zaloguj</button>
+  </form>
+</div>
+{% endblock %}
