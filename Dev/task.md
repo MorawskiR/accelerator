@@ -375,6 +375,12 @@ wejść ponownie i zobaczyć, czy pasek podejmuje od miejsca zatrzymania, a licz
 - [x] 🟢 Prefiks kodu wg typu Flow: `RT-` / `SF-` / `SCH-` / `AL-`
 - [x] 🟢 Pole `jak_testowac` z `RiskScanner` wchodzi wprost w kroki — **po to je pisaliśmy w Fazie 3**
 - [x] 🟢 Przycisk **„Generuj testy"** na widoku Flow + lista TC pod ryzykami
+- [x] 🟢 **Ostrzeżenie o nieaktualnych przypadkach** — ✅ 2026-09-07. Luka wyszła przy pytaniu
+      o to, gdzie generator trzyma dane: gdy Flow zmieni się w org, `MetadataFetcher` zeruje digest
+      i ryzyka, ale `test_cases` **zostają** i po cichu opisują poprzednią wersję.
+      Sygnałem jest `digested_at`, **nie** `fetched_at` — to drugie odświeża się także przy metadanych
+      bez zmian, więc każde ponowne pobranie fałszywie unieważniałoby listę.
+      Nie kasujemy nic po cichu: widok pokazuje baner z obiema datami, tester decyduje sam
 
 ### Silnik B — most przez schowek (jakość modelu, koszt 0)
 
