@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 4 — silnik A (generator z reguł) działa na produkcji
+**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 4 kompletna kodowo, oba silniki na produkcji
 
 ---
 
@@ -295,7 +295,15 @@ przy metadanych bez zmian i fałszywie unieważniałoby listę po każdym pobran
 Wgrane 7 plików, bez migracji — `test_cases` istnieje od `001_init.sql`. Diagnostyka na produkcyjnym
 PHP 8.4.24 potwierdziła: klasy się ładują, 15 przypadków na testowym Flow, **zero nieznanych odwołań**.
 
-**Został silnik B** — most przez schowek (`PromptBuilder`, „Kopiuj prompt”, „Wklej wynik”).
+**Silnik B też działa na produkcji — 2026-09-07, 18:30.** `PromptBuilder` składa gotowy prompt
+(checklista + digest + ryzyka + format), przycisk kopiuje go do schowka, a `ClipboardImporter`
+przyjmuje odpowiedź z powrotem. Importer jest odporny na to, co człowiek naprawdę wkleja: JSON
+w płotku markdown, JSON po zdaniu wstępnym modelu, opakowanie w obiekt, priorytety po angielsku.
+Nieznany `checklist_ref` podmienia na kod ogólny zamiast odrzucać przypadek — jedna literówka
+modelu nie może kasować wklejonej pracy.
+
+**Faza 4 jest kompletna kodowo i w całości na produkcji.** Do zamknięcia brakuje potwierdzenia
+kryterium „Gotowe, gdy” w przeglądarce oraz uprzątnięcia gita.
 
 ### Zanim ruszy Faza 4 — trzy rzeczy do uprzątnięcia
 

@@ -396,11 +396,28 @@ wejść ponownie i zobaczyć, czy pasek podejmuje od miejsca zatrzymania, a licz
       puste pole, zwykły tekst, brak wymaganego pola i urwany JSON. Priorytety po angielsku
       (`high`/`medium`) sprowadzane do trzech wartości z arkusza
 
+### Deploy na produkcję
+
+Pomijamy UAT tak samo jak w Fazie 3 — to nadal ten sam świadomy wyjątek, nie zmiana procesu.
+
+- [x] 🟢 **Silnik A** — ✅ 2026-09-07, 14:21. Siedem plików: cztery klasy `Generator`,
+      poprawiony `RiskScanner` (TC-020 → TC-010), `Routes.php`, `flow.twig`. Bez migracji.
+      Sprawdzone: `GET /ftf/flows/1/testy` → **405** (trasa istnieje, przyjmuje tylko POST),
+      diagnostyka na PHP 8.4.24 — 15 przypadków, zero nieznanych odwołań
+- [x] 🟢 **Silnik B** — ✅ 2026-09-07, 18:30. Pięć plików: `PromptBuilder`,
+      `ClipboardImporter`, `Routes.php`, `flow.twig`, `layout.twig`. Bez migracji.
+      Sprawdzone: `GET /ftf/flows/1/testy/wklej` → **405**, a diagnostyka na PHP 8.4.24
+      przepuściła **najtrudniejszy realny wariant** wklejenia — JSON w płotku, po zdaniu
+      wstępnym modelu, z nieznanym kodem `TC-999` (podmieniony na `RT-001`) i priorytetem
+      `high` (sprowadzonym do `Kluczowe`). Śmieci odrzucone zdaniem po polsku, nie wyjątkiem
+
 ### Czego świadomie NIE robimy
 
-- [ ] ~~`composer require anthropic-ai/sdk`~~ — niepotrzebne, żadnych wywołań API
-- [ ] ~~prompt caching, structured outputs, guard na `refusal`~~ — dotyczyły płatnego API
-- [ ] `generation_runs` zostaje w schemacie z kosztem 0 — gdyby kiedyś doszedł silnik API
+> To **decyzje**, nie zaległości — dlatego bez kwadratów do odznaczenia.
+
+· ~~`composer require anthropic-ai/sdk`~~ — niepotrzebne, żadnych wywołań API
+· ~~prompt caching, structured outputs, guard na `refusal`~~ — dotyczyły płatnego API
+· `generation_runs` zostaje w schemacie z kosztem 0 — gdyby kiedyś doszedł silnik API
 
 - [ ] **Gotowe, gdy:** dla Record-Triggered Flow dostajemy TC na trigger, każdą gałąź Decision,
       bulk 200, brak fault path — **kryterium bez zmian**, bo digest z Fazy 3 ma wszystko,
