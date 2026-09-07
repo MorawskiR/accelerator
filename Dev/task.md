@@ -304,11 +304,22 @@
   - [x] lista Flow w dwóch stanach: import w toku (pasek na 67%) i kolejka pusta
   - [x] rozstrzyganie tras — czy `/flows/metadane/partia` nie wpada w `/flows/{id}/metadane`;
         obie są POST i obie mają trzy segmenty, więc kolizja byłaby cicha
+- [x] 🟢 **Deploy Fazy 3 na produkcję** — ✅ 2026-09-07. Decyzja Rafała: **pomijamy UAT ten jeden
+      raz**, żeby zobaczyć efekt od razu; UAT stawiamy przed Fazą 4 (procedura w `deploy.md`, sekcja 8).
+      Wgrane 9 plików w kolejności bezpiecznej dla żądań w locie: najpierw 4 klasy `Flow/`,
+      potem 3 szablony, na końcu `Routes.php` i `index.php`. Bez migracji — kolumny istnieją
+      od `001_init.sql`. `vendor/` bez zmian.
+  - [x] `/ftf/flows/1` i `/ftf/flows/metadane/stan` zwracają **302 na login** zamiast 404,
+        a nieistniejąca ścieżka nadal 404 — trasy żyją
+  - [x] Diagnostyka na produkcyjnym **PHP 8.4.24** (lokalnie jest 8.3): cztery klasy się ładują,
+        szablony na miejscu, cache Twiga zapisywalny, a `DigestBuilder` + `RiskScanner` zwracają
+        na testowym Flow dokładnie `dml_w_petli`, `dml_bez_fault_path`, `after_save_bez_kryteriow`.
+        Plik skasowany zaraz po odczycie (`/ftf/_check-faza3.php` → 404)
 - [ ] **Gotowe, gdy:** na celowo zepsutym Flow zapala się „DML w pętli" i „brak fault path"
-      ⚠️ **Przechodzi lokalnie** na realnych metadanych `RT- Flownatic_Bad_Example`
-      (5 ryzyk: 3 wysokie, 2 średnie — oba wymagane widoczne). Do odznaczenia brakuje
-      potwierdzenia **w przeglądarce**, czyli deployu; firmowa sieć blokuje `dobo.com.pl`,
-      więc sprawdzenie idzie z telefonu 🔵
+      ⚠️ Kod przechodzi lokalnie i na produkcji, ale **ostatni krok wymaga zalogowania** 🔵 —
+      hasła nie biorę do rozmowy. Wejdź na `https://dobo.com.pl/ftf/` z telefonu (firmowa sieć
+      blokuje tę domenę), zaloguj się, **Pobierz metadane**, a potem otwórz
+      `RT- Flownatic_Bad_Example`. Spodziewane: 5 ryzyk — 3 wysokie, 2 średnie
 
 ---
 

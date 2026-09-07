@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 3 gotowa kodowo — czeka na deploy i regresję
+**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 3 wgrana na produkcję — czeka na potwierdzenie w przeglądarce
 
 ---
 
@@ -261,7 +261,26 @@ API, więc lista Flow nie musi budować klienta Salesforce (a więc i odświeża
 Wszystkie 8 punktów odhaczonych. **Kryterium „Gotowe, gdy" czeka na potwierdzenie w przeglądarce**,
 a to wymaga deployu — dlatego zostaje nieodznaczone.
 
-⚠️ **Produkcja stoi na stanie z 31 sierpnia (koniec Fazy 2).** Sprawdzone 2026-09-07 przez FTP
+**Deploy wykonany 2026-09-07 — produkcja ma Fazę 3.** Decyzja Rafała: **pomijamy UAT ten jeden
+raz**, żeby zobaczyć efekt od razu. UAT stawiamy przed Fazą 4 — procedura i pułapki czekają
+w `deploy.md`, sekcja 8.
+
+Wgrane 9 plików w kolejności bezpiecznej dla żądań w locie: najpierw cztery klasy `Flow/` (same
+dodatki, nic ich jeszcze nie woła), potem trzy szablony, na końcu `Routes.php` i `index.php`.
+Sprawdzone po wdrożeniu: `/ftf/flows/1` zwraca **302 na login** zamiast 404, a diagnostyka na
+produkcyjnym **PHP 8.4.24** (lokalnie mamy 8.3) potwierdziła, że klasy się ładują, cache Twiga
+jest zapisywalny, a silnik zwraca `dml_w_petli`, `dml_bez_fault_path` i `after_save_bez_kryteriow`.
+Plik diagnostyczny skasowany zaraz po odczycie.
+
+⚠️ **Git rozjechał się z rzeczywistością i trzeba to poskładać.** `main` **nie ma ani jednej
+linijki kodu aplikacji** (57 commitów za gałęzią feature), `uat` ma tylko dokument o gałęziach.
+Cały kod z Faz 1–3 żyje wyłącznie na `feature/faza-3-widok` — a to on stoi na produkcji.
+Do zrobienia 🔵: `uat` ← `feature/faza-3-widok`, potem `main` ← `uat`, tag `faza-3`. Bez tego
+`main` przestaje znaczyć „stabilna wersja", a przy kolejnej fazie nie będzie z czego wychodzić.
+
+### Stan produkcji przed tym deployem (dla porządku)
+
+⚠️ **Produkcja stała na stanie z 31 sierpnia (koniec Fazy 2).** Sprawdzone 2026-09-07 przez FTP
 i `curl`: zdalny `flownatic-app/src/Flow/` zawiera **wyłącznie `FlowImporter.php`**, brak
 `flow.twig` w szablonach, `GET /ftf/flows/1` → **404**. Czyli nie tylko dzisiejsza praca, ale
 **cała Faza 3 z 1 września nigdy nie została wgrana**. `/ftf/health` odpowiada, baza `tak`,
