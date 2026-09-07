@@ -96,10 +96,13 @@ function renderuj(Environment $twig, string $plik): array
         'digest'       => $digest,
         'ryzyka'       => $ryzyka,
         'podsumowanie' => RiskScanner::podsumuj($ryzyka),
+        'testy'        => $GLOBALS['testy'] ?? [],
+        'zrodla'       => $GLOBALS['zrodla'] ?? [],
         'polaczona'    => true,
         'blad'         => null,
         'ok'           => null,
         'u'            => ['flows' => '/flows', 'metadane' => '/flows/1/metadane',
+                           'testy' => '/flows/1/testy',
                            'connect' => '/org/connect', 'wyloguj' => '/logout'],
     ]);
 
@@ -130,7 +133,7 @@ $przypadki = [
     ],
     [
         'plik'       => 'bez-filtrow.json',
-        'zawiera'    => ['Pobranie rekordów bez filtrów', 'TC-020'],
+        'zawiera'    => ['Pobranie rekordów bez filtrów', 'TC-010'],  // od 2026-09-07: TC-020 to uprawnienia
         'niezawiera' => [],
         'ryzyk'      => null,
     ],
@@ -183,6 +186,57 @@ foreach ($przypadki as $p) {
         $lokalne === 0 ? '' : '  (' . $lokalne . ' problemow)'
     );
 }
+
+// ── Widok z przypadkami testowymi ────────────────────────────────
+// Renderujemy ten sam Flow raz jeszcze, tym razem z gotowymi przypadkami,
+// zeby sprawdzic sekcje dodana w Fazie 4. Przypadki bierzemy z generatora,
+// a nie wymyslamy - dzieki temu test lapie tez rozjazd miedzy szablonem
+// a ksztaltem danych, ktore generator naprawde produkuje.
+require_once __DIR__ . '/../app/src/Generator/Framework.php';
+require_once __DIR__ . '/../app/src/Generator/TestCaseSource.php';
+require_once __DIR__ . '/../app/src/Generator/TemplateGenerator.php';
+
+$metaBad = json_decode((string) file_get_contents(__DIR__ . '/fixtures/bad-example.json'), true);
+$digestBad = (new DigestBuilder())->build(is_array($metaBad) ? $metaBad : []);
+$ryzykaBad = (new RiskScanner())->scan($digestBad);
+
+$GLOBALS['testy'] = array_map(
+    static function (array $t): array {
+        // Wiersz z bazy ma jeszcze source i status - dokladamy je jak repozytorium.
+        $t['source'] = 'reguly';
+        $t['status'] = 'draft';
+
+        return $t;
+    },
+    (new \Flownatic\Generator\TemplateGenerator())->generuj($digestBad, $ryzykaBad)
+);
+
+$GLOBALS['zrodla'] = ['reguly' => count($GLOBALS['testy'])];
+
+$zTestami = renderuj($twig, __DIR__ . '/fixtures/bad-example.json');
+file_put_contents($wyjscie . '/bad-example-z-testami.html', $zTestami['html']);
+
+$lokalne = 0;
+
+foreach ([
+    'Przypadki testowe',
+    'Generuj ponownie',              // sa juz przypadki, wiec przycisk zmienia napis
+    'RT-001',                        // kod pierwszego przypadku
+    'Oczekiwany wynik',
+    'dopiski własne zostają nietknięte',
+] as $tekst) {
+    if (!str_contains($zTestami['html'], $tekst)) {
+        echo '[BLAD] widok z testami - brak: ' . $tekst . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+$bledy += $lokalne;
+printf('%-20s %s  przypadkow: %d' . PHP_EOL, 'flow.twig/testy',
+    $lokalne === 0 ? '[OK] ' : '[BLAD]', count($GLOBALS['testy']));
+
+$GLOBALS['testy']  = [];
+$GLOBALS['zrodla'] = [];
 
 // ── Lista Flow ───────────────────────────────────────────────────
 // Osobno, bo liczniki ryzyk na liscie biora sie z innego miejsca niz widok
@@ -288,6 +342,7 @@ $rozstrzygniecia = [
     'POST /flows/metadane'          => '/flows/metadane',
     'POST /flows/metadane/partia'   => '/flows/metadane/partia',
     'POST /flows/7/metadane'        => '/flows/{id}/metadane',
+    'POST /flows/7/testy'           => '/flows/{id}/testy',
     'POST /flows/sync'              => '/flows/sync',
 ];
 

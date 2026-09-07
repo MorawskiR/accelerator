@@ -7,6 +7,8 @@ namespace Flownatic\Http;
 use Flownatic\Flow\FlowAnalyzer;
 use Flownatic\Flow\FlowImporter;
 use Flownatic\Flow\MetadataFetcher;
+use Flownatic\Generator\TemplateGenerator;
+use Flownatic\Generator\TestCaseRepository;
 use Flownatic\Salesforce\OAuthService;
 use Flownatic\Support\Config;
 use Flownatic\Support\Db;
@@ -339,6 +341,47 @@ final class Routes
             return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
         })->add($auth);
 
+        // Generowanie przypadkow testowych. Bez wywolan platnego API -
+        // TemplateGenerator instancjonuje checkliste frameworku danymi z digestu.
+        $app->post('/flows/{id}/testy', function (Request $request, Response $response, array $args) use ($app): Response {
+            $id  = (int) ($args['id'] ?? 0);
+            $uid = (int) $_SESSION['user_id'];
+
+            if (self::flowUzytkownika($id, $uid) === null) {
+                return self::zKomunikatem($response, $app, 'Nie ma takiego Flow.', '/flows');
+            }
+
+            try {
+                $analiza = (new FlowAnalyzer())->analiza($id);
+            } catch (\Throwable $e) {
+                return self::zKomunikatem($response, $app, $e->getMessage(), '/flows/' . $id);
+            }
+
+            if ($analiza === null) {
+                return self::zKomunikatem($response, $app,
+                    'Najpierw pobierz metadane tego Flow - bez nich nie ma z czego generowac.', '/flows/' . $id);
+            }
+
+            $przypadki = (new TemplateGenerator())->generuj($analiza['digest'], $analiza['ryzyka']);
+
+            try {
+                $ile = (new TestCaseRepository())->zapisz(
+                    (int) $analiza['wersja']['id'],
+                    $przypadki,
+                    TestCaseRepository::ZRODLO_REGULY
+                );
+            } catch (\Throwable $e) {
+                return self::zKomunikatem($response, $app, 'Nie moge zapisac przypadkow: ' . $e->getMessage(), '/flows/' . $id);
+            }
+
+            $_SESSION['komunikat_ok'] = sprintf(
+                'Wygenerowano %d przypadkow testowych. Dopiski wlasne pozostaly nietkniete.',
+                $ile
+            );
+
+            return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
+        })->add($auth);
+
         // Widok jednego Flow: struktura z DigestBuilder i ryzyka z RiskScanner.
         $app->get('/flows/{id}', function (Request $request, Response $response, array $args) use ($app): Response {
             $id   = (int) ($args['id'] ?? 0);
@@ -360,18 +403,31 @@ final class Routes
                 $blad ??= 'Nie moge przeliczyc struktury: ' . $e->getMessage();
             }
 
+            $testy   = [];
+            $zrodla  = [];
+            $wersjaId = (int) ($analiza['wersja']['id'] ?? 0);
+
+            if ($wersjaId > 0) {
+                $repo   = new TestCaseRepository();
+                $testy  = $repo->dla($wersjaId);
+                $zrodla = $repo->podsumowanie($wersjaId);
+            }
+
             return Twig::fromRequest($request)->render($response, 'flow.twig', [
                 'flow'         => $flow,
                 'wersja'       => $analiza['wersja'] ?? null,
                 'digest'       => $analiza['digest'] ?? null,
                 'ryzyka'       => $analiza['ryzyka'] ?? [],
                 'podsumowanie' => $analiza['podsumowanie'] ?? [],
+                'testy'        => $testy,
+                'zrodla'       => $zrodla,
                 'polaczona'    => (new OAuthService())->connection($uid) !== null,
                 'blad'         => $blad,
                 'ok'           => self::pobierzKomunikatOk(),
                 'u'            => [
                     'flows'    => self::url($app, '/flows'),
                     'metadane' => self::url($app, '/flows/' . $id . '/metadane'),
+                    'testy'    => self::url($app, '/flows/' . $id . '/testy'),
                     'connect'  => self::url($app, '/org/connect'),
                     'wyloguj'  => self::url($app, '/logout'),
                 ],

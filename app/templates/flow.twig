@@ -104,6 +104,70 @@
     {% endfor %}
   {% endif %}
 
+  {# ── Przypadki testowe ─────────────────────────────────────────
+     To jest produkt tego narzędzia. Ryzyka wyżej mówią, na co uważać;
+     tutaj jest gotowa lista do wykonania, z odwołaniami do frameworku. #}
+  <h2>Przypadki testowe
+    {% if testy is not empty %}<span class="przygaszone">({{ testy|length }})</span>{% endif %}
+  </h2>
+
+  <div class="karta">
+    <div class="rzad">
+      <div>
+        {% if testy is empty %}
+          <div class="przygaszone">Jeszcze nie wygenerowane. Powstaną z reguł — bez wywołań płatnego API.</div>
+        {% else %}
+          <div class="przygaszone">
+            {% for zrodlo, ile in zrodla %}
+              {{ ile }} {{ zrodlo == 'reguly' ? 'z reguł' : (zrodlo == 'wklejone' ? 'wklejonych' : 'własnych') }}{% if not loop.last %} · {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+      <form method="post" action="{{ u.testy }}" style="margin:0">
+        <button type="submit" {% if testy is not empty %}class="cichy"{% endif %}>
+          {{ testy is empty ? 'Generuj testy' : 'Generuj ponownie' }}
+        </button>
+      </form>
+    </div>
+    {% if testy is not empty %}
+      <p class="przygaszone" style="margin:12px 0 0">Ponowne generowanie nadpisuje wyłącznie przypadki
+      z reguł — dopiski własne zostają nietknięte.</p>
+    {% endif %}
+  </div>
+
+  {% for t in testy %}
+    <div class="karta">
+      <div class="rzad">
+        <div>
+          <span class="mono"><strong>{{ t.tc_code }}</strong></span>
+          <span class="znacznik">{{ t.checklist_ref }}</span>
+          {% if t.source != 'reguly' %}
+            <span class="znacznik">{{ t.source == 'wklejone' ? 'wklejone' : 'własne' }}</span>
+          {% endif %}
+        </div>
+        <span class="waga {{ t.priority == 'Kluczowe' ? 'wysokie' : (t.priority == 'Ważne' ? 'srednie' : 'niskie') }}">
+          {{ t.priority }}
+        </span>
+      </div>
+
+      <h3 style="margin:10px 0 0; font-size:1rem">{{ t.title }}</h3>
+
+      <dl class="para">
+        {% if t.preconditions %}
+          <dt>Warunki wstępne</dt><dd>{{ t.preconditions }}</dd>
+        {% endif %}
+        <dt>Kroki</dt>
+        <dd>
+          {% for krok in t.steps|split("\n") %}
+            <div>{{ krok }}</div>
+          {% endfor %}
+        </dd>
+        <dt>Oczekiwany wynik</dt><dd>{{ t.expected }}</dd>
+      </dl>
+    </div>
+  {% endfor %}
+
   {# ── Struktura ─────────────────────────────────────────────── #}
   <h2>Struktura</h2>
 
