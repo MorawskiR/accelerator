@@ -277,8 +277,25 @@
   - [x] DML bez fault path → TC-015
   - [x] After Save bez entry criteria → ryzyko rekursji (RT-004)
   - [x] `Get Records` bez filtrów → nadmiar rekordów
-- [ ] 🟢 Widok struktury Flow + lista wykrytych ryzyk
+- [x] 🟢 Widok struktury Flow + lista wykrytych ryzyk — ✅ 2026-09-07.
+      `GET /flows/{id}`: ryzyka przed strukturą (to one są powodem wejścia), a niżej wyzwalacz,
+      operacje zapisu, pobrania, pętle, decyzje, ekrany i zmienne. Lista Flow dostała link
+      w nazwie i kolumnę z licznikami ryzyk.
+  - [x] `app/src/Flow/FlowAnalyzer.php` — **brakujące ogniwo**: `MetadataFetcher` zapisywał tylko
+        surowe metadane i zerował `digest_json`/`risks_json`, a nic ich nie liczyło.
+        Liczy leniwie (przy oglądaniu, nie przy imporcie — import ma twarde 180 s) i zapisuje,
+        bo Faza 4 wysyła digest do modelu, a Faza 5 eksportuje ryzyka do .xlsx
+  - [x] `MetadataFetcher::pobierzJeden()` — pobranie metadanych jednego Flow z pominięciem
+        kolejki partii; `pobierzPartie()` i ono dzielą teraz `przetworzFlow()`
+  - [x] Teksty ryzyk z polskimi znakami — trafiają wprost na ekran i do eksportu z Fazy 5
+- [x] 🟢 `tests/widok-flow.php` — ✅ 2026-09-07. Renderuje `flow.twig` na czterech fixture'ach
+      bez bazy i bez org (`php tests/widok-flow.php`). Pilnuje obu ryzyk z kryterium poniżej
+      **oraz braku fałszywych alarmów** na `po-petli.json` i `czysty.json`. Podgląd: `tests/out/`
 - [ ] **Gotowe, gdy:** na celowo zepsutym Flow zapala się „DML w pętli" i „brak fault path"
+      ⚠️ **Przechodzi lokalnie** na realnych metadanych `RT- Flownatic_Bad_Example`
+      (5 ryzyk: 3 wysokie, 2 średnie — oba wymagane widoczne). Do odznaczenia brakuje
+      potwierdzenia **w przeglądarce**, czyli deployu; firmowa sieć blokuje `dobo.com.pl`,
+      więc sprawdzenie idzie z telefonu 🔵
 
 ---
 

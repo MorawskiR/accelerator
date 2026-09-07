@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-08-27 · **Aktualny stan:** Faza 0 — subdomena postawiona
+**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 3 — widok struktury i ryzyk działa
 
 ---
 
@@ -179,9 +179,10 @@ publiczny, nie nasze autorstwo.
 
 ## 7. Gdzie jesteśmy i co dalej
 
-**Stan na koniec sesji 2026-09-01.**
-**Faza 0 ✅ · Faza 1 ✅ · Faza 2 ✅ ZAMKNIĘTA · Faza 3: 5 z 8.**
-Gałąź: `feature/faza-3-flow-digest`. Kod: 14 klas, ~2300 linii w `app/src/`.
+**Stan na koniec sesji 2026-09-07.**
+**Faza 0 ✅ · Faza 1 ✅ · Faza 2 ✅ ZAMKNIĘTA · Faza 3: 7 z 8.**
+Gałąź: `feature/faza-3-widok` (wyszła z `feature/faza-3-flow-digest`, zawiera całą jej historię).
+Kod: 15 klas, ~2600 linii w `app/src/`.
 
 ### Aplikacja działa na produkcji i czyta prawdziwą org
 
@@ -207,11 +208,38 @@ od `nextValueConnector`, a nie zliczanie elementów. Naiwne „Flow ma pętlę i
 zgłaszałoby poprawne Flow jako błędne. Osobny test na fałszywy alarm: Flow z DML
 **po** pętli, z fault path i kryteriami → **zero ryzyk**.
 
-### Zostały 3 punkty Fazy 3
+### Widok Flow — gotowy 2026-09-07
+
+`GET /flows/{id}` pokazuje **najpierw ryzyka, potem strukturę** — bo ryzyka są powodem, dla
+którego tester tu wchodzi, a struktura jest dowodem, skąd się wzięły. Lista Flow ma teraz link
+w nazwie i kolumnę z licznikami ryzyk.
+
+**Odkryta luka, którą trzeba było domknąć:** `MetadataFetcher` zapisywał wyłącznie surowe
+metadane i przy każdej zmianie zerował `digest_json` / `risks_json` — a **nic ich nie liczyło**.
+Digest i ryzyka nie trafiały do bazy w ogóle. Domyka to `Flow\FlowAnalyzer`:
+
+- **liczy leniwie**, przy oglądaniu, a nie przy imporcie — import ma twarde 180 s i każda
+  sekunda w nim jest droga, a digest to czysty PHP bez wywołań API, więc jest tani;
+- **ale zapisuje**, bo Faza 4 wysyła digest do modelu, a Faza 5 eksportuje ryzyka do .xlsx —
+  obie muszą dostać dokładnie to, co tester zobaczył na ekranie;
+- `podsumowania()` dolicza brakujące przy wejściu na listę (limit 50 na żądanie).
+
+`MetadataFetcher::pobierzJeden()` pobiera metadane jednego Flow z pominięciem kolejki partii —
+tester klika w konkretny Flow i nie ma powodu czekać na całą kolejkę.
+
+Teksty ryzyk dostały polskie znaki: idą wprost na ekran, a w Fazie 5 do eksportu .xlsx.
+
+**Weryfikacja bez bazy i bez org:** `php tests/widok-flow.php` renderuje `flow.twig` na czterech
+fixture'ach. Na `bad-example.json` (realne metadane `RT- Flownatic_Bad_Example`) widać oba ryzyka
+z kryterium fazy, a na `po-petli.json` i `czysty.json` **zero fałszywych alarmów**. Podgląd HTML
+ląduje w `tests/out/` (poza repo).
+
+### Został 1 punkt Fazy 3
 
 - 🟢 pasek postępu odpytywany AJAX-em (import wznawialny już działa po stronie klasy)
-- 🟢 widok struktury Flow + lista wykrytych ryzyk
-- **Gotowe, gdy:** na wadliwym Flow w przeglądarce zapala się „DML w pętli" i „brak fault path"
+- **Gotowe, gdy:** na wadliwym Flow **w przeglądarce** zapala się „DML w pętli" i „brak fault path"
+  — lokalnie przechodzi, brakuje potwierdzenia po deployu (firmowa sieć blokuje `dobo.com.pl`,
+  więc sprawdzenie idzie z telefonu)
 
 ### Do zrobienia po stronie Rafała 🔵
 
