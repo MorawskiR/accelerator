@@ -459,6 +459,12 @@ wynik o złym formacie daje czytelny błąd.
 - [x] 🟢 `tests/eksport.php` — ✅ 2026-09-07. Buduje plik, **otwiera go ponownie** i sprawdza
       sześć arkuszy, komplet checklisty, liczbę przypadków co do sztuki oraz to, że formuły
       przetrwały zapis i odczyt. Plik, którego nie da się otworzyć, jest bezwartościowy
+- [x] 🟢 **Deploy eksportu na produkcję** — ✅ 2026-09-07, 22:50. Trzy pliki: `XlsxExporter`,
+      `Routes.php`, `flow.twig`. Bez migracji, `vendor` bez zmian — PhpSpreadsheet leży tam
+      od 28 sierpnia. Diagnostyka na produkcji potwierdziła całą drogę zapisu:
+      `zip` obecny, katalog tymczasowy zapisywalny, plik **19 771 B** zbudowany i **otwarty
+      z powrotem** (6 arkuszy, 16 przypadków), a **szczyt pamięci to 20 MB przy limicie 128 MB**
+      — ograniczenie z Fazy 0 okazało się mieć ogromny zapas
 - [ ] **Gotowe, gdy:** pobrany .xlsx wygląda jak framework, tylko wypełniony konkretami z org
       ⚠️ Przechodzi lokalnie (21 KB, 6 arkuszy, 16 przypadków). Do odznaczenia brakuje otwarcia
       pliku w Excelu i porównania z oryginalnym `SalesforcCloud_FTF.xlsx` 🔵
