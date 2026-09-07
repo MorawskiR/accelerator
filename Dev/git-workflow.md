@@ -104,7 +104,7 @@ Lista rośnie wraz z projektem — **po każdej zakończonej fazie dopisujemy do
 | R7 | Na celowo wadliwym Flow zapala się „DML w pętli" i „brak fault path" | 3 |
 | R8 | Import przerwany w połowie da się wznowić, nie duplikuje danych | 3 |
 | R9 | Generowanie TC zwraca 15–30 przypadków z `checklist_ref` | 4 |
-| R10 | Drugie generowanie z rzędu: `cacheReadInputTokens > 0` | 4 |
+| R10 | Ponowne generowanie **nadpisuje** przypadki, nie duplikuje ich; wklejony wynik o złym formacie daje czytelny błąd, a nie 500 | 4 |
 | R11 | Edycja TC zapisuje się poprawnie | 5 |
 | R12 | Eksport .xlsx otwiera się i ma układ 6 arkuszy frameworku | 5 |
 

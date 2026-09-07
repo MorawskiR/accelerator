@@ -337,29 +337,53 @@ wejść ponownie i zobaczyć, czy pasek podejmuje od miejsca zatrzymania, a licz
 
 ---
 
-## FAZA 4 — Warstwa AI
+## FAZA 4 — Generator przypadków testowych (bez kosztów API)
 
-- [ ] 🔵 **Doładuj konto Anthropic** — klucz jest ważny (`GET /v1/models` → 200,
-      `claude-opus-5` dostępny), ale **saldo zerowe**: `/v1/messages` zwraca
-      `credit balance is too low`. Ścieżka: **platform.claude.com/settings/billing**
-      (komunikat API myli, kierując do nieistniejącej pozycji „Plans & Billing”).
-      Wymaga roli Admin lub Billing. Kredyty przedpłacone, **wygasają po roku**
-      i są bezzwrotne — dla POC kupić mało. Szacunek: ~0,09 USD za jeden Flow
-      (digest 2–5 KB, nie surowy JSON), czyli 10–18 USD na cały rozwój Fazy 4 i walidację.
-      Auto-doładowania nie włączać, dopóki nie znamy realnego zużycia.
-      ⚠️ **Ważność klucza nie dowodzi, że da się uruchomić model** — `/v1/models`
-      zwraca 200 nawet przy pustym koncie. Sprawdzać realnym wywołaniem.
-- [ ] 🟢 `composer require anthropic-ai/sdk`
-- [ ] 🟢 `app/src/Ai/Prompts/system_checklist.md` — TC-001…TC-026 + reguły SF + format wyjścia
-- [ ] 🟢 `app/src/Ai/TestCaseGenerator.php` — model `claude-opus-5`
-- [ ] 🟢 **Prompt caching** — `cacheControl` na bloku `system`, Flow Digest w `messages`
-- [ ] 🟢 **Structured outputs** — JSON Schema, bez parsowania markdownu
-- [ ] 🟢 **Nie ustawiać** `thinking` ani `budgetTokens` (na Opus 5 zwraca 400)
-- [ ] 🟢 Guard na `stopReason === 'refusal'`
-- [ ] 🟢 Mapowanie: `checklist_ref` → TC-001…TC-026, prefiksy `RT-`/`SF-`/`SCH-`/`AL-`
-- [ ] 🟢 Ryzyka z `RiskScanner` jako **obowiązkowe do pokrycia** w promptcie
-- [ ] 🟢 Zapis kosztu w `generation_runs`
-- [ ] **Gotowe, gdy:** dla Record-Triggered Flow dostajemy TC na trigger, każdą gałąź Decision, bulk 200, brak fault path
+> **Decyzja z 2026-09-07 — Rafał: projekt ma działać bez kosztów.** Doładowanie konta Anthropic
+> wypada z planu. ⚠️ Nie wracać do pomysłu „użyjemy subskrypcji": **subskrypcja Claude i kredyty
+> API to dwa osobne rozliczenia**, a aplikacja PHP wołająca `/v1/messages` obciąża kredyty API
+> niezależnie od sposobu uwierzytelnienia. Uzasadnienie i pełny kształt fazy: `plan.md`.
+
+- [x] 🔵 ~~Doładuj konto Anthropic~~ — **anulowane 2026-09-07**, patrz wyżej
+
+### Wspólny interfejs
+
+- [ ] 🟢 `app/src/Generator/TestCaseSource.php` — `generuj(array $digest, array $ryzyka): array`
+- [ ] 🟢 `app/src/Generator/TestCaseRepository.php` — zapis do `test_cases`, `source` rozróżnia
+      `reguly` / `wklejone` / `manual`; ponowne generowanie **nadpisuje**, nie duplikuje
+
+### Silnik A — `TemplateGenerator` (domyślny, deterministyczny, koszt 0)
+
+- [ ] 🟢 `app/src/Generator/TemplateGenerator.php` — instancjonuje TC-001…TC-026 nazwami z digestu
+- [ ] 🟢 `app/src/Generator/szablony.php` — treści kroków i oczekiwanych wyników, po polsku
+  - [ ] TC na każdą operację wyzwalacza (Create / Update / Delete)
+  - [ ] TC „rekord spełnia kryteria wejścia" i „nie spełnia"
+  - [ ] TC na każdą gałąź `decyzje[].galezie` + gałąź domyślną, z warunkiem w krokach
+  - [ ] TC bulk na 200 rekordów, gdy digest pokazuje DML w pętli
+  - [ ] TC na wymuszony błąd zapisu, gdy DML nie ma fault path
+  - [ ] TC na duży wolumen, gdy `Get Records` jest bez filtrów
+  - [ ] TC na walidację pól wymaganych ekranu
+  - [ ] TC na rekursję przy After Save bez kryteriów
+- [ ] 🟢 Prefiks kodu wg typu Flow: `RT-` / `SF-` / `SCH-` / `AL-`
+- [ ] 🟢 Pole `jak_testowac` z `RiskScanner` wchodzi wprost w kroki — **po to je pisaliśmy w Fazie 3**
+- [ ] 🟢 Przycisk **„Generuj testy"** na widoku Flow + lista TC pod ryzykami
+
+### Silnik B — most przez schowek (jakość modelu, koszt 0)
+
+- [ ] 🟢 `app/src/Generator/PromptBuilder.php` — składa prompt: checklista + digest + ryzyka + format
+- [ ] 🟢 Przycisk **„Kopiuj prompt"** — do wklejenia w Claude.ai albo Claude Code (subskrypcja)
+- [ ] 🟢 Pole **„Wklej wynik"** + `ClipboardImporter` — walidacja schematu, czytelny błąd
+      przy śmieciach, zapis z `source = 'wklejone'`
+
+### Czego świadomie NIE robimy
+
+- [ ] ~~`composer require anthropic-ai/sdk`~~ — niepotrzebne, żadnych wywołań API
+- [ ] ~~prompt caching, structured outputs, guard na `refusal`~~ — dotyczyły płatnego API
+- [ ] `generation_runs` zostaje w schemacie z kosztem 0 — gdyby kiedyś doszedł silnik API
+
+- [ ] **Gotowe, gdy:** dla Record-Triggered Flow dostajemy TC na trigger, każdą gałąź Decision,
+      bulk 200, brak fault path — **kryterium bez zmian**, bo digest z Fazy 3 ma wszystko,
+      czego do tego trzeba
 
 ---
 

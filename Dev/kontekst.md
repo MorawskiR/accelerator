@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 3 ZAMKNIĘTA — analizator działa na produkcji
+**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 3 ZAMKNIĘTA · Faza 4 przeredagowana na wariant bez kosztów API
 
 ---
 
@@ -34,12 +34,12 @@ twardych liczb do obrony tego zgłoszenia.
 |---|---|---|
 | Backend | **PHP 8.4 + MySQL** | Natywne dla cyberfolks. Node.js wymagałby ręcznego `nohup` i proxy w `.htaccess`, bez PM2 i bez wsparcia hostingu |
 | Framework | **Slim 4** (nie Laravel) | Na współdzielonym hostingu Laravel to walka z document rootem i `artisan`, bez korzyści w zamian |
-| Silnik AI | **Claude API**, model `claude-opus-5` | Działa z każdą org, w tym Developer Edition. Einstein/Agentforce wymagałby licencji, których playground może nie mieć — rozważymy w Fazie 6 |
+| Generator TC | **Reguły deterministyczne, bez płatnego API** | Decyzja z 2026-09-07: projekt ma działać bez kosztów. Subskrypcji Claude nie da się podpiąć pod wywołania API — to osobne rozliczenia. Prozę modelu odzyskuje most przez schowek. Szczegóły w sekcji 7 |
 | Zakres MVP | **Analizator Flow → generator TC** | To sedno pomysłu i to, czego Excel nie potrafi. Pełny menedżer testów byłby głównie przepisaniem arkusza |
 | Użytkownicy | **Jeden, jedna org** | POC. Bez `tenant_id`, bez izolacji — najszybsza droga do walidacji |
 | Kolejność | **Deploy w Fazie 1, nie na końcu** | Ryzyko hostingowe najgorzej odkrywać po trzech tygodniach kodowania. Callback OAuth i tak wymaga publicznego HTTPS już w Fazie 2 |
 | Adres produkcyjny | **`dobo.com.pl/ftf/`, nie subdomena** | Subdomena i podkatalog to fizycznie ten sam katalog, więc subdomena nie daje izolacji. Podkatalog ma ważny, publicznie zaufany certyfikat od ręki — subdomena nie ma żadnego. Decyzja z 2026-08-27 |
-| Kolejność | **Parser (Faza 3) przed AI (Faza 4)** | Deterministyczny parser robi to, co musi być powtarzalne. Model dostaje mały, czysty opis i robi to, w czym jest dobry. Taniej, celniej, i część wartości działa bez API AI |
+| Kolejność | **Parser (Faza 3) przed generatorem (Faza 4)** | Deterministyczny parser robi to, co musi być powtarzalne. **Ta kolejność uratowała projekt 2026-09-07**: gdy zapadła decyzja o zerowym koszcie, nie trzeba było wyrzucić niczego — wartość stała poza AI, a Faza 4 miała gotowy wsad |
 
 ---
 
@@ -117,7 +117,7 @@ Klucz SSH `%USERPROFILE%\.ssh\cyberfolks_dobo` został wygenerowany, ale jest be
 4. **Limit API playgrounda** (Developer Edition) — nie odpytywać niezmienionych Flow.
 5. **`DOCUMENT_ROOT` raportuje `private_html`**, choć pliki idą do `public_html`. Nie polegać na
    `$_SERVER['DOCUMENT_ROOT']` — używać `__DIR__`.
-6. **Na Opus 5 nie ustawiać** `budgetTokens` ani `thinking` — zwraca 400. Thinking jest domyślnie włączone.
+6. ~~Na Opus 5 nie ustawiać `budgetTokens` ani `thinking`~~ — **nieaktualne od 2026-09-07**: aplikacja nie woła płatnego API. Zostawione, bo wróci, gdyby kiedyś doszedł `ApiGenerator`.
 7. **DocumentRoot subdomeny leży WEWNĄTRZ `public_html` domeny głównej** —
    `domains/dobo.com.pl/public_html/ftf/`, a nie `domains/ftf.dobo.com.pl/`, jak zakładał `plan.md`.
    DirectAdmin na cyberfolks tak właśnie zakłada subdomeny. **Konsekwencja bezpieczeństwa:** katalog
@@ -278,8 +278,38 @@ podejmuje od miejsca zatrzymania i czy liczba Flow się nie zmienia).
 2. 🔵 **Postawić UAT** (`deploy.md`, sekcja 8) — pominięcie go było świadomym jednorazowym
    wyjątkiem, nie zmianą procesu. Faza 4 wprowadza koszty API, więc regresja na produkcji
    przestaje być tania.
-3. 🔵 **Doładować konto Anthropic** — klucz jest ważny, ale saldo zerowe, `/v1/messages`
-   zwraca `credit balance is too low`. Bez tego Faza 4 nie ruszy.
+3. ~~Doładować konto Anthropic~~ — **anulowane 2026-09-07.** Faza 4 została przeredagowana tak,
+   żeby obyć się bez płatnego API. Nic tu nie blokuje.
+
+### Faza 4 bez kosztów — decyzja z 2026-09-07
+
+Rafał: **projekt ma działać bez kosztów, subskrypcja powinna wystarczyć.**
+
+⚠️ **Rzecz, do której nie warto wracać:** subskrypcja Claude i kredyty API to **dwa osobne
+rozliczenia**. Aplikacja PHP wołająca `/v1/messages` obciąża kredyty API niezależnie od tego,
+czy uwierzytelni się kluczem, czy profilem OAuth — subskrypcji nie da się pod to podpiąć.
+Wybór był binarny: kredyty albo brak wywołań z serwera.
+
+Dla porządku, cennik sprawdzony tego dnia (`claude-opus-5`: $5/$25 za 1M tokenów wej./wyj.):
+realny koszt to **0,15–0,25 USD za Flow** — nie 0,09, jak zakładał stary `task.md`, bo tamten
+szacunek pomijał tokeny myślenia. Cała Faza 4 wyszłaby na 10–20 USD. Kwota nieduża, ale decyzja
+brzmi „zero", więc plan idzie w tę stronę.
+
+**Nowy kształt Fazy 4: dwa źródła TC wpięte w jeden interfejs `TestCaseSource`.**
+
+- **`TemplateGenerator`** — domyślny, deterministyczny, zero kosztów. Instancjonuje checklistę
+  TC-001…TC-026 nazwami z digestu: operacje wyzwalacza, każda gałąź decyzji z warunkiem, bulk 200
+  przy DML w pętli, wymuszony błąd przy braku fault path, wolumen przy `Get Records` bez filtrów.
+- **Most przez schowek** — „Kopiuj prompt" → Claude.ai albo Claude Code (pokryte subskrypcją) →
+  „Wklej wynik" z walidacją schematu. Odzyskuje prozę modelu, gdy potrzebna jest na demo.
+- Miejsce na `ApiGenerator` zostaje w interfejsie, gdyby kiedyś pojawiły się kredyty.
+
+**Kryterium „Gotowe, gdy" Fazy 4 nie zmieniło się ani o słowo** — i to jest najlepszy dowód, że
+kolejność Faz 3→4 była dobra. Digest ma wszystko, czego generator potrzebuje; gdyby projekt stał
+na wrzucaniu surowego JSON-a do modelu, ta decyzja kosztowałaby przepisanie połowy aplikacji.
+
+**Kompromis, o którym trzeba wiedzieć:** przypadki z reguł są poprawne, ale sztampowe językowo.
+Model pisze kroki naturalniej. Most przez schowek to odzyskuje, kosztem dwóch `Ctrl+V`.
 
 **Deploy wykonany 2026-09-07 — produkcja ma Fazę 3.** Decyzja Rafała: **pomijamy UAT ten jeden
 raz**, żeby zobaczyć efekt od razu. UAT stawiamy przed Fazą 4 — procedura i pułapki czekają

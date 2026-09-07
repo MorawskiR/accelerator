@@ -8,7 +8,7 @@
 > (po przerwaniu sesji lub skompaktowaniu kontekstu) opisuje **[`kontekst.md`](kontekst.md)**.
 
 **Aplikacja:** webowa · **Hosting:** cyberfolks (`dobo.com.pl/ftf/`) · **Stack:** PHP 8.4 / MySQL / Slim 4
-**AI:** Claude API (`claude-opus-5`) · **Org testowa:** hands-on playground · **Użytkownik:** jeden (POC)
+**Generator TC:** reguły deterministyczne, bez płatnego API (decyzja 2026-09-07) · **Org testowa:** hands-on playground · **Użytkownik:** jeden (POC)
 
 ---
 
@@ -19,8 +19,8 @@
 | 0 | Fundament i weryfikacja hostingu | ✅ Zakończona (2 punkty świadomie odłożone) |
 | 1 | Szkielet aplikacji + deploy na produkcję | ✅ **Zakończona 2026-08-31** |
 | 2 | OAuth do Salesforce + automatyczny inwentarz Flow | ✅ **Zakończona 2026-09-01** |
-| 3 | Metadane Flow + Flow Digest + RiskScanner | ⬜ Nie rozpoczęta |
-| 4 | Warstwa AI — generowanie przypadków testowych | ⬜ Nie rozpoczęta |
+| 3 | Metadane Flow + Flow Digest + RiskScanner | ✅ **Zakończona 2026-09-07** |
+| 4 | Generator przypadków testowych (bez kosztów API) | ⬜ Nie rozpoczęta |
 | 5 | Edycja i eksport do .xlsx | ⬜ Nie rozpoczęta |
 | 6 | Walidacja pomysłu (Ideal validation) | ⬜ Nie rozpoczęta |
 
@@ -57,22 +57,25 @@ aplikacja robi żmudną część.
 | 8 | Gotowa apka na `dobo.com.pl`, używana na realnych Flow | ↓ |
 | 7 | Eksport do .xlsx w układzie 6 arkuszy frameworku | ↓ |
 | 6 | Przypadki testowe w bazie, edytowalne przez testera | ↓ |
-| 5 | AI generuje TC dopasowane do struktury konkretnego Flow | ↓ |
+| 5 | Generator TC dopasowanych do struktury konkretnego Flow | ↓ |
 | 4 | **Flow Digest** — skondensowany opis Flow (nie surowy JSON) | ↓ |
 | 3 | Pobrane metadane Flow z org (Tooling API, cache w bazie) | ↓ |
 | 2 | Działający OAuth do Salesforce + lista Flow z org | ↓ |
 | 1 | Szkielet PHP + baza + logowanie, **działające na produkcji** | ↓ |
-| 0 | Dostępy, playground org, klucz API, lokalne środowisko | — |
+| 0 | Dostępy, playground org, lokalne środowisko | — |
 
 **Dwie decyzje kolejnościowe, które są celowe:**
 
 1. **Deploy na produkcję w Fazie 1, nie na końcu.** Ryzyko hostingowe (wersja PHP, brak Composera,
    uprawnienia katalogów, HTTPS pod callback OAuth) jest największe i najgorsze do odkrycia po trzech
    tygodniach pisania kodu lokalnie. Callback OAuth i tak wymaga publicznego HTTPS-a już w Fazie 2.
-2. **Parser (Faza 3) przed AI (Faza 4).** Deterministyczny parser robi to, co musi być w 100%
-   powtarzalne — strukturę i ryzyka techniczne. Model dostaje czysty, mały opis i robi to, w czym jest
-   dobry — wymyśla scenariusze i dane testowe. Taniej, celniej, powtarzalnie, i część wartości działa
-   nawet gdy API AI jest niedostępne. Gdyby wrzucać surowy JSON do modelu, jakość byłaby losowa.
+2. **Parser (Faza 3) przed generatorem (Faza 4).** Deterministyczny parser robi to, co musi być
+   w 100% powtarzalne — strukturę i ryzyka techniczne. Faza 4 tylko instancjonuje checklistę
+   tym, co parser już wyciągnął.
+   **Ta kolejność okazała się kluczowa 2026-09-07:** gdy zapadła decyzja o rezygnacji z płatnego API,
+   nie trzeba było wyrzucać niczego — cała wartość Faz 1–3 stała poza AI, a Faza 4 miała już gotowy,
+   ustrukturyzowany wsad. Gdyby projekt opierał się na wrzucaniu surowego JSON-a do modelu,
+   ta decyzja kosztowałaby przepisanie połowy aplikacji.
 
 ---
 
@@ -82,7 +85,6 @@ aplikacja robi żmudną część.
 Przeglądarka  ──►  dobo.com.pl/ftf/  (Apache + PHP, cyberfolks)
                           │
                           ├──►  Salesforce Tooling API   (metadane Flow)
-                          ├──►  Claude API                (generowanie TC)
                           └──►  MySQL                     (cache + wyniki)
 ```
 
@@ -97,7 +99,7 @@ Układ katalogów na serwerze — **kod źródłowy i sekrety poza katalogiem pu
 │       ├── .htaccess         ← rewrite wszystkiego do index.php
 │       └── assets/
 └── flownatic-app/            ← NIEDOSTĘPNE z przeglądarki (poza domains/)
-    ├── .env                  ← ANTHROPIC_API_KEY, SF_CLIENT_SECRET, APP_KEY
+    ├── .env                  ← SF_CLIENT_SECRET, APP_KEY (klucz Anthropic zbędny)
     ├── vendor/               ← zależności Composera
     ├── src/
     ├── templates/
@@ -113,7 +115,7 @@ Układ katalogów na serwerze — **kod źródłowy i sekrety poza katalogiem pu
 > `dirname(__DIR__, 4) . '/flownatic-app'` (serwer), więc ten sam kod działa w obu układach.
 
 
-**Stack:** Slim 4 + PDO + Twig + `phpoffice/phpspreadsheet` + `anthropic-ai/sdk`.
+**Stack:** Slim 4 + PDO + Twig + `phpoffice/phpspreadsheet`. **Bez SDK Anthropic** — Faza 4 nie woła API.
 Świadomie **nie Laravel** — na współdzielonym hostingu to walka z document rootem, uprawnieniami
 i `artisan`, a nie potrzebujemy niczego, co daje w zamian.
 
@@ -125,8 +127,8 @@ i `artisan`, a nie potrzebujemy niczego, co daje w zamian.
 | `sf_connections` | org: `instance_url`, `access_token_enc`, `refresh_token_enc`, `expires_at` |
 | `flows` | inwentarz: `api_name`, `label`, `process_type`, `trigger_object`, `trigger_type`, `is_active` |
 | `flow_versions` | `version_number`, `status`, `metadata_json`, `metadata_hash`, `digest_json`, `fetched_at` |
-| `test_cases` | `tc_code`, `category`, `title`, `steps`, `expected`, `priority`, `checklist_ref`, `source`(ai/manual), `status` |
-| `generation_runs` | `model`, `input_tokens`, `output_tokens`, `cost_usd` — koszt widoczny od pierwszego dnia |
+| `test_cases` | `tc_code`, `category`, `title`, `steps`, `expected`, `priority`, `checklist_ref`, `source`(reguly/wklejone/manual), `status` |
+| `generation_runs` | `model`, `input_tokens`, `output_tokens`, `cost_usd` — zostaje w schemacie, ale w Fazie 4 koszt to 0 |
 
 ---
 
@@ -166,7 +168,7 @@ przy budowaniu ścieżek — używać `__DIR__`.
     publicznie zaufany certyfikat od ręki, a subdomena go nie ma
 - [ ] **Baza MySQL** + użytkownik (zapisz dane dostępowe)
 - [ ] **Playground org** — zaloguj się, potwierdź uprawnienia admina (potrzebne do Tooling API na Flow)
-- [ ] **Klucz Anthropic** — `ANTHROPIC_API_KEY` z console.anthropic.com
+- [ ] ~~**Klucz Anthropic**~~ — **nieaktualne od 2026-09-07.** Faza 4 nie woła płatnego API, więc klucz nie jest do niczego potrzebny
 - [ ] **Lokalne środowisko:** PHP 8.1+ / Composer / MySQL (Laragon albo XAMPP) + `git init` w katalogu projektu
 - [ ] **Utwórz 3–5 Flow w playgroundzie** różnych typów (Record-Triggered, Screen, Scheduled)
   - **Jeden zrób celowo źle:** DML wewnątrz Loop, bez fault path.
@@ -281,58 +283,101 @@ Na celowo zepsutym Flow z Fazy 0 **musi** zapalić się „DML w pętli".
 
 ---
 
-# FAZA 4 — Warstwa AI: generowanie przypadków testowych
+# FAZA 4 — Generator przypadków testowych (bez kosztów API)
 
 **Cel:** klikasz „Generuj testy" → dostajesz 15–30 konkretnych TC dla tego Flow.
+**Bez ani jednego płatnego wywołania API.**
 
-- [ ] `composer require anthropic-ai/sdk`
-- [ ] `app/src/Ai/Prompts/system_checklist.md` — część stała promptu
-- [ ] `app/src/Ai/TestCaseGenerator.php`
+### Decyzja z 2026-09-07: rezygnujemy z płatnego API
 
-### Kształt wywołania
+Pierwotny plan zakładał `POST /v1/messages` na `claude-opus-5` i doładowanie konta.
+Rafał zdecydował inaczej: **projekt ma działać bez kosztów.**
+
+⚠️ **Rzecz, którą trzeba znać, żeby nie wracać do tego pomysłu:** subskrypcja Claude
+i kredyty API to **dwa osobne rozliczenia**. Aplikacja PHP wołająca `/v1/messages`
+obciąża kredyty API niezależnie od tego, czy uwierzytelni się kluczem, czy profilem
+OAuth — subskrypcji nie da się do tego podpiąć. Wybór jest więc binarny: albo kredyty,
+albo brak wywołań z serwera. Wybieramy to drugie.
+
+Zamiast jednego silnika AI mamy **dwa źródła TC wpięte w ten sam interfejs** — plus
+trzecie, gdyby kiedyś pojawiły się kredyty. Żadne z nich nie wymaga zmiany reszty aplikacji.
 
 ```php
-use Anthropic\Client;
-
-$client = new Client(apiKey: Config::get('ANTHROPIC_API_KEY'));
-
-$message = $client->messages->create(
-    model: 'claude-opus-5',
-    maxTokens: 16000,
-    system: [[
-        'type'         => 'text',
-        'text'         => $stalyPromptZChecklista,   // Universal Checklist + reguły SF + format
-        'cacheControl' => ['type' => 'ephemeral'],
-    ]],
-    messages: [['role' => 'user', 'content' => $flowDigestJson]],
-);
+interface TestCaseSource
+{
+    /** @return list<array<string,mixed>> przypadki gotowe do zapisu w test_cases */
+    public function generuj(array $digest, array $ryzyka): array;
+}
 ```
 
-### Cztery rzeczy, na których to stoi
+| Implementacja | Koszt | Kiedy używana |
+|---|---|---|
+| `TemplateGenerator` | **0** | Domyślna. Zawsze działa, także bez internetu |
+| `ClipboardImporter` | **0** (subskrypcja) | Gdy chcemy prozy modelu — np. na demo |
+| `ApiGenerator` | płatny | Nie budujemy teraz. Interfejs zostawia na to miejsce |
 
-- [ ] **Prompt caching.** Część stała — TC-001…TC-026, reguły Salesforce, definicja formatu wyjścia —
-      ląduje w `system` z `cacheControl`. Zmienny Flow Digest idzie w `messages`, czyli **po** punkcie
-      cache'owania. Minimalny cache'owalny prefiks to ~1024 tokeny — checklista z regułami spokojnie
-      to przekracza. Weryfikacja: `$message->usage->cacheReadInputTokens` > 0 przy drugim wywołaniu.
-- [ ] **Structured outputs** (`output_config.format` z JSON Schema) — wymuszają tablicę obiektów
-      z polami `tc_code`, `category`, `title`, `steps[]`, `expected`, `priority`, `checklist_ref`.
-      Bez parsowania markdownu.
-- [ ] **Adaptive thinking** jest na Opus 5 domyślnie włączone — po prostu nie ustawiaj parametru
-      `thinking`. **Nie przekazuj `budgetTokens`** — na tym modelu zwraca błąd 400.
-- [ ] **Guard na odmowę:** sprawdzaj `$message->stopReason === 'refusal'` przed czytaniem treści.
+### Silnik A — `TemplateGenerator`, deterministyczny
+
+Digest z Fazy 3 zawiera **wszystko, czego potrzeba**, żeby wypisać konkretne przypadki:
+nazwy elementów, obiekt wyzwalacza, kryteria wejścia, gałęzie decyzji z warunkami, pętle,
+operacje zapisu, pola ekranów. Generator instancjonuje uniwersalną checklistę TC-001…TC-026
+tymi nazwami. To ta sama zasada, co `RiskScanner`: reguły, zero AI, powtarzalny wynik.
+
+| Co w digeście | Jakie TC powstają | `checklist_ref` |
+|---|---|---|
+| `wyzwalacz.operacje` (Create/Update/Delete) | po jednym TC na operację | TC-001…TC-003 |
+| `wyzwalacz.kryteria_wejscia` | rekord spełnia kryteria / **nie** spełnia | TC-004, TC-005 |
+| każda gałąź `decyzje[].galezie` | TC na gałąź, z warunkiem w krokach | TC-008 |
+| gałąź domyślna decyzji | TC na ścieżkę domyślną | TC-009 |
+| `petle` + DML w ciele | **bulk na 200 rekordów** | TC-018 |
+| DML bez `ma_fault` | wymuszony błąd zapisu | TC-015 |
+| `zapytania` bez filtrów | duży wolumen danych | TC-020 |
+| `ekrany[].pola.wymagane` | walidacja pola wymaganego | TC-012 |
+| After Save bez kryteriów | test rekursji | RT-004 |
+
+Prefiks kodu bierze się z typu Flow, zgodnie z arkuszem „Test Cases": `RT-` / `SF-` / `SCH-` / `AL-`.
+Ryzyka z `RiskScanner` **wchodzą wprost** — każde ryzyko ma już pole `jak_testowac`, które
+jest gotowym opisem kroków. To nie przypadek: pisaliśmy je w Fazie 3 właśnie pod ten moment.
+
+### Silnik B — most przez schowek
+
+Deterministyczny generator daje przypadki **poprawne, ale sztampowe** — model pisze kroki
+naturalniejszym językiem i lepiej łapie niuanse domenowe. Odzyskujemy to bez płacenia za API:
+
+- [ ] przycisk **„Kopiuj prompt"** — aplikacja składa gotowy prompt: checklista + digest + ryzyka
+      + wymagany format JSON
+- [ ] Rafał wkleja go do Claude.ai albo Claude Code (**pokryte subskrypcją**) i kopiuje odpowiedź
+- [ ] pole **„Wklej wynik"** — walidacja po schemacie i zapis do `test_cases` z `source = 'wklejone'`
+
+Ręczne, ale to dwa `Ctrl+V`, a nie przepisywanie testów. I daje dokładnie tę samą treść,
+za którą płaciłoby się przez API.
 
 ### Mapowanie na framework
 
-To jest to, co czyni z tego **akcelerator**, a nie generyczny generator:
+To jest to, co czyni z tego **akcelerator**, a nie generyczny generator — i jest niezależne
+od tego, który silnik wyprodukował treść:
 
-- [ ] każdy wygenerowany TC ma `checklist_ref` wskazujący na konkretne TC-001…TC-026
+- [ ] każdy TC ma `checklist_ref` wskazujący na konkretne TC-001…TC-026
 - [ ] kod dostaje prefiks wg typu Flow zgodny z arkuszem „Test Cases": `RT-` / `SF-` / `SCH-` / `AL-`
-- [ ] ryzyka z `RiskScanner` (Faza 3) wchodzą do promptu jako **obowiązkowe do pokrycia** — jeśli parser
-      wykrył DML w pętli, model musi wygenerować test bulk na 200 rekordów
+- [ ] ryzyka z `RiskScanner` (Faza 3) są **obowiązkowe do pokrycia** — jeśli parser wykrył DML
+      w pętli, wśród TC musi być bulk na 200 rekordów
+- [ ] `test_cases.source` rozróżnia `reguly` od `wklejone` — w Fazie 6 to podstawa do policzenia,
+      które przypadki były trafione
 
-**Koszt** (Opus 5: $5 / $25 za 1M tokenów wej./wyj.): ok. 6K tokenów wejścia + 4K wyjścia na Flow
-≈ **$0,13**, z cache'em taniej. Kilkanaście Flow to grosze — koszt AI nie jest w tym projekcie
-czynnikiem ryzyka i nie ma powodu schodzić na słabszy model.
+### Co ta decyzja zmienia w pozostałych fazach
+
+- **Faza 5 (eksport .xlsx): bez zmian.** Czyta `test_cases`, nie obchodzi jej, skąd się wzięły.
+- **Faza 6 (obrona pomysłu): argument się wzmacnia.** „Koszt na Flow: 0 USD, bez licencji
+  i bez zależności od zewnętrznego dostawcy" broni się w firmie lepiej niż „$0,13 za Flow".
+- **Regresja:** R10 traci sens (dotyczył `cacheReadInputTokens`, czyli API) i zostaje zastąpiony —
+  patrz `git-workflow.md`.
+- **`generation_runs`** zostaje w schemacie, ale z kosztem 0. Nie kasujemy tabeli: gdyby kiedyś
+  doszedł `ApiGenerator`, jest gotowa.
+
+**Uczciwie o kompromisie:** deterministyczny generator nie napisze kroków tak płynnie jak model
+i nie wychwyci niuansu, którego nie ma w metadanych. Most przez schowek to odzyskuje na żądanie.
+Cała reszta wartości — inwentarz, digest, wykrywanie ryzyk, mapowanie na framework, eksport —
+**nigdy nie zależała od AI**.
 
 **Gotowe, gdy:** dla Record-Triggered Flow dostajesz TC pokrywające trigger, każdą gałąź Decision,
 bulk 200 rekordów i brakujący fault path — z odwołaniami do checklisty.
@@ -379,7 +424,7 @@ To jest „punkt drugi" z Twojego zgłoszenia. Bez tego cała reszta jest tylko 
 | `Flow.Metadata` = 1 rekord na zapytanie | Faza 3 | cache po `metadata_hash`, import partiami |
 | Limit wywołań API playgrounda (Developer Edition) | Faza 3 | ten sam cache; nie odpytuj niezmienionych Flow |
 | Uprawnienia do Tooling API na Flow | Faza 2 | w playgroundzie jesteś adminem; u klienta wymagać „View All Data" / „Manage Flow" |
-| Wyciek sekretów (`ANTHROPIC_API_KEY`, refresh token SF) | Faza 1 | `.env` poza `public_html` + `Require all denied`; tokeny SF szyfrowane AES-256-GCM |
+| Wyciek sekretów (`SF_CLIENT_SECRET`, refresh token SF) | Faza 1 | `.env` poza `public_html` + `Require all denied`; tokeny SF szyfrowane AES-256-GCM |
 | Wygasły refresh token / rozłączona org | Faza 2 | czytelny komunikat i przycisk ponownej autoryzacji, nie cichy błąd 500 |
 | Model generuje ogólniki zamiast konkretów | Faza 4 | jakość zależy od Flow Digest, nie od promptu — dlatego Faza 3 jest przed Fazą 4 |
 
@@ -395,7 +440,8 @@ Test akceptacyjny całości, do przejścia po Fazie 5:
 4. Wybór Flow → import metadanych → widoczna struktura + wykryte ryzyka
 5. Na celowo zepsutym Flow z Fazy 0: `RiskScanner` **musi** zgłosić „DML w pętli" i „brak fault path"
 6. „Generuj testy" → 15–30 TC z odwołaniami do TC-001…TC-026
-7. Drugie generowanie z rzędu: `usage->cacheReadInputTokens > 0` — sprawdzalne w `generation_runs`
+7. Drugie generowanie z rzędu **nadpisuje** przypadki zamiast je duplikować; wklejony wynik
+   o złym formacie daje czytelny błąd, a nie 500
 8. Edycja jednego TC → eksport .xlsx → plik otwiera się i ma układ frameworku
 9. Rozłącz org, spróbuj generować → czytelny komunikat, nie błąd 500
 

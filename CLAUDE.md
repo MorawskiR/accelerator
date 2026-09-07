@@ -10,8 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Flownatic** — akcelerator do manualnego testowania Salesforce Flow. Aplikacja webowa (PHP 8.4 / MySQL /
 Slim 4) podłącza się do org przez API, czyta strukturę Flow, deterministycznie wykrywa ryzyka, a następnie
-przez Claude API zamienia generyczną checklistę TC-001…TC-026 w konkretne przypadki testowe i eksportuje je
-do .xlsx w układzie frameworku.
+regułami zamienia generyczną checklistę TC-001…TC-026 w konkretne przypadki testowe i eksportuje je
+do .xlsx w układzie frameworku. **Bez płatnego API** — decyzja z 2026-09-07, patrz `Dev/plan.md`, Faza 4.
 
 **Stan: projekt jest przed pierwszą linijką kodu aplikacji.** W repo są dziś tylko: dokumentacja w `Dev/`,
 strona-wizytówka `site/index.html` i narzędzia w `tools/`. Katalogi `app/` i `public_html/` z opisu
@@ -115,9 +115,10 @@ a równoległy `app/` (z `.env`, `vendor/`, `src/`) jest niedostępny z sieci �
 - **Slim 4, nie Laravel** — na współdzielonym hostingu Laravel to walka z document rootem i `artisan`, bez
   korzyści w zamian.
 - **PHP, nie Node.js** — cyberfolks nie wspiera Node (ręczny `nohup` + proxy w `.htaccess`, bez PM2).
-- **Deterministyczny parser (Faza 3) przed AI (Faza 4).** `DigestBuilder` zamienia 100–300 KB surowego JSON-a
-  na 2–5 KB konkretów, a `RiskScanner` wykrywa ryzyka regułami, zero AI. Model dostaje mały, czysty opis
-  i robi to, w czym jest dobry. Wrzucanie surowego JSON-a do modelu dawałoby losową jakość.
+- **Deterministyczny parser (Faza 3) przed generatorem (Faza 4).** `DigestBuilder` zamienia 100–300 KB
+  surowego JSON-a na 2–5 KB konkretów, a `RiskScanner` wykrywa ryzyka regułami. **Ta kolejność uratowała
+  projekt 2026-09-07**, gdy zapadła decyzja o rezygnacji z płatnego API: nie trzeba było wyrzucić niczego,
+  bo cała wartość stała poza AI, a Faza 4 miała gotowy, ustrukturyzowany wsad do instancjonowania szablonów.
 - **Deploy na produkcję w Fazie 1, nie na końcu** — ryzyko hostingowe najgorzej odkrywać po trzech tygodniach
   kodowania, a callback OAuth i tak wymaga publicznego HTTPS już w Fazie 2.
 - **Jeden użytkownik, jedna org** — POC, bez `tenant_id` i izolacji.
