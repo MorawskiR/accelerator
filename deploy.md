@@ -126,6 +126,43 @@ Lista kontrolna po wdrożeniu:
 - [ ] nagłówki `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` obecne
 - [ ] wizytówka na `dobo.com.pl` nadal działa
 
+## 8. Drugie środowisko (UAT) — czego nie widać na pierwszy rzut oka
+
+**Nie jest jeszcze postawione.** Poniżej to, co wyszło z rozpoznania 2026-09-07, żeby
+nie odkrywać tego w trakcie.
+
+UAT stoi pod `https://qekbnopwvk.cfolks.pl/`, document root to
+`domains/qekbnopwvk.cfolks.pl/public_html/` — czyli **korzeń domeny, nie podkatalog**
+jak na produkcji. Dziś leży tam wyłącznie domyślny `index.html` hostingu.
+
+⚠️ **To o jeden poziom wyżej niż produkcja, więc `dirname(__DIR__, 4)` w `index.php`
+trafia w `/home/flownatic-app` — obok.** Dlatego `index.php` sprawdza najpierw
+`public_html/app-dir.php`: plik zwracający ścieżkę katalogu aplikacji, zakładany
+**raz na środowisko**, poza repozytorium. Deploy wgrywa pliki po jednym i niczego
+nie kasuje, więc raz założony wskaźnik przeżywa kolejne wgrania.
+
+```php
+<?php return '/home/qekbnopwvk/flownatic-app-uat';
+```
+
+⚠️ **UAT musi mieć własny katalog aplikacji i własną bazę.** Gdyby wskazywał na
+`~/flownatic-app`, dzieliłby z produkcją `.env`, tokeny Salesforce i dane — a wtedy
+regresja na UAT testowałaby produkcję.
+
+Kolejność stawiania:
+
+1. 🔵 baza MySQL dla UAT (DirectAdmin) — kodowanie `utf8mb4`, panel lubi dać `utf8mb3`
+2. 🔵 w Connected App w Salesforce dopisać callback `https://qekbnopwvk.cfolks.pl/oauth/callback`
+   — bez tego OAuth odbije się z `redirect_uri_mismatch`
+3. 🟢 `flownatic-app-uat/` przez FTP: `src`, `templates`, `db`, `bin` + `vendor` (`-UploadZip`)
+4. 🟢 własny `.env` (inny `APP_KEY`, inne dane bazy, `APP_ENV=uat`)
+5. 🟢 `public_html/{index.php,.htaccess}` do docroota UAT + `app-dir.php`
+6. 🟢 skasować `index.html` hostingu, inaczej przesłoni `index.php`
+7. 🟢 migracje przez `bin/migrate.php`, konto przez `bin/adduser.php`
+
+**Dobra wiadomość:** `qekbnopwvk.cfolks.pl` odpowiada **z firmowej sieci** (HTTP 200),
+w odróżnieniu od `dobo.com.pl`. Regresję R1–R8 da się więc przeklikać z laptopa.
+
 ## Czego nie robić
 
 - **Nie wgrywać `app/` w całości** — poleciałby lokalny `.env`

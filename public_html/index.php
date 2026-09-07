@@ -10,12 +10,26 @@ declare(strict_types=1);
  */
 
 // ── Znalezienie kodu aplikacji ───────────────────────────────────
-// Dwa ukazy katalogow, bo DirectAdmin zaklada subdomene wewnatrz public_html
-// domeny glownej: lokalnie app/ jest obok, na serwerze lezy w ~/flownatic-app/.
-$kandydaci = [
-    __DIR__ . '/../app',                    // uklad lokalny (repozytorium)
-    dirname(__DIR__, 4) . '/flownatic-app', // uklad serwera, poza domains/
-];
+// Kilka ukladow katalogow, bo DirectAdmin zaklada subdomene wewnatrz
+// public_html domeny glownej: lokalnie app/ jest obok, na produkcji lezy
+// w ~/flownatic-app/.
+//
+// app-dir.php to wskaznik zakladany RAZ na srodowisko i celowo trzymany poza
+// repozytorium: ma zwracac sciezke do katalogu aplikacji. Potrzebuje go UAT,
+// ktorego document root jest o poziom wyzej niz produkcyjny (domena zamiast
+// podkatalogu), wiec liczenie w gore trafia obok. Deploy wgrywa pliki po
+// jednym i niczego nie kasuje, wiec raz zalozony wskaznik przezywa kolejne
+// wgrania. Jest plikiem PHP, a nie tekstowym, zeby pobrany z sieci nie
+// pokazywal sciezki na dysku.
+$wskaznik  = __DIR__ . '/app-dir.php';
+$kandydaci = [];
+
+if (is_file($wskaznik)) {
+    $kandydaci[] = rtrim(trim((string) require $wskaznik), '/\\');
+}
+
+$kandydaci[] = __DIR__ . '/../app';                    // uklad lokalny (repozytorium)
+$kandydaci[] = dirname(__DIR__, 4) . '/flownatic-app'; // uklad produkcji, poza domains/
 
 $appDir = null;
 

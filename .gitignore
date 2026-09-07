@@ -54,3 +54,6 @@ Salesforce Go with the Flow Ebook*.pdf
 
 # Podglad HTML z tests/widok-flow.php - generowany, nie wersjonowany
 tests/out/
+
+# Wskaznik katalogu aplikacji - zakladany raz na srodowisko, na serwerze
+public_html/app-dir.php
