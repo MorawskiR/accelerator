@@ -118,6 +118,17 @@ a.cichy:hover{text-decoration:underline}
 .chipy{display:flex; flex-wrap:wrap; gap:7px; margin:10px 0 0}
 .pusto{color:var(--przygaszony); font-size:.9rem; margin:0}
 
+/* ── Most przez schowek ─────────────────────────────────── */
+textarea{width:100%; padding:11px 13px; font:13px/1.5 ui-monospace,"Cascadia Code",monospace;
+  color:var(--tekst); background:var(--tlo); border:1px solid var(--linia); border-radius:7px;
+  resize:vertical}
+textarea:focus{outline:2px solid var(--akcent); outline-offset:1px}
+details.most summary{cursor:pointer; font-weight:600; list-style:none}
+details.most summary::-webkit-details-marker{display:none}
+details.most summary::before{content:"▸ "; color:var(--przygaszony)}
+details.most[open] summary::before{content:"▾ "}
+details.most[open] summary{margin-bottom:10px}
+
 /* ── Pasek postępu importu ──────────────────────────────── */
 .postep{height:8px; border-radius:999px; background:var(--plyta2); overflow:hidden; margin:14px 0 0}
 .postep-slupek{height:100%; width:0; border-radius:999px;

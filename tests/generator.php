@@ -311,6 +311,130 @@ foreach ($sytuacje as $s) {
 $bledy += $lokalne;
 printf("%-22s %s\n", 'nieaktualnosc', $lokalne === 0 ? '[OK] ' : '[BLAD]');
 
+// ── Most przez schowek ───────────────────────────────────────────
+require_once __DIR__ . '/../app/src/Generator/PromptBuilder.php';
+require_once __DIR__ . '/../app/src/Generator/ClipboardImporter.php';
+
+use Flownatic\Generator\ClipboardImporter;
+use Flownatic\Generator\PromptBuilder;
+
+$wynikBad  = przypadkiDla(__DIR__ . '/fixtures/bad-example.json');
+$digestBad = $wynikBad['digest'];
+$ryzykaBad = $wynikBad['ryzyka'];
+
+$prompt = (new PromptBuilder())->zbuduj($digestBad, $ryzykaBad);
+file_put_contents($wyjscie . '/prompt-bad-example.txt', $prompt);
+
+$lokalne = 0;
+
+// Prompt musi niesc komplet: framework, strukture, ryzyka i format wyjscia.
+foreach ([
+    'TC-018',                       // kod z checklisty
+    'RT-005',                       // przypadek per typ Flow
+    'Loop Through Contacts',        // nazwa z digestu
+    'DML wewnątrz pętli',           // wykryte ryzyko
+    'checklist_ref',                // wymagany format
+    'Odpowiedz',                    // instrukcja o samym JSON-ie
+] as $tekst) {
+    if (!str_contains($prompt, $tekst)) {
+        echo '[BLAD] prompt - brak: ' . $tekst . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+$bledy += $lokalne;
+printf("%-22s %s  dlugosc: %d B\n", 'PromptBuilder',
+    $lokalne === 0 ? '[OK] ' : '[BLAD]', strlen($prompt));
+
+// Warianty tego, co czlowiek naprawde wklei.
+$poprawny = '[{"checklist_ref":"TC-005","title":"Galaz Tak","preconditions":null,'
+    . '"steps":"1. Ustaw pole.\n2. Zapisz.","expected":"Flow idzie w galaz Tak","priority":"Kluczowe"}]';
+
+/** @var list<array{opis:string, wejscie:string, przypadkow:?int, blad:bool}> $wklejenia */
+$wklejenia = [
+    ['opis' => 'czysty JSON', 'wejscie' => $poprawny, 'przypadkow' => 1, 'blad' => false],
+    ['opis' => 'JSON w plotku markdown',
+     'wejscie' => "```json\n" . $poprawny . "\n```", 'przypadkow' => 1, 'blad' => false],
+    ['opis' => 'JSON po zdaniu wstepnym',
+     'wejscie' => "Oto przypadki testowe dla tego Flow:\n\n" . $poprawny, 'przypadkow' => 1, 'blad' => false],
+    ['opis' => 'opakowanie w obiekt',
+     'wejscie' => '{"przypadki":' . $poprawny . '}', 'przypadkow' => 1, 'blad' => false],
+    ['opis' => 'nieznany checklist_ref - podmiana, nie odrzucenie',
+     'wejscie' => str_replace('TC-005', 'TC-999', $poprawny), 'przypadkow' => 1, 'blad' => false],
+    ['opis' => 'puste pole', 'wejscie' => '', 'przypadkow' => null, 'blad' => true],
+    ['opis' => 'zwykly tekst', 'wejscie' => 'Nie mam dostepu do tego Flow.', 'przypadkow' => null, 'blad' => true],
+    ['opis' => 'brak wymaganego pola',
+     'wejscie' => '[{"checklist_ref":"TC-005","title":"Bez krokow","expected":"cos"}]',
+     'przypadkow' => null, 'blad' => true],
+    ['opis' => 'urwany JSON', 'wejscie' => '[{"title":"Urwane"', 'przypadkow' => null, 'blad' => true],
+];
+
+$lokalne = 0;
+
+foreach ($wklejenia as $w) {
+    try {
+        $tcW = (new ClipboardImporter($w['wejscie']))->generuj($digestBad, $ryzykaBad);
+        $bylBlad = false;
+    } catch (\Throwable $e) {
+        $tcW = [];
+        $bylBlad = true;
+
+        // Komunikat ma byc dla czlowieka, nie zrzutem stosu.
+        if (strlen($e->getMessage()) < 15) {
+            echo '[BLAD] wklejanie (' . $w['opis'] . ') - komunikat za ubogi: ' . $e->getMessage() . PHP_EOL;
+            $lokalne++;
+        }
+    }
+
+    if ($bylBlad !== $w['blad']) {
+        echo '[BLAD] wklejanie (' . $w['opis'] . ') - oczekiwano '
+            . ($w['blad'] ? 'bledu' : 'sukcesu') . PHP_EOL;
+        $lokalne++;
+        continue;
+    }
+
+    if ($w['przypadkow'] !== null && count($tcW) !== $w['przypadkow']) {
+        echo '[BLAD] wklejanie (' . $w['opis'] . ') - przypadkow: ' . count($tcW) . PHP_EOL;
+        $lokalne++;
+    }
+
+    foreach ($tcW as $p) {
+        if (!Framework::znany((string) $p['checklist_ref'])) {
+            echo '[BLAD] wklejanie (' . $w['opis'] . ') - przepuscil nieznany kod' . PHP_EOL;
+            $lokalne++;
+        }
+
+        if (($p['tc_code'] ?? '') === '') {
+            echo '[BLAD] wklejanie (' . $w['opis'] . ') - brak nadanego kodu' . PHP_EOL;
+            $lokalne++;
+        }
+    }
+}
+
+// Priorytety z modelu bywaja po angielsku albo w innej odmianie.
+$mieszane = '[{"checklist_ref":"TC-005","title":"A","steps":"1. X","expected":"Y","priority":"high"},'
+    . '{"checklist_ref":"TC-005","title":"B","steps":"1. X","expected":"Y","priority":"ważne"},'
+    . '{"checklist_ref":"TC-005","title":"C","steps":"1. X","expected":"Y"}]';
+
+$tcP = (new ClipboardImporter($mieszane))->generuj($digestBad, $ryzykaBad);
+$dozwolone = [Framework::PRIORYTET_KLUCZOWY, Framework::PRIORYTET_WAZNY, Framework::PRIORYTET_STANDARD];
+
+foreach ($tcP as $p) {
+    if (!in_array((string) $p['priority'], $dozwolone, true)) {
+        echo '[BLAD] priorytet spoza arkusza: ' . (string) $p['priority'] . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+if (($tcP[0]['priority'] ?? '') !== Framework::PRIORYTET_KLUCZOWY) {
+    echo '[BLAD] "high" nie zamienilo sie na Kluczowe' . PHP_EOL;
+    $lokalne++;
+}
+
+$bledy += $lokalne;
+printf("%-22s %s  wariantow: %d\n", 'ClipboardImporter',
+    $lokalne === 0 ? '[OK] ' : '[BLAD]', count($wklejenia));
+
 echo PHP_EOL . ($bledy === 0
     ? 'Wszystko sie zgadza. Podglad: tests/out/tc-*.txt' . PHP_EOL
     : $bledy . ' problemow.' . PHP_EOL);

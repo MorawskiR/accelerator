@@ -7,6 +7,8 @@ namespace Flownatic\Http;
 use Flownatic\Flow\FlowAnalyzer;
 use Flownatic\Flow\FlowImporter;
 use Flownatic\Flow\MetadataFetcher;
+use Flownatic\Generator\ClipboardImporter;
+use Flownatic\Generator\PromptBuilder;
 use Flownatic\Generator\TemplateGenerator;
 use Flownatic\Generator\TestCaseRepository;
 use Flownatic\Salesforce\OAuthService;
@@ -382,6 +384,48 @@ final class Routes
             return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
         })->add($auth);
 
+        // Druga polowa mostu przez schowek: wynik wklejony z Claude.ai wraca tutaj.
+        $app->post('/flows/{id}/testy/wklej', function (Request $request, Response $response, array $args) use ($app): Response {
+            $id  = (int) ($args['id'] ?? 0);
+            $uid = (int) $_SESSION['user_id'];
+
+            if (self::flowUzytkownika($id, $uid) === null) {
+                return self::zKomunikatem($response, $app, 'Nie ma takiego Flow.', '/flows');
+            }
+
+            $dane     = (array) $request->getParsedBody();
+            $wklejone = (string) ($dane['wynik'] ?? '');
+
+            try {
+                $analiza = (new FlowAnalyzer())->analiza($id);
+            } catch (\Throwable $e) {
+                return self::zKomunikatem($response, $app, $e->getMessage(), '/flows/' . $id);
+            }
+
+            if ($analiza === null) {
+                return self::zKomunikatem($response, $app,
+                    'Najpierw pobierz metadane tego Flow.', '/flows/' . $id);
+            }
+
+            try {
+                $przypadki = (new ClipboardImporter($wklejone))->generuj($analiza['digest'], $analiza['ryzyka']);
+
+                $ile = (new TestCaseRepository())->zapisz(
+                    (int) $analiza['wersja']['id'],
+                    $przypadki,
+                    TestCaseRepository::ZRODLO_WKLEJONE
+                );
+            } catch (\Throwable $e) {
+                // Zly format to najczestszy przypadek uzycia tej sciezki -
+                // ma konczyc sie zdaniem po polsku, a nie strona bledu.
+                return self::zKomunikatem($response, $app, $e->getMessage(), '/flows/' . $id);
+            }
+
+            $_SESSION['komunikat_ok'] = sprintf('Wczytano %d przypadkow z wklejonego wyniku.', $ile);
+
+            return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
+        })->add($auth);
+
         // Widok jednego Flow: struktura z DigestBuilder i ryzyka z RiskScanner.
         $app->get('/flows/{id}', function (Request $request, Response $response, array $args) use ($app): Response {
             $id   = (int) ($args['id'] ?? 0);
@@ -418,6 +462,12 @@ final class Routes
                 );
             }
 
+            // Prompt skladamy przy kazdym wyswietleniu - to czysty string,
+            // tanszy niz trzymanie go w bazie i pilnowanie aktualnosci.
+            $prompt = $analiza === null
+                ? null
+                : (new PromptBuilder())->zbuduj($analiza['digest'], $analiza['ryzyka']);
+
             return Twig::fromRequest($request)->render($response, 'flow.twig', [
                 'flow'         => $flow,
                 'wersja'       => $analiza['wersja'] ?? null,
@@ -427,6 +477,7 @@ final class Routes
                 'testy'        => $testy,
                 'zrodla'       => $zrodla,
                 'stanTestow'   => $stanTest,
+                'prompt'       => $prompt,
                 'polaczona'    => (new OAuthService())->connection($uid) !== null,
                 'blad'         => $blad,
                 'ok'           => self::pobierzKomunikatOk(),
@@ -434,6 +485,7 @@ final class Routes
                     'flows'    => self::url($app, '/flows'),
                     'metadane' => self::url($app, '/flows/' . $id . '/metadane'),
                     'testy'    => self::url($app, '/flows/' . $id . '/testy'),
+                    'wklej'    => self::url($app, '/flows/' . $id . '/testy/wklej'),
                     'connect'  => self::url($app, '/org/connect'),
                     'wyloguj'  => self::url($app, '/logout'),
                 ],

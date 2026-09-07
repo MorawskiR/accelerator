@@ -384,10 +384,17 @@ wejść ponownie i zobaczyć, czy pasek podejmuje od miejsca zatrzymania, a licz
 
 ### Silnik B — most przez schowek (jakość modelu, koszt 0)
 
-- [ ] 🟢 `app/src/Generator/PromptBuilder.php` — składa prompt: checklista + digest + ryzyka + format
-- [ ] 🟢 Przycisk **„Kopiuj prompt"** — do wklejenia w Claude.ai albo Claude Code (subskrypcja)
-- [ ] 🟢 Pole **„Wklej wynik"** + `ClipboardImporter` — walidacja schematu, czytelny błąd
-      przy śmieciach, zapis z `source = 'wklejone'`
+- [x] 🟢 `app/src/Generator/PromptBuilder.php` — ✅ 2026-09-07. Prompt ma **7,8 KB**: pełna
+      checklista z kodami, przypadki dla typu Flow, digest w JSON, ryzyka z ich `jak_testowac`
+      oraz dokładny opis formatu odpowiedzi — po tamtej stronie nie ma structured outputs,
+      więc całą robotę musi zrobić tekst promptu
+- [x] 🟢 Przycisk **„Kopiuj prompt”** — ✅ 2026-09-07. Bez JavaScriptu treść i tak jest w polu
+      tekstowym i da się ją zaznaczyć ręcznie
+- [x] 🟢 Pole **„Wklej wynik”** + `ClipboardImporter` — ✅ 2026-09-07. Test pokrywa **9 wariantów**
+      tego, co człowiek naprawdę wkleja: czysty JSON, JSON w płotku ```json, JSON po zdaniu
+      wstępnym modelu, opakowanie w obiekt, nieznany `checklist_ref` (podmiana, nie odrzucenie),
+      puste pole, zwykły tekst, brak wymaganego pola i urwany JSON. Priorytety po angielsku
+      (`high`/`medium`) sprowadzane do trzech wartości z arkusza
 
 ### Czego świadomie NIE robimy
 

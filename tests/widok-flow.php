@@ -99,11 +99,12 @@ function renderuj(Environment $twig, string $plik): array
         'testy'        => $GLOBALS['testy'] ?? [],
         'zrodla'       => $GLOBALS['zrodla'] ?? [],
         'stanTestow'   => $GLOBALS['stanTestow'] ?? ['nieaktualne' => false, 'wygenerowano' => null],
+        'prompt'       => $GLOBALS['prompt'] ?? null,
         'polaczona'    => true,
         'blad'         => null,
         'ok'           => null,
         'u'            => ['flows' => '/flows', 'metadane' => '/flows/1/metadane',
-                           'testy' => '/flows/1/testy',
+                           'testy' => '/flows/1/testy', 'wklej' => '/flows/1/testy/wklej',
                            'connect' => '/org/connect', 'wyloguj' => '/logout'],
     ]);
 
@@ -268,9 +269,54 @@ if (str_contains($swieze['html'], 'opisują poprzednią wersję Flow')) {
 $bledy += $lokalne;
 printf('%-20s %s' . PHP_EOL, 'flow.twig/nieakt.', $lokalne === 0 ? '[OK] ' : '[BLAD]');
 
+// ── Most przez schowek w widoku ──────────────────────────────────
+require_once __DIR__ . '/../app/src/Generator/PromptBuilder.php';
+
+$GLOBALS['prompt'] = (new \Flownatic\Generator\PromptBuilder())->zbuduj($digestBad, $ryzykaBad);
+
+$zMostem = renderuj($twig, __DIR__ . '/fixtures/bad-example.json');
+file_put_contents($wyjscie . '/bad-example-most.html', $zMostem['html']);
+
+$lokalne = 0;
+
+foreach ([
+    'id="kopiuj-prompt"',
+    'Kopiuj prompt',
+    'action="/flows/1/testy/wklej"',
+    'name="wynik"',
+    'Wczytaj wynik',
+] as $tekst) {
+    if (!str_contains($zMostem['html'], $tekst)) {
+        echo '[BLAD] most - brak: ' . $tekst . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+// Prompt trafia do pola tekstowego, wiec musi byc zescapowany - inaczej
+// cudzyslowy z przykladu JSON rozwalilyby atrybuty HTML.
+if (str_contains($zMostem['html'], '<textarea id="prompt-tresc" readonly rows="6"') === false) {
+    echo '[BLAD] most - brak pola z promptem' . PHP_EOL;
+    $lokalne++;
+}
+
+// Bez promptu (brak metadanych) sekcja mostu ma sie nie pokazac.
+$GLOBALS['prompt'] = null;
+$bezMostu = renderuj($twig, __DIR__ . '/fixtures/czysty.json');
+
+// Szukamy znacznika sekcji, a nie frazy: ta sama fraza jest komentarzem
+// w arkuszu stylow i pierwsza wersja tego testu lapala wlasnie ja.
+if (str_contains($bezMostu['html'], 'id="kopiuj-prompt"')) {
+    echo '[BLAD] most pokazuje sie mimo braku promptu' . PHP_EOL;
+    $lokalne++;
+}
+
+$bledy += $lokalne;
+printf('%-20s %s' . PHP_EOL, 'flow.twig/most', $lokalne === 0 ? '[OK] ' : '[BLAD]');
+
 $GLOBALS['testy']      = [];
 $GLOBALS['zrodla']     = [];
 $GLOBALS['stanTestow'] = ['nieaktualne' => false, 'wygenerowano' => null];
+$GLOBALS['prompt']     = null;
 
 // ── Lista Flow ───────────────────────────────────────────────────
 // Osobno, bo liczniki ryzyk na liscie biora sie z innego miejsca niz widok
@@ -377,6 +423,7 @@ $rozstrzygniecia = [
     'POST /flows/metadane/partia'   => '/flows/metadane/partia',
     'POST /flows/7/metadane'        => '/flows/{id}/metadane',
     'POST /flows/7/testy'           => '/flows/{id}/testy',
+    'POST /flows/7/testy/wklej'     => '/flows/{id}/testy/wklej',
     'POST /flows/sync'              => '/flows/sync',
 ];
 

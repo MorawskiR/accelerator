@@ -147,6 +147,68 @@
     </div>
   {% endif %}
 
+  {% if prompt %}
+    {# Most przez schowek: te same dane, które poszłyby do płatnego API,
+       tyle że przenosi je człowiek. Zwinięty, bo to ścieżka na żądanie —
+       domyślną jest generator z reguł wyżej. #}
+    <details class="karta most">
+      <summary>Most przez schowek — proza modelu, dalej bez kosztów API</summary>
+
+      <p class="przygaszone">Skopiuj prompt, wklej go w Claude.ai albo Claude Code
+      (pokryte subskrypcją), a otrzymaną odpowiedź wklej z powrotem poniżej.
+      Wczytane przypadki dopiszą się obok tych z reguł, nie kasując ich.</p>
+
+      <div class="akcje" style="margin:12px 0">
+        <button type="button" id="kopiuj-prompt">Kopiuj prompt</button>
+        <span class="przygaszone" id="kopiuj-status" role="status"></span>
+      </div>
+
+      <textarea id="prompt-tresc" readonly rows="6"
+                aria-label="Prompt do skopiowania">{{ prompt }}</textarea>
+
+      <form method="post" action="{{ u.wklej }}" style="margin:16px 0 0">
+        <label for="wynik">Wklej wynik z modelu</label>
+        <textarea name="wynik" id="wynik" rows="6" required
+                  placeholder='[ { "checklist_ref": "TC-005", "title": "...", "steps": "1. ...", "expected": "..." } ]'></textarea>
+        <button type="submit" class="cichy" style="margin-top:10px">Wczytaj wynik</button>
+      </form>
+    </details>
+
+    <script>
+    // Kopiowanie promptu. Bez tego skryptu tresc i tak jest widoczna
+    // w polu tekstowym i da sie ja zaznaczyc recznie.
+    (function () {
+        var przycisk = document.getElementById('kopiuj-prompt');
+        var pole     = document.getElementById('prompt-tresc');
+        var status   = document.getElementById('kopiuj-status');
+
+        if (!przycisk || !pole) {
+            return;
+        }
+
+        przycisk.addEventListener('click', function () {
+            var gotowe = function () {
+                status.textContent = 'skopiowane';
+                window.setTimeout(function () { status.textContent = ''; }, 2500);
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(pole.value).then(gotowe, function () {
+                    pole.select();
+                    status.textContent = 'zaznaczone — skopiuj skrótem';
+                });
+
+                return;
+            }
+
+            // Starsze przegladarki: zaznaczamy, uzytkownik kopiuje sam.
+            pole.select();
+            status.textContent = 'zaznaczone — skopiuj skrótem';
+        });
+    }());
+    </script>
+  {% endif %}
+
   {% for t in testy %}
     <div class="karta">
       <div class="rzad">
