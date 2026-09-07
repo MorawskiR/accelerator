@@ -348,25 +348,33 @@ wejść ponownie i zobaczyć, czy pasek podejmuje od miejsca zatrzymania, a licz
 
 ### Wspólny interfejs
 
-- [ ] 🟢 `app/src/Generator/TestCaseSource.php` — `generuj(array $digest, array $ryzyka): array`
-- [ ] 🟢 `app/src/Generator/TestCaseRepository.php` — zapis do `test_cases`, `source` rozróżnia
-      `reguly` / `wklejone` / `manual`; ponowne generowanie **nadpisuje**, nie duplikuje
+- [x] 🟢 `app/src/Generator/TestCaseSource.php` — ✅ 2026-09-07. Do tego `Generator/Framework.php`:
+      **kody TC-001…TC-026 i przypadki per typ Flow przepisane z arkusza**, z metodą `znany()`.
+      ⚠️ Sprawdzenie tych kodów przy realnym arkuszu wykazało **błąd w Fazie 3**: `RiskScanner`
+      odsyłał „Get Records bez filtrów” do `TC-020`, czyli do profilu użytkownika standardowego.
+      Właściwy kod to `TC-010`. Poprawione — **błąd jest na produkcji od deployu 2026-09-07**
+- [x] 🟢 `app/src/Generator/TestCaseRepository.php` — ✅ 2026-09-07. Nadpisuje **wyłącznie w obrębie
+      tego samego źródła**, więc dopiski testera (`manual`) przetrwają każde ponowne generowanie.
+      Całość w transakcji — połowa kompletu byłaby gorsza niż brak
 
 ### Silnik A — `TemplateGenerator` (domyślny, deterministyczny, koszt 0)
 
-- [ ] 🟢 `app/src/Generator/TemplateGenerator.php` — instancjonuje TC-001…TC-026 nazwami z digestu
-- [ ] 🟢 `app/src/Generator/szablony.php` — treści kroków i oczekiwanych wyników, po polsku
-  - [ ] TC na każdą operację wyzwalacza (Create / Update / Delete)
-  - [ ] TC „rekord spełnia kryteria wejścia" i „nie spełnia"
-  - [ ] TC na każdą gałąź `decyzje[].galezie` + gałąź domyślną, z warunkiem w krokach
-  - [ ] TC bulk na 200 rekordów, gdy digest pokazuje DML w pętli
-  - [ ] TC na wymuszony błąd zapisu, gdy DML nie ma fault path
-  - [ ] TC na duży wolumen, gdy `Get Records` jest bez filtrów
-  - [ ] TC na walidację pól wymaganych ekranu
-  - [ ] TC na rekursję przy After Save bez kryteriów
-- [ ] 🟢 Prefiks kodu wg typu Flow: `RT-` / `SF-` / `SCH-` / `AL-`
-- [ ] 🟢 Pole `jak_testowac` z `RiskScanner` wchodzi wprost w kroki — **po to je pisaliśmy w Fazie 3**
-- [ ] 🟢 Przycisk **„Generuj testy"** na widoku Flow + lista TC pod ryzykami
+- [x] 🟢 `app/src/Generator/TemplateGenerator.php` — ✅ 2026-09-07. Na realnym
+      `RT- Flownatic_Bad_Example`: **16 przypadków**
+- [x] 🟢 Treści kroków — ✅ 2026-09-07. **Zostały w `TemplateGenerator`, bez osobnego `szablony.php`**:
+      każdy szablon jest kilkulinijkowy i czyta się razem z regułą, która go wybiera. Osobny plik
+      rozdzielałby te dwie rzeczy bez zysku
+  - [x] TC na każdą operację wyzwalacza (Create / Update / Delete)
+  - [x] TC „rekord spełnia kryteria wejścia" i „nie spełnia"
+  - [x] TC na każdą gałąź `decyzje[].galezie` + gałąź domyślną, z warunkiem w krokach
+  - [x] TC bulk na 200 rekordów, gdy digest pokazuje DML w pętli
+  - [x] TC na wymuszony błąd zapisu, gdy DML nie ma fault path
+  - [x] TC na duży wolumen, gdy `Get Records` jest bez filtrów
+  - [x] TC na walidację pól wymaganych ekranu
+  - [x] TC na rekursję przy After Save bez kryteriów
+- [x] 🟢 Prefiks kodu wg typu Flow: `RT-` / `SF-` / `SCH-` / `AL-`
+- [x] 🟢 Pole `jak_testowac` z `RiskScanner` wchodzi wprost w kroki — **po to je pisaliśmy w Fazie 3**
+- [x] 🟢 Przycisk **„Generuj testy"** na widoku Flow + lista TC pod ryzykami
 
 ### Silnik B — most przez schowek (jakość modelu, koszt 0)
 
