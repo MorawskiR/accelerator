@@ -184,6 +184,61 @@ foreach ($przypadki as $p) {
     );
 }
 
+// ── Lista Flow ───────────────────────────────────────────────────
+// Osobno, bo liczniki ryzyk na liscie biora sie z innego miejsca niz widok
+// szczegolu: z FlowAnalyzer::podsumowania(), a nie z pelnej analizy.
+$listaHtml = $twig->render('flows.twig', [
+    'polaczona'   => true,
+    'instancja'   => 'https://przyklad.my.salesforce.com',
+    'flows'       => [
+        ['id' => 1, 'label' => 'RT- Flownatic_Bad_Example', 'api_name' => 'RT_Bad',
+         'process_type' => 'AutoLaunchedFlow', 'trigger_object' => 'Account',
+         'trigger_type' => 'RecordAfterSave', 'record_trigger_type' => 'CreateAndUpdate',
+         'version_number' => 1, 'is_active' => 1],
+        ['id' => 2, 'label' => 'RT- Czysty', 'api_name' => 'RT_Czysty',
+         'process_type' => 'AutoLaunchedFlow', 'trigger_object' => 'Account',
+         'trigger_type' => 'RecordBeforeSave', 'record_trigger_type' => 'Update',
+         'version_number' => 3, 'is_active' => 1],
+        ['id' => 3, 'label' => 'SF- Bez metadanych', 'api_name' => 'SF_Bez',
+         'process_type' => 'Flow', 'trigger_object' => null,
+         'trigger_type' => null, 'record_trigger_type' => null,
+         'version_number' => 1, 'is_active' => 0],
+    ],
+    'typy'        => ['AutoLaunchedFlow', 'Flow'],
+    'ryzyka'      => [
+        1 => ['ryzyka' => ['wysokie' => 3, 'srednie' => 2, 'niskie' => 0], 'razem' => 5],
+        2 => ['ryzyka' => ['wysokie' => 0, 'srednie' => 0, 'niskie' => 0], 'razem' => 0],
+        // Flow nr 3 celowo nie ma wpisu - metadane niepobrane.
+    ],
+    'wybranyTyp'  => '',
+    'wybranyStan' => '',
+    'blad'        => null,
+    'ok'          => null,
+    'u'           => ['connect' => '/org/connect', 'disconnect' => '/org/disconnect',
+                      'sync' => '/flows/sync', 'flows' => '/flows', 'wyloguj' => '/logout'],
+]);
+
+file_put_contents($wyjscie . '/lista.html', $listaHtml);
+
+$oczekiwaneNaLiscie = [
+    'href="/flows/1"',              // nazwa jest linkiem do szczegolu
+    'metadane niepobrane',          // Flow bez wersji nie udaje przeanalizowanego
+    'czysto',                       // zero ryzyk to informacja, nie pusta komorka
+];
+
+$lokalne = 0;
+
+foreach ($oczekiwaneNaLiscie as $tekst) {
+    if (!str_contains($listaHtml, $tekst)) {
+        echo '[BLAD] flows.twig - brak na liscie: ' . $tekst . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+$bledy += $lokalne;
+
+printf('%-20s %s' . PHP_EOL, 'flows.twig', $lokalne === 0 ? '[OK] ' : '[BLAD]');
+
 echo PHP_EOL . ($bledy === 0
     ? 'Wszystko sie zgadza. Podglad HTML: tests/out/' . PHP_EOL
     : $bledy . ' problemow.' . PHP_EOL);
