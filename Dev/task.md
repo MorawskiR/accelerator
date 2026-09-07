@@ -443,10 +443,25 @@ wynik o złym formacie daje czytelny błąd.
 ## FAZA 5 — Edycja i eksport
 
 - [ ] 🟢 Edycja i akceptacja TC przed eksportem (`source = manual` dla dopisanych ręcznie)
-- [ ] 🟢 `app/src/Export/XlsxExporter.php` — 6 arkuszy w układzie `SalesforcCloud_FTF.xlsx`
-- [ ] 🟢 Inventory i Test Cases wypełnione, Defect Log i Progress Tracker puste z formułami
+- [x] 🟢 `app/src/Export/XlsxExporter.php` — ✅ 2026-09-07. Sześć arkuszy z emoji w nazwach,
+      w kolejności oryginalu. **Układ nie jest wymyślony** — kolory, szerokości kolumn i nagłówki
+      odczytane z `SalesforcCloud_FTF.xlsx`: pasek tytułu `1F3864`, nagłówki tabel `2E75B6`,
+      wiersze naprzemiennie `DEEAF1`/białe, pola do wypełnienia `FFF2CC`, treść od kolumny B
+- [x] 🟢 Inventory i Test Cases wypełnione, Defect Log i Progress Tracker puste z formułami — ✅ 2026-09-07
+  - [x] Inventory: **cała org**, nie tylko ten Flow; typ rozpoznany po `TriggerType`, nie `ProcessType`
+  - [x] Test Cases: przypadki z bazy wraz z odwołaniem do frameworku w kolumnie Uwagi
+  - [x] Checklist: komplet 26 pozycji z kolumną Status jako listą wyboru (Pass/Fail/Blocked/N/A)
+  - [x] Progress Tracker liczy sam: `COUNTIF` po kolumnie Status w Test Cases, `% Pass` jako formuła
+  - [x] Defect Log pusty, ale z listami wyboru Severity i Priority — gotowy do pracy
 - [ ] 🟢 Eksport PDF — widok do druku (`@media print`)
+- [x] 🟢 Trasa `GET /flows/{id}/eksport` + przycisk **„Pobierz .xlsx”** — ✅ 2026-09-07.
+      Plik czytany w całości i kasowany od razu, żeby nie zostawiać śmieci w katalogu tymczasowym
+- [x] 🟢 `tests/eksport.php` — ✅ 2026-09-07. Buduje plik, **otwiera go ponownie** i sprawdza
+      sześć arkuszy, komplet checklisty, liczbę przypadków co do sztuki oraz to, że formuły
+      przetrwały zapis i odczyt. Plik, którego nie da się otworzyć, jest bezwartościowy
 - [ ] **Gotowe, gdy:** pobrany .xlsx wygląda jak framework, tylko wypełniony konkretami z org
+      ⚠️ Przechodzi lokalnie (21 KB, 6 arkuszy, 16 przypadków). Do odznaczenia brakuje otwarcia
+      pliku w Excelu i porównania z oryginalnym `SalesforcCloud_FTF.xlsx` 🔵
 
 ---
 

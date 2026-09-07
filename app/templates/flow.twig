@@ -124,11 +124,16 @@
           </div>
         {% endif %}
       </div>
-      <form method="post" action="{{ u.testy }}" style="margin:0">
-        <button type="submit" {% if testy is not empty %}class="cichy"{% endif %}>
-          {{ testy is empty ? 'Generuj testy' : 'Generuj ponownie' }}
-        </button>
-      </form>
+      <div class="akcje">
+        <form method="post" action="{{ u.testy }}" style="margin:0">
+          <button type="submit" {% if testy is not empty %}class="cichy"{% endif %}>
+            {{ testy is empty ? 'Generuj testy' : 'Generuj ponownie' }}
+          </button>
+        </form>
+        {% if testy is not empty %}
+          <a class="przycisk" href="{{ u.eksport }}">Pobierz .xlsx</a>
+        {% endif %}
+      </div>
     </div>
     {% if testy is not empty %}
       <p class="przygaszone" style="margin:12px 0 0">Ponowne generowanie nadpisuje wyłącznie przypadki

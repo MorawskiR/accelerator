@@ -105,6 +105,7 @@ function renderuj(Environment $twig, string $plik): array
         'ok'           => null,
         'u'            => ['flows' => '/flows', 'metadane' => '/flows/1/metadane',
                            'testy' => '/flows/1/testy', 'wklej' => '/flows/1/testy/wklej',
+                           'eksport' => '/flows/1/eksport',
                            'connect' => '/org/connect', 'wyloguj' => '/logout'],
     ]);
 
@@ -224,6 +225,7 @@ foreach ([
     'Przypadki testowe',
     'Generuj ponownie',              // sa juz przypadki, wiec przycisk zmienia napis
     'RT-001',                        // kod pierwszego przypadku
+    'href="/flows/1/eksport"',       // pobranie .xlsx pojawia sie razem z przypadkami
     'Oczekiwany wynik',
     'dopiski własne zostają nietknięte',
 ] as $tekst) {
@@ -424,6 +426,7 @@ $rozstrzygniecia = [
     'POST /flows/7/metadane'        => '/flows/{id}/metadane',
     'POST /flows/7/testy'           => '/flows/{id}/testy',
     'POST /flows/7/testy/wklej'     => '/flows/{id}/testy/wklej',
+    'GET /flows/7/eksport'          => '/flows/{id}/eksport',
     'POST /flows/sync'              => '/flows/sync',
 ];
 

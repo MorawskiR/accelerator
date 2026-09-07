@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Flownatic\Http;
 
+use Flownatic\Export\XlsxExporter;
 use Flownatic\Flow\FlowAnalyzer;
 use Flownatic\Flow\FlowImporter;
 use Flownatic\Flow\MetadataFetcher;
@@ -426,6 +427,66 @@ final class Routes
             return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
         })->add($auth);
 
+        // Eksport do .xlsx w ukladzie frameworku - domkniecie petli narzedzia.
+        $app->get('/flows/{id}/eksport', function (Request $request, Response $response, array $args) use ($app): Response {
+            $id   = (int) ($args['id'] ?? 0);
+            $uid  = (int) $_SESSION['user_id'];
+            $flow = self::flowUzytkownika($id, $uid);
+
+            if ($flow === null) {
+                return self::zKomunikatem($response, $app, 'Nie ma takiego Flow.', '/flows');
+            }
+
+            try {
+                $analiza = (new FlowAnalyzer())->analiza($id);
+            } catch (\Throwable) {
+                $analiza = null;
+            }
+
+            $przypadki = [];
+            $wersjaId  = (int) ($analiza['wersja']['id'] ?? 0);
+
+            if ($wersjaId > 0) {
+                $przypadki = (new TestCaseRepository())->dla($wersjaId);
+            }
+
+            $pol = (new OAuthService())->connection($uid);
+
+            // Arkusz "Flow Inventory" opisuje cala org, nie tylko ten jeden Flow.
+            $inwentarz = $pol === null
+                ? [$flow]
+                : Db::all('SELECT * FROM flows WHERE connection_id = ? ORDER BY label', [(int) $pol['id']]);
+
+            $eksporter = new XlsxExporter();
+
+            try {
+                $skoroszyt = $eksporter->zbuduj(
+                    $flow,
+                    $analiza['digest'] ?? null,
+                    $przypadki,
+                    $inwentarz,
+                    isset($pol['instance_url']) ? (string) $pol['instance_url'] : null
+                );
+
+                $sciezka = $eksporter->doPliku($skoroszyt);
+            } catch (\Throwable $e) {
+                return self::zKomunikatem($response, $app, 'Nie moge zbudowac pliku: ' . $e->getMessage(), '/flows/' . $id);
+            }
+
+            // Plik ma kilkadziesiat kilobajtow, wiec czytamy go w calosci
+            // i kasujemy od razu - nie zostawiamy smieci w katalogu tymczasowym.
+            $tresc = (string) file_get_contents($sciezka);
+            @unlink($sciezka);
+
+            $response->getBody()->write($tresc);
+
+            return $response
+                ->withHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                ->withHeader('Content-Disposition', 'attachment; filename="' . $eksporter->nazwaPliku($flow) . '"')
+                ->withHeader('Content-Length', (string) strlen($tresc))
+                ->withHeader('Cache-Control', 'no-store');
+        })->add($auth);
+
         // Widok jednego Flow: struktura z DigestBuilder i ryzyka z RiskScanner.
         $app->get('/flows/{id}', function (Request $request, Response $response, array $args) use ($app): Response {
             $id   = (int) ($args['id'] ?? 0);
@@ -485,6 +546,7 @@ final class Routes
                     'flows'    => self::url($app, '/flows'),
                     'metadane' => self::url($app, '/flows/' . $id . '/metadane'),
                     'testy'    => self::url($app, '/flows/' . $id . '/testy'),
+                    'eksport'  => self::url($app, '/flows/' . $id . '/eksport'),
                     'wklej'    => self::url($app, '/flows/' . $id . '/testy/wklej'),
                     'connect'  => self::url($app, '/org/connect'),
                     'wyloguj'  => self::url($app, '/logout'),
