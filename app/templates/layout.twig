@@ -118,6 +118,14 @@ a.cichy:hover{text-decoration:underline}
 .chipy{display:flex; flex-wrap:wrap; gap:7px; margin:10px 0 0}
 .pusto{color:var(--przygaszony); font-size:.9rem; margin:0}
 
+/* ── Kafelki liczbowe na dashboardzie ───────────────────── */
+.stat-rzad{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:0 0 16px}
+.stat-kafel{background:var(--plyta); border:1px solid var(--linia); border-radius:10px;
+  padding:16px 18px; box-shadow:var(--cien)}
+.stat-n{font-size:1.9rem; font-weight:700; letter-spacing:-.03em; line-height:1.1;
+  font-variant-numeric:tabular-nums}
+.stat-l{font-size:.82rem; color:var(--przygaszony); margin-top:4px}
+
 /* ── Edycja przypadków ──────────────────────────────────── */
 .edycja{margin-top:14px; display:flex; flex-direction:column; gap:4px}
 .edycja label{margin-top:8px}

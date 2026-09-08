@@ -721,10 +721,15 @@ final class Routes
 
         // ── Dashboard ──────────────────────────────────────────────
         $app->get('/', function (Request $request, Response $response) use ($app): Response {
-            $user = Db::one('SELECT email, last_login_at FROM users WHERE id = ?', [$_SESSION['user_id']]);
+            $uid  = (int) $_SESSION['user_id'];
+            $user = Db::one('SELECT email, last_login_at FROM users WHERE id = ?', [$uid]);
+            $pol  = (new OAuthService())->connection($uid);
 
             return Twig::fromRequest($request)->render($response, 'dashboard.twig', [
                 'email'      => $user['email'] ?? '?',
+                'polaczona'  => $pol !== null,
+                'instancja'  => $pol['instance_url'] ?? null,
+                'stat'       => self::statystyki($pol === null ? null : (int) $pol['id']),
                 'wylogujUrl' => self::url($app, '/logout'),
                 'flowsUrl'   => self::url($app, '/flows'),
                 'srodowisko' => Config::get('APP_ENV', '?'),
@@ -738,6 +743,55 @@ final class Routes
         $base = rtrim($app->getBasePath(), '/');
 
         return $base . $sciezka;
+    }
+
+    /**
+     * Liczby na dashboard.
+     *
+     * Do wersji z 2026-09-08 dashboard wyliczał, czego jeszcze nie ma - i wymieniał
+     * przy tym Fazy 3, 4 i 5, ktore od dawna dzialaja na produkcji. Placeholder
+     * z Fazy 1 przezyl trzy fazy, bo nikt na niego nie patrzyl. Teraz pokazuje
+     * stan realnej org, wiec sam sie zdezaktualizuje, gdy dane sie zmienia.
+     *
+     * @return array{flow:int, zMetadanymi:int, przypadki:int, ryzykaRazem:int, ryzykaWysokie:int}
+     */
+    private static function statystyki(?int $connectionId): array
+    {
+        $puste = ['flow' => 0, 'zMetadanymi' => 0, 'przypadki' => 0, 'ryzykaRazem' => 0, 'ryzykaWysokie' => 0];
+
+        if ($connectionId === null) {
+            return $puste;
+        }
+
+        $puste['flow'] = (int) (Db::one(
+            'SELECT COUNT(*) AS ile FROM flows WHERE connection_id = ?',
+            [$connectionId]
+        )['ile'] ?? 0);
+
+        $puste['zMetadanymi'] = (int) (Db::one(
+            'SELECT COUNT(DISTINCT v.flow_id) AS ile
+               FROM flow_versions v
+               JOIN flows f ON f.id = v.flow_id
+              WHERE f.connection_id = ? AND v.metadata_json IS NOT NULL',
+            [$connectionId]
+        )['ile'] ?? 0);
+
+        $puste['przypadki'] = (int) (Db::one(
+            'SELECT COUNT(*) AS ile
+               FROM test_cases t
+               JOIN flow_versions v ON v.id = t.flow_version_id
+               JOIN flows f ON f.id = v.flow_id
+              WHERE f.connection_id = ?',
+            [$connectionId]
+        )['ile'] ?? 0);
+
+        // Ryzyka licza sie z zapisanych analiz - ta sama droga, co na liscie Flow.
+        foreach ((new FlowAnalyzer())->podsumowania($connectionId) as $wpis) {
+            $puste['ryzykaRazem']   += (int) $wpis['razem'];
+            $puste['ryzykaWysokie'] += (int) ($wpis['ryzyka']['wysokie'] ?? 0);
+        }
+
+        return $puste;
     }
 
     /**
