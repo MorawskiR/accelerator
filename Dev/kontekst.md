@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-09-07 · **Aktualny stan:** Faza 4 ZAMKNIĘTA — ruszamy z Fazą 5 (eksport .xlsx)
+**Ostatnia aktualizacja:** 2026-09-08 · **Aktualny stan:** Faza 5 ZAMKNIĘTA — pełna pętla działa, zostaje Faza 6 (walidacja pomysłu)
 
 ---
 
@@ -301,6 +301,26 @@ przyjmuje odpowiedź z powrotem. Importer jest odporny na to, co człowiek napra
 w płotku markdown, JSON po zdaniu wstępnym modelu, opakowanie w obiekt, priorytety po angielsku.
 Nieznany `checklist_ref` podmienia na kod ogólny zamiast odrzucać przypadek — jedna literówka
 modelu nie może kasować wklejonej pracy.
+
+### ✅ FAZA 5 ZAMKNIĘTA — 2026-09-08
+
+**Akcelerator robi pełną pętlę: z org do pliku, który można oddać klientowi.**
+Inwentarz → metadane → digest → ryzyka → przypadki → przegląd przez człowieka → eksport
+w układzie frameworku albo wydruk roboczy z kratkami na wynik.
+
+Trzy decyzje z tej fazy, których nie widać w kodzie na pierwszy rzut oka:
+
+- **Układ .xlsx odczytany z oryginalnego arkusza**, nie wymyślony — kolory (`1F3864`, `2E75B6`,
+  `DEEAF1`, `FFF2CC`), szerokości kolumn i treść od kolumny B. Test **otwiera zbudowany plik
+  ponownie**, bo plik, którego nie da się odczytać, jest bezwartościowy.
+- **Odrzucone przypadki nie trafiają ani do .xlsx, ani na wydruk** — warunek stoi w dwóch
+  miejscach niezależnie, bo plik idzie do klienta.
+- **Edycja nie zmienia źródła przypadku.** Poprawiony przypadek z reguł nadal jest z reguł
+  i zostanie nadpisany — inaczej jedna literówka zamrażałaby go na zawsze, a lista przestawałaby
+  odzwierciedlać metadane. Kto chce trwałej wersji, dopisuje własny (`source = manual`).
+
+**PDF przez przeglądarkę**, bez dokładania biblioteki — wynik ten sam, o jedną zależność mniej
+do wgrywania przez FTP.
 
 ### ✅ FAZA 4 ZAMKNIĘTA — 2026-09-07
 

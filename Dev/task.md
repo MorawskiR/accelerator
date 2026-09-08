@@ -487,7 +487,19 @@ wynik o złym formacie daje czytelny błąd.
       `zip` obecny, katalog tymczasowy zapisywalny, plik **19 771 B** zbudowany i **otwarty
       z powrotem** (6 arkuszy, 16 przypadków), a **szczyt pamięci to 20 MB przy limicie 128 MB**
       — ograniczenie z Fazy 0 okazało się mieć ogromny zapas
-- [ ] **Gotowe, gdy:** pobrany .xlsx wygląda jak framework, tylko wypełniony konkretami z org
+- [x] **Gotowe, gdy:** pobrany .xlsx wygląda jak framework, tylko wypełniony konkretami z org
+      ✅ **2026-09-08 potwierdzone przez Rafała** — plik pobrany z produkcji i obejrzany w Excelu.
+
+---
+
+## ✅ FAZA 5 ZAMKNIĘTA — 2026-09-08
+
+**Akcelerator robi pełną pętlę: z org do pliku, który można oddać klientowi.**
+Inwentarz → metadane → digest → ryzyka → przypadki testowe → przegląd przez człowieka →
+eksport w układzie frameworku albo wydruk roboczy. Koszt działania: **0 USD**.
+
+Regresja: **R12 potwierdzone** (plik otwiera się i ma układ sześciu arkuszy).
+**R11 do przeklikania** — edycja przypadku zapisuje się poprawnie.
       ⚠️ Przechodzi lokalnie (21 KB, 6 arkuszy, 16 przypadków). Do odznaczenia brakuje otwarcia
       pliku w Excelu i porównania z oryginalnym `SalesforcCloud_FTF.xlsx` 🔵
 

@@ -21,7 +21,7 @@
 | 2 | OAuth do Salesforce + automatyczny inwentarz Flow | ✅ **Zakończona 2026-09-01** |
 | 3 | Metadane Flow + Flow Digest + RiskScanner | ✅ **Zakończona 2026-09-07** |
 | 4 | Generator przypadków testowych (bez kosztów API) | ✅ **Zakończona 2026-09-07** |
-| 5 | Edycja i eksport do .xlsx | ⬜ Nie rozpoczęta |
+| 5 | Edycja i eksport do .xlsx | ✅ **Zakończona 2026-09-08** |
 | 6 | Walidacja pomysłu (Ideal validation) | ⬜ Nie rozpoczęta |
 
 Legenda: ⬜ nie rozpoczęta · 🟡 w trakcie · ✅ zakończona
