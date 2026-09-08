@@ -7,6 +7,7 @@
   <span class="kto">
     {{ email }}
     <span class="znacznik">{{ srodowisko }}</span>
+    {% if polaczona %}<span class="znacznik ok">org podłączona</span>{% endif %}
     <form method="post" action="{{ wylogujUrl }}" style="margin:0">
       <button type="submit" class="cichy">Wyloguj</button>
     </form>
@@ -16,23 +17,72 @@
 
 {% block tresc %}
 <h1>Dashboard</h1>
-<p>Szkielet aplikacji działa: logowanie, sesja i połączenie z bazą są na miejscu.
-Poniżej to, co powstanie w kolejnych fazach.</p>
+
+{% if not polaczona %}
+  {# Bez podłączonej org nie ma czego liczyć — jedna akcja zamiast pustych kafelków. #}
+  <p>Flownatic czyta strukturę Flow z Twojej organizacji, wykrywa ryzyka i zamienia
+  checklistę frameworku w konkretne przypadki testowe.</p>
+
+  <div class="karta">
+    <h2 style="margin-top:0">Zacznij od podłączenia org</h2>
+    <p>Zostaniesz przekierowany do logowania w Salesforce — Flownatic nie widzi Twojego hasła.</p>
+    <p style="margin:0"><a class="przycisk" href="{{ flowsUrl }}">Przejdź do Flow</a></p>
+  </div>
+{% else %}
+  <p>Stan Twojej organizacji <span class="mono przygaszone">{{ instancja }}</span></p>
+
+  <div class="stat-rzad">
+    <div class="stat-kafel">
+      <div class="stat-n">{{ stat.flow }}</div>
+      <div class="stat-l">Flow w inwentarzu</div>
+    </div>
+    <div class="stat-kafel">
+      <div class="stat-n">{{ stat.zMetadanymi }}</div>
+      <div class="stat-l">z pobranymi metadanymi</div>
+    </div>
+    <div class="stat-kafel">
+      <div class="stat-n">{{ stat.ryzykaRazem }}</div>
+      <div class="stat-l">wykrytych ryzyk{% if stat.ryzykaWysokie > 0 %}, w tym {{ stat.ryzykaWysokie }} wysokich{% endif %}</div>
+    </div>
+    <div class="stat-kafel">
+      <div class="stat-n">{{ stat.przypadki }}</div>
+      <div class="stat-l">przypadków testowych</div>
+    </div>
+  </div>
+
+  {% if stat.zMetadanymi < stat.flow %}
+    <div class="karta">
+      <div class="rzad">
+        <div>
+          <strong>{{ stat.flow - stat.zMetadanymi }} Flow czeka na pobranie metadanych</strong>
+          <div class="przygaszone">Bez nich nie da się wykryć ryzyk ani wygenerować przypadków.</div>
+        </div>
+        <a class="przycisk" href="{{ flowsUrl }}">Przejdź do Flow</a>
+      </div>
+    </div>
+  {% else %}
+    <div class="karta">
+      <div class="rzad">
+        <div>
+          <strong>Wszystkie Flow mają pobrane metadane</strong>
+          <div class="przygaszone">Wybierz Flow, żeby zobaczyć strukturę, ryzyka i przypadki testowe.</div>
+        </div>
+        <a class="przycisk" href="{{ flowsUrl }}">Przejdź do Flow</a>
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
 
 <div class="karta">
-  <h2 style="margin-top:0">Salesforce</h2>
-  <p style="margin-bottom:12px">Podłącz organizację i pobierz inwentarz Flow.</p>
-  <p style="margin:0"><a class="przycisk" href="{{ flowsUrl }}">Przejdź do Flow</a></p>
-</div>
-
-<div class="karta">
-  <h2 style="margin-top:0">Czego jeszcze nie ma</h2>
+  <h2 style="margin-top:0">Co robi Flownatic</h2>
   <ul class="lista">
-    <li><strong>Faza 3</strong> — struktura Flow i deterministyczne wykrywanie ryzyk</li>
-    <li><strong>Faza 4</strong> — generowanie przypadków testowych przez Claude</li>
-    <li><strong>Faza 5</strong> — eksport do .xlsx w układzie frameworku</li>
+    <li><strong>Czyta strukturę Flow</strong> z metadanych org — bez otwierania Flow Buildera</li>
+    <li><strong>Wykrywa ryzyka regułami</strong>: DML w pętli, brak fault path, After Save bez kryteriów,
+        pobranie bez filtrów</li>
+    <li><strong>Generuje przypadki testowe</strong> z odwołaniem do checklisty TC-001…TC-026 —
+        deterministycznie, bez kosztów API</li>
+    <li><strong>Eksportuje do .xlsx</strong> w układzie frameworku albo drukuje wydruk roboczy
+        z miejscem na wynik</li>
   </ul>
 </div>
-
-<p class="przygaszone">Ten widok celowo pokazuje, czego brakuje, zamiast udawać gotową aplikację.</p>
 {% endblock %}

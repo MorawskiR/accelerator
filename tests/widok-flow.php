@@ -433,6 +433,72 @@ $bledy += $lokalne;
 printf('%-20s %s  przypadkow: %d' . PHP_EOL, 'druk.twig',
     $lokalne === 0 ? '[OK] ' : '[BLAD]', count($doDruku));
 
+// ── Dashboard ────────────────────────────────────────────────────
+// Do 2026-09-08 dashboard wymienial Fazy 3, 4 i 5 jako "czego jeszcze nie ma",
+// mimo ze dzialaly na produkcji. Test pilnuje, zeby placeholder nie wrocil
+// i zeby widok pokazywal liczby, a nie obietnice.
+$dashPolaczony = $twig->render('dashboard.twig', [
+    'email'      => 'tester@przyklad.pl',
+    'polaczona'  => true,
+    'instancja'  => 'https://przyklad.my.salesforce.com',
+    'stat'       => ['flow' => 9, 'zMetadanymi' => 7, 'przypadki' => 42,
+                     'ryzykaRazem' => 5, 'ryzykaWysokie' => 3],
+    'wylogujUrl' => '/logout',
+    'flowsUrl'   => '/flows',
+    'srodowisko' => 'produkcja',
+]);
+
+file_put_contents($wyjscie . '/dashboard.html', $dashPolaczony);
+
+$lokalne = 0;
+
+foreach (['9', '42', '3 wysokich', 'Flow w inwentarzu', 'org podłączona'] as $tekst) {
+    if (!str_contains($dashPolaczony, $tekst)) {
+        echo '[BLAD] dashboard - brak: ' . $tekst . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+foreach (['Czego jeszcze nie ma', 'powstanie w kolejnych fazach', 'Faza 3', 'Faza 4', 'Faza 5'] as $tekst) {
+    if (str_contains($dashPolaczony, $tekst)) {
+        echo '[BLAD] dashboard - wrocil placeholder: ' . $tekst . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+// Zaleglosc w pobieraniu metadanych ma byc widoczna, a nie schowana.
+if (!str_contains($dashPolaczony, '2 Flow czeka na pobranie metadanych')) {
+    echo '[BLAD] dashboard - brak informacji o zaleglych metadanych' . PHP_EOL;
+    $lokalne++;
+}
+
+// Bez org nie pokazujemy pustych kafelkow, tylko jedna akcje.
+$dashBezOrg = $twig->render('dashboard.twig', [
+    'email'      => 'tester@przyklad.pl',
+    'polaczona'  => false,
+    'instancja'  => null,
+    'stat'       => ['flow' => 0, 'zMetadanymi' => 0, 'przypadki' => 0,
+                     'ryzykaRazem' => 0, 'ryzykaWysokie' => 0],
+    'wylogujUrl' => '/logout',
+    'flowsUrl'   => '/flows',
+    'srodowisko' => 'produkcja',
+]);
+
+// Szukamy znacznika, nie nazwy klasy: regula .stat-kafel jest w arkuszu
+// stylow zawsze, wiec samo "stat-kafel" trafialoby w CSS, nie w tresc.
+if (str_contains($dashBezOrg, '<div class="stat-kafel">')) {
+    echo '[BLAD] dashboard bez org - pokazuje puste kafelki' . PHP_EOL;
+    $lokalne++;
+}
+
+if (!str_contains($dashBezOrg, 'Zacznij od podłączenia org')) {
+    echo '[BLAD] dashboard bez org - brak wezwania do podlaczenia' . PHP_EOL;
+    $lokalne++;
+}
+
+$bledy += $lokalne;
+printf('%-20s %s' . PHP_EOL, 'dashboard.twig', $lokalne === 0 ? '[OK] ' : '[BLAD]');
+
 // ── Lista Flow ───────────────────────────────────────────────────
 // Osobno, bo liczniki ryzyk na liscie biora sie z innego miejsca niz widok
 // szczegolu: z FlowAnalyzer::podsumowania(), a nie z pelnej analizy.
