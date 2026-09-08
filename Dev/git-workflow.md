@@ -93,20 +93,20 @@ Lista rośnie wraz z projektem — **po każdej zakończonej fazie dopisujemy do
 
 ### Regresja — stan na dziś
 
-| # | Sprawdzenie | Od fazy |
-|---|---|---|
-| R1 | `https://dobo.com.pl/ftf/` odpowiada, logowanie działa, widać dashboard | 1 |
-| R2 | Wylogowanie działa, strony chronione nie wpuszczają bez sesji | 1 |
-| R3 | „Połącz org" → OAuth → powrót z aktywnym połączeniem | 2 |
-| R4 | Lista Flow zgadza się z Setup → Process Automation → Flows | 2 |
-| R5 | Rozłączona org → czytelny komunikat, **nie błąd 500** | 2 |
-| R6 | Import metadanych Flow kończy się, widać strukturę | 3 |
-| R7 | Na celowo wadliwym Flow zapala się „DML w pętli" i „brak fault path" | 3 |
-| R8 | Import przerwany w połowie da się wznowić, nie duplikuje danych | 3 |
-| R9 | Generowanie TC zwraca 15–30 przypadków z `checklist_ref` | 4 |
-| R10 | Ponowne generowanie **nadpisuje** przypadki, nie duplikuje ich; wklejony wynik o złym formacie daje czytelny błąd, a nie 500 | 4 |
-| R11 | Edycja TC zapisuje się poprawnie | 5 |
-| R12 | Eksport .xlsx otwiera się i ma układ 6 arkuszy frameworku | 5 |
+| # | Sprawdzenie | Od fazy | Ostatnio potwierdzone |
+|---|---|---|---|
+| R1 | `https://dobo.com.pl/ftf/` odpowiada, logowanie działa, widać dashboard | 1 | ✅ 2026-08-31 |
+| R2 | Wylogowanie działa, strony chronione nie wpuszczają bez sesji | 1 | ✅ 2026-08-31 |
+| R3 | „Połącz org" → OAuth → powrót z aktywnym połączeniem | 2 | ✅ 2026-09-01 |
+| R4 | Lista Flow zgadza się z Setup → Process Automation → Flows | 2 | ✅ 2026-09-01 |
+| R5 | Rozłączona org → czytelny komunikat, **nie błąd 500** | 2 | ✅ 2026-09-01 |
+| R6 | Import metadanych Flow kończy się, widać strukturę | 3 | ✅ 2026-09-07 |
+| R7 | Na celowo wadliwym Flow zapala się „DML w pętli" i „brak fault path" | 3 | ✅ 2026-09-07 |
+| R8 | Import przerwany w połowie da się wznowić, nie duplikuje danych | 3 | — do przeklikania |
+| R9 | Generowanie TC zwraca 15–30 przypadków z `checklist_ref` | 4 | ✅ 2026-09-07 |
+| R10 | Ponowne generowanie **nadpisuje** przypadki, nie duplikuje ich; wklejony wynik o złym formacie daje czytelny błąd, a nie 500 | 4 | — do przeklikania |
+| R11 | Edycja TC zapisuje się poprawnie | 5 | ✅ 2026-09-08 |
+| R12 | Eksport .xlsx otwiera się i ma układ 6 arkuszy frameworku | 5 | ✅ 2026-09-08 |
 
 **Zasada:** regresję robimy na UAT **na danych z playgrounda**, nie na produkcji. Jeśli którykolwiek
 punkt nie przechodzi — poprawka wraca na gałąź feature, nie łatamy bezpośrednio na `uat` ani `main`.

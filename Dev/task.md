@@ -498,8 +498,9 @@ wynik o złym formacie daje czytelny błąd.
 Inwentarz → metadane → digest → ryzyka → przypadki testowe → przegląd przez człowieka →
 eksport w układzie frameworku albo wydruk roboczy. Koszt działania: **0 USD**.
 
-Regresja: **R12 potwierdzone** (plik otwiera się i ma układ sześciu arkuszy).
-**R11 do przeklikania** — edycja przypadku zapisuje się poprawnie.
+Regresja: **R11 i R12 potwierdzone na produkcji 2026-09-08** — plik otwiera się i ma układ
+sześciu arkuszy, a edycja przypadku (zmiana tytułu i zapis) działa na żywej bazie.
+**Cała regresja Fazy 5 przechodzi.**
       ⚠️ Przechodzi lokalnie (21 KB, 6 arkuszy, 16 przypadków). Do odznaczenia brakuje otwarcia
       pliku w Excelu i porównania z oryginalnym `SalesforcCloud_FTF.xlsx` 🔵
 
