@@ -315,6 +315,25 @@ ustalone przed pomiarem, zasada „najpierw ręcznie”, tabela i rejestr brakó
 **Stan POC: domknięty funkcjonalnie.** Pełna pętla od inwentarza po plik .xlsx, koszt działania
 0 USD, wszystko na produkcji, Fazy 1–5 otagowane.
 
+### Które typy Flow są sprawdzone na żywych danych
+
+`TemplateGenerator` ma osobne gałęzie dla czterech typów Flow, ale każda z nich powstała na
+podstawie struktury digestu i fixture'ów — a to nie to samo, co prawdziwe metadane z org.
+Ta tabela pilnuje, żeby nie mylić „napisane i przetestowane lokalnie" z „potwierdzone na żywo".
+
+| Typ | Prefiks | Stan | Co potwierdzone |
+|---|---|---|---|
+| Record-Triggered | `RT-` | ✅ 2026-09-07 | 16 przypadków, wyzwalacz, gałęzie decyzji, bulk 200, brak fault path |
+| Screen Flow | `SF-` | ✅ 2026-09-08 | kody `SF-`, walidacja pól wymaganych — czyli `DigestBuilder` wyciągnął ekrany z flagą `wymagane` |
+| Scheduled | `SCH-` | ⬜ niesprawdzone | harmonogram, filtr rekordów, idempotentność |
+| Auto-launched | `AL-` | ⬜ niesprawdzone | zmienne wejściowe i wyjściowe |
+
+⚠️ **Dlaczego to ma znaczenie.** Rozpoznanie typu nie opiera się na jednym polu: Record-Triggered
+i Scheduled mają tę samą wartość `ProcessType` (`AutoLaunchedFlow`) i rozróżnia je dopiero
+`TriggerType`. Błąd w tym miejscu nie wywala aplikacji — po prostu wygeneruje przypadki
+z niewłaściwego zestawu, co widać dopiero przy czytaniu treści.
+
+
 ### ✅ FAZA 5 ZAMKNIĘTA — 2026-09-08
 
 **Akcelerator robi pełną pętlę: z org do pliku, który można oddać klientowi.**
