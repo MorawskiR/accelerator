@@ -539,6 +539,52 @@ final class Routes
             return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
         })->add($auth);
 
+        // Widok do druku - wydruk roboczy do testow manualnych, z kratkami
+        // na wynik. Ta sama zasada co w eksporcie: odrzucone sie nie drukuja.
+        $app->get('/flows/{id}/druk', function (Request $request, Response $response, array $args) use ($app): Response {
+            $id   = (int) ($args['id'] ?? 0);
+            $uid  = (int) $_SESSION['user_id'];
+            $flow = self::flowUzytkownika($id, $uid);
+
+            if ($flow === null) {
+                return self::zKomunikatem($response, $app, 'Nie ma takiego Flow.', '/flows');
+            }
+
+            try {
+                $analiza = (new FlowAnalyzer())->analiza($id);
+            } catch (\Throwable) {
+                $analiza = null;
+            }
+
+            $testy    = [];
+            $wersjaId = (int) ($analiza['wersja']['id'] ?? 0);
+
+            if ($wersjaId > 0) {
+                $testy = (new TestCaseRepository())->doEksportu($wersjaId);
+            }
+
+            $pol = (new OAuthService())->connection($uid);
+
+            // Tytuly pozycji frameworku obok kodow - na papierze nie ma
+            // dymkow ani odnosnikow, wiec kontekst musi byc wydrukowany.
+            $refTytuly = [];
+
+            foreach ($testy as $t) {
+                $kod = (string) ($t['checklist_ref'] ?? '');
+                $refTytuly[$kod] = \Flownatic\Generator\Framework::tytul($kod);
+            }
+
+            return Twig::fromRequest($request)->render($response, 'druk.twig', [
+                'flow'      => $flow,
+                'testy'     => $testy,
+                'ryzyka'    => $analiza['ryzyka'] ?? [],
+                'refTytuly' => array_filter($refTytuly),
+                'instancja' => isset($pol['instance_url']) ? (string) $pol['instance_url'] : null,
+                'data'      => date('Y-m-d'),
+                'u'         => ['flow' => self::url($app, '/flows/' . $id)],
+            ]);
+        })->add($auth);
+
         // Eksport do .xlsx w ukladzie frameworku - domkniecie petli narzedzia.
         $app->get('/flows/{id}/eksport', function (Request $request, Response $response, array $args) use ($app): Response {
             $id   = (int) ($args['id'] ?? 0);
@@ -663,6 +709,7 @@ final class Routes
                     'metadane' => self::url($app, '/flows/' . $id . '/metadane'),
                     'testy'    => self::url($app, '/flows/' . $id . '/testy'),
                     'eksport'  => self::url($app, '/flows/' . $id . '/eksport'),
+                    'druk'     => self::url($app, '/flows/' . $id . '/druk'),
                     'dodaj'    => self::url($app, '/flows/' . $id . '/testy/dodaj'),
                     'przypadek' => self::url($app, '/flows/' . $id . '/testy'),
                     'wklej'    => self::url($app, '/flows/' . $id . '/testy/wklej'),

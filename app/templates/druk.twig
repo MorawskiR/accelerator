@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ flow.label ?: flow.api_name }} — przypadki testowe</title>
+<style>
+/* Widok do druku. Celowo NIE dziedziczy z layout.twig: tamten jest zrobiony
+   pod ekran i ciemny motyw, a tutaj liczy się kartka papieru — czarny tekst
+   na białym tle, szeryfy dla czytelności i miejsce na notatki długopisem. */
+
+:root{ --tekst:#111827; --przygaszony:#4b5563; --linia:#d1d5db; --tlo:#ffffff; }
+
+*{box-sizing:border-box}
+
+body{
+  margin:0; background:var(--tlo); color:var(--tekst);
+  font:12pt/1.5 Georgia,"Times New Roman",serif;
+}
+
+.strona{max-width:190mm; margin:0 auto; padding:16mm 12mm}
+
+.pasek-ekranu{
+  display:flex; gap:12px; align-items:center; justify-content:space-between;
+  padding:12px 16px; background:#f3f4f6; border-bottom:1px solid var(--linia);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif; font-size:10pt;
+}
+.pasek-ekranu a{color:#0b6fc4}
+.pasek-ekranu button{
+  font:inherit; font-weight:600; cursor:pointer; border:0; border-radius:6px;
+  padding:8px 16px; background:#0b6fc4; color:#fff;
+}
+
+h1{font-size:18pt; margin:0 0 4px; letter-spacing:-.01em}
+.api{font-family:ui-monospace,"Cascadia Code",monospace; font-size:9pt; color:var(--przygaszony)}
+
+.metryczka{
+  width:100%; border-collapse:collapse; margin:12px 0 0; font-size:10pt;
+}
+.metryczka th,.metryczka td{
+  border:1px solid var(--linia); padding:5px 8px; text-align:left; vertical-align:top;
+}
+.metryczka th{width:28mm; font-weight:600; background:#f9fafb}
+
+.podpis{margin:10px 0 0; font-size:9pt; color:var(--przygaszony)}
+
+h2{font-size:13pt; margin:16px 0 8px; padding-bottom:4px; border-bottom:2px solid var(--tekst)}
+
+.tc{
+  border:1px solid var(--linia); border-radius:3px; padding:10px 12px; margin:0 0 10px;
+  /* Przypadek nie ma się łamać w poprzek stron — testerowi urwałby się w połowie kroku. */
+  break-inside:avoid; page-break-inside:avoid;
+}
+.tc-gora{display:flex; gap:10px; align-items:baseline; justify-content:space-between; margin-bottom:6px}
+.kod{font-family:ui-monospace,"Cascadia Code",monospace; font-weight:700; font-size:11pt}
+.ref{font-size:9pt; color:var(--przygaszony)}
+.prio{font-size:9pt; border:1px solid var(--linia); border-radius:999px; padding:1px 8px; white-space:nowrap}
+.tc h3{font-size:11.5pt; margin:0 0 6px; font-weight:600}
+.tc dl{display:grid; grid-template-columns:30mm 1fr; gap:3px 8px; margin:0; font-size:10.5pt}
+.tc dt{color:var(--przygaszony); font-size:9pt; text-transform:uppercase; letter-spacing:.04em; padding-top:2px}
+.tc dd{margin:0}
+.kroki div{margin-bottom:2px}
+
+/* Miejsce na wynik — to jest wydruk roboczy, nie dokument do czytania. */
+.wynik{display:flex; gap:14px; align-items:center; margin-top:8px; padding-top:7px; border-top:1px dashed var(--linia)}
+.wynik span{font-size:9pt; color:var(--przygaszony)}
+.kratka{display:inline-block; width:4.5mm; height:4.5mm; border:1px solid var(--tekst); vertical-align:-1px; margin-right:3px}
+.linia-uwag{flex:1; border-bottom:1px dotted var(--przygaszony); height:4mm}
+
+.pusto{font-size:10.5pt; color:var(--przygaszony)}
+
+@media print{
+  @page{ margin:14mm; }
+  .pasek-ekranu{display:none}
+  .strona{max-width:none; margin:0; padding:0}
+  body{font-size:10.5pt}
+  .tc{border-color:#9ca3af}
+  a{color:inherit; text-decoration:none}
+}
+</style>
+</head>
+<body>
+
+<div class="pasek-ekranu">
+  <a href="{{ u.flow }}">← Wróć do Flow</a>
+  <span>{{ testy|length }} przypadków · odrzucone pominięte</span>
+  <button type="button" onclick="window.print()">Drukuj</button>
+</div>
+
+<div class="strona">
+
+  <h1>{{ flow.label ?: flow.api_name }}</h1>
+  <div class="api">{{ flow.api_name }}</div>
+
+  <table class="metryczka">
+    <tr>
+      <th>Typ Flow</th><td>{{ flow.process_type ?: '—' }}</td>
+      <th>Obiekt</th><td>{{ flow.trigger_object ?: '—' }}</td>
+    </tr>
+    <tr>
+      <th>Wyzwalacz</th><td>{{ flow.trigger_type ?: '—' }}{% if flow.record_trigger_type %} ({{ flow.record_trigger_type }}){% endif %}</td>
+      <th>Wersja</th><td>{{ flow.version_number ?: '—' }}</td>
+    </tr>
+    <tr>
+      <th>Środowisko</th><td>{{ instancja ?: '—' }}</td>
+      <th>Data wydruku</th><td>{{ data }}</td>
+    </tr>
+    <tr>
+      <th>Tester</th><td></td>
+      <th>Podpis</th><td></td>
+    </tr>
+  </table>
+
+  {% if ryzyka is not empty %}
+    <h2>Wykryte ryzyka ({{ ryzyka|length }})</h2>
+    <table class="metryczka">
+      <tr><th style="width:22mm">Waga</th><th style="width:auto">Ryzyko</th><th style="width:30mm">Element</th><th style="width:18mm">Ref.</th></tr>
+      {% for r in ryzyka %}
+        <tr>
+          <td>{{ r.waga }}</td>
+          <td>{{ r.tytul }}</td>
+          <td>{{ r.etykieta ?: r.element }}</td>
+          <td>{{ r.checklist }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+
+  <h2>Przypadki testowe</h2>
+
+  {% if testy is empty %}
+    <p class="pusto">Brak przypadków do wydrukowania — wygeneruj je najpierw w aplikacji.</p>
+  {% endif %}
+
+  {% for t in testy %}
+    <div class="tc">
+      <div class="tc-gora">
+        <div>
+          <span class="kod">{{ t.tc_code }}</span>
+          <span class="ref">{{ t.checklist_ref }}{% if refTytuly[t.checklist_ref] is defined %} — {{ refTytuly[t.checklist_ref] }}{% endif %}</span>
+        </div>
+        <span class="prio">{{ t.priority }}</span>
+      </div>
+
+      <h3>{{ t.title }}</h3>
+
+      <dl>
+        {% if t.preconditions %}
+          <dt>Warunki wstępne</dt><dd>{{ t.preconditions }}</dd>
+        {% endif %}
+        <dt>Kroki</dt>
+        <dd class="kroki">
+          {% for krok in t.steps|split("\n") %}
+            <div>{{ krok }}</div>
+          {% endfor %}
+        </dd>
+        <dt>Oczekiwany wynik</dt><dd>{{ t.expected }}</dd>
+      </dl>
+
+      <div class="wynik">
+        <span><span class="kratka"></span>Pass</span>
+        <span><span class="kratka"></span>Fail</span>
+        <span><span class="kratka"></span>Blocked</span>
+        <span><span class="kratka"></span>N/A</span>
+        <span class="linia-uwag"></span>
+      </div>
+    </div>
+  {% endfor %}
+
+  <p class="podpis">Wygenerowane przez Flownatic {{ data }} — przypadki pochodzą z metadanych Flow.</p>
+
+</div>
+</body>
+</html>

@@ -465,7 +465,17 @@ wynik o złym formacie daje czytelny błąd.
   - [x] Checklist: komplet 26 pozycji z kolumną Status jako listą wyboru (Pass/Fail/Blocked/N/A)
   - [x] Progress Tracker liczy sam: `COUNTIF` po kolumnie Status w Test Cases, `% Pass` jako formuła
   - [x] Defect Log pusty, ale z listami wyboru Severity i Priority — gotowy do pracy
-- [ ] 🟢 Eksport PDF — widok do druku (`@media print`)
+- [x] 🟢 Widok do druku — ✅ 2026-09-08. `GET /flows/{id}/druk`, osobny szablon `druk.twig`
+      **celowo bez dziedziczenia z `layout.twig`**: tamten jest zrobiony pod ekran i ciemny
+      motyw, a tutaj liczy się kartka — czarny tekst, szeryfy, `@page` z marginesem 14 mm.
+  - [x] To **wydruk roboczy**, nie dokument do czytania: metryczka z miejscem na testera
+        i podpis, a przy każdym przypadku kratki Pass / Fail / Blocked / N/A oraz linia na uwagi
+  - [x] `page-break-inside: avoid` — przypadek nie łamie się w poprzek stron, bo urwałby się
+        testerowi w połowie kroku
+  - [x] Odrzucone się nie drukują — ta sama zasada, co w eksporcie
+  - [x] PDF robi się przez „Drukuj → Zapisz jako PDF” przeglądarki — **bez dokładania
+        biblioteki**; osobny generator PDF byłby kolejną zależnością do wgrywania przez FTP
+        i utrzymywania, a daje to samo
 - [x] 🟢 Trasa `GET /flows/{id}/eksport` + przycisk **„Pobierz .xlsx”** — ✅ 2026-09-07.
       Plik czytany w całości i kasowany od razu, żeby nie zostawiać śmieci w katalogu tymczasowym
 - [x] 🟢 `tests/eksport.php` — ✅ 2026-09-07. Buduje plik, **otwiera go ponownie** i sprawdza

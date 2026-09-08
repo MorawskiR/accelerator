@@ -107,7 +107,7 @@ function renderuj(Environment $twig, string $plik): array
         'u'            => ['flows' => '/flows', 'metadane' => '/flows/1/metadane',
                            'testy' => '/flows/1/testy', 'wklej' => '/flows/1/testy/wklej',
                            'eksport' => '/flows/1/eksport', 'dodaj' => '/flows/1/testy/dodaj',
-                           'przypadek' => '/flows/1/testy',
+                           'przypadek' => '/flows/1/testy', 'druk' => '/flows/1/druk',
                            'connect' => '/org/connect', 'wyloguj' => '/logout'],
     ]);
 
@@ -234,6 +234,7 @@ foreach ([
     'Odrzuć',
     '?edytuj=1',                     // wejscie w edycje bez JavaScriptu
     'Dopisz własny przypadek',
+    'Widok do druku',
     'Oczekiwany wynik',
     'dopiski własne zostają nietknięte',
 ] as $tekst) {
@@ -365,6 +366,73 @@ $GLOBALS['zrodla']     = [];
 $GLOBALS['stanTestow'] = ['nieaktualne' => false, 'wygenerowano' => null];
 $GLOBALS['prompt']     = null;
 
+// ── Widok do druku ───────────────────────────────────────────────
+// Osobny szablon, celowo nie dziedziczacy z layout.twig: tam liczy sie
+// ekran i ciemny motyw, tutaj kartka papieru.
+// Przypadki budujemy tutaj od nowa, a nie z $GLOBALS - wczesniejsza sekcja
+// zeruje ten klucz po sobie, wiec poleganie na nim dawalo pusta liste
+// i test przechodzil na niczym.
+$wszystkieTesty = (new \Flownatic\Generator\TemplateGenerator())->generuj($digestBad, $ryzykaBad);
+
+foreach ($wszystkieTesty as $i => $t) {
+    $wszystkieTesty[$i]['id']     = $i + 1;
+    $wszystkieTesty[$i]['source'] = 'reguly';
+    $wszystkieTesty[$i]['status'] = 'draft';
+}
+
+// Jeden przypadek odrzucony - nie ma prawa sie wydrukowac.
+$wszystkieTesty[0]['status'] = 'odrzucony';
+$kodOdrzucony = (string) $wszystkieTesty[0]['tc_code'];
+
+$doDruku = array_values(array_filter(
+    $wszystkieTesty,
+    static fn (array $t): bool => (string) ($t['status'] ?? '') !== 'odrzucony'
+));
+
+$drukHtml = $twig->render('druk.twig', [
+    'flow'      => ['label' => 'RT- Flownatic_Bad_Example', 'api_name' => 'RT_Bad',
+                    'process_type' => 'AutoLaunchedFlow', 'trigger_object' => 'Account',
+                    'trigger_type' => 'RecordAfterSave', 'record_trigger_type' => 'Update',
+                    'version_number' => 1],
+    'testy'     => $doDruku,
+    'ryzyka'    => $ryzykaBad,
+    'refTytuly' => ['TC-018' => 'Flow nie przekracza governor limits (DML, SOQL, CPU)'],
+    'instancja' => 'https://przyklad.my.salesforce.com',
+    'data'      => '2026-09-08',
+    'u'         => ['flow' => '/flows/1'],
+]);
+
+file_put_contents($wyjscie . '/druk.html', $drukHtml);
+
+$lokalne = 0;
+
+foreach ([
+    '@media print',                  // bez tego wydruk bierze style ekranowe
+    'page-break-inside:avoid',       // przypadek nie lamie sie w poprzek stron
+    'class="kratka"',                // kratki na wynik - to wydruk roboczy
+    'onclick="window.print()"',
+    'Tester',                        // metryczka do podpisania
+] as $tekst) {
+    if (!str_contains($drukHtml, $tekst)) {
+        echo '[BLAD] druk - brak: ' . $tekst . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+if (str_contains($drukHtml, $kodOdrzucony)) {
+    echo '[BLAD] druk - odrzucony przypadek ' . $kodOdrzucony . ' trafil na wydruk' . PHP_EOL;
+    $lokalne++;
+}
+
+if (count($doDruku) !== count($wszystkieTesty) - 1) {
+    echo '[BLAD] druk - filtr odrzuconych wycial zla liczbe przypadkow' . PHP_EOL;
+    $lokalne++;
+}
+
+$bledy += $lokalne;
+printf('%-20s %s  przypadkow: %d' . PHP_EOL, 'druk.twig',
+    $lokalne === 0 ? '[OK] ' : '[BLAD]', count($doDruku));
+
 // ── Lista Flow ───────────────────────────────────────────────────
 // Osobno, bo liczniki ryzyk na liscie biora sie z innego miejsca niz widok
 // szczegolu: z FlowAnalyzer::podsumowania(), a nie z pelnej analizy.
@@ -472,6 +540,7 @@ $rozstrzygniecia = [
     'POST /flows/7/testy'           => '/flows/{id}/testy',
     'POST /flows/7/testy/wklej'     => '/flows/{id}/testy/wklej',
     'GET /flows/7/eksport'          => '/flows/{id}/eksport',
+    'GET /flows/7/druk'             => '/flows/{id}/druk',
     'POST /flows/7/testy/dodaj'     => '/flows/{id}/testy/dodaj',
     'POST /flows/7/testy/12/zapisz' => '/flows/{id}/testy/{tc}/zapisz',
     'POST /flows/7/testy/12/status' => '/flows/{id}/testy/{tc}/status',
