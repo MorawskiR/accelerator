@@ -22,7 +22,7 @@
 | 3 | Metadane Flow + Flow Digest + RiskScanner | ✅ **Zakończona 2026-09-07** |
 | 4 | Generator przypadków testowych (bez kosztów API) | ✅ **Zakończona 2026-09-07** |
 | 5 | Edycja i eksport do .xlsx | ✅ **Zakończona 2026-09-08** |
-| 6 | Walidacja pomysłu (Ideal validation) | ⬜ Nie rozpoczęta |
+| 6 | Walidacja pomysłu (Ideal validation) | ⏸️ **Odłożona 2026-09-08** — pomiar później |
 
 Legenda: ⬜ nie rozpoczęta · 🟡 w trakcie · ✅ zakończona
 

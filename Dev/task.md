@@ -508,8 +508,16 @@ sześciu arkuszy, a edycja przypadku (zmiana tytułu i zapis) działa na żywej 
 
 ## FAZA 6 — Walidacja pomysłu
 
+> ⏸️ **FAZA ODŁOŻONA — decyzja Rafała z 2026-09-08.** Narzędzie działa i stoi na produkcji,
+> więc zostaje jak jest; pomiar robimy później. **Nie anulowana** — protokół czeka gotowy
+> w `walidacja-pomiar.md`, a najlepszy moment to pierwszy realny projekt z Flow klienta:
+> liczby z prawdziwej org bronią zgłoszenia №00001131 mocniej niż te z playgrounda.
+>
+> Do tego czasu argument „4 godziny → 2 minuty” pozostaje **twierdzeniem, nie pomiarem** —
+> warto o tym pamiętać, prezentując narzędzie.
+>
 > **Cała ta faza jest 🔵.** Pomiar robi tester i to jest jej sens — gdyby liczby wychodziły
-> z narzędzia, nie byłyby dowodem. 🟢 przygotowuje wyłącznie instrumenty.
+> z narzędzia, nie byłyby dowodem. 🟢 przygotował wyłącznie instrumenty.
 
 - [x] 🟢 **Protokół pomiaru** — ✅ 2026-09-08, `Dev/walidacja-pomiar.md`. Definicje ustalone
       **przed** pomiarem, bo definicja dopasowana po zobaczeniu wyników zawsze pasuje do wyników.
@@ -532,7 +540,14 @@ sześciu arkuszy, a edycja przypadku (zmiana tytułu i zapis) działa na żywej 
 
 ## Zadania poboczne (nie blokują faz)
 
+> Żadne z nich **nie zależy od Fazy 6** ani jej nie odblokowuje. Sprawdzone 2026-09-08.
+
 - [ ] 🟢 Przejrzeć `Plan projektu.odt` — czy zawiera coś, czego nie ma w `plan.md`
 - [ ] 🟢 Usunąć `<meta name="robots" content="noindex">` ze strony przed prawdziwym startem
+      — jest w `site/index.html`, linia 8. Decyzja zależy od tego, kiedy strona ma być indeksowana,
+      a nie od stanu aplikacji
 - [ ] 🔵 Rozważyć zmianę repo na prywatne (obecnie **publiczne**, zawiera dokumenty firmowe)
-- [ ] 🟢 Git LFS dla `.odp`, jeśli prezentacja zacznie puchnąć w historii
+      — **najważniejsze z tej listy**, bo dotyczy zgłoszenia №00001131, prezentacji i frameworku
+- [x] 🟢 ~~Git LFS dla `.odp`~~ — **niepotrzebne, sprawdzone 2026-09-08.** Całe `.git` waży
+      **6,2 MB** przy trzech wersjach 5-megabajtowej prezentacji — kompresja radzi sobie sama.
+      Wrócić do tematu, gdyby `.odp` zaczął być wersjonowany często

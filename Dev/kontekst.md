@@ -5,7 +5,7 @@
 > wiedział, gdzie jesteśmy i dlaczego. Aktualizujemy go **na końcu każdej fazy** oraz **zawsze, gdy
 > zapadnie decyzja projektowa** albo **gdy coś okaże się inne, niż zakładaliśmy**.
 
-**Ostatnia aktualizacja:** 2026-09-08 · **Aktualny stan:** Faza 5 ZAMKNIĘTA — pełna pętla działa, zostaje Faza 6 (walidacja pomysłu)
+**Ostatnia aktualizacja:** 2026-09-08 · **Aktualny stan:** Fazy 1–5 zamknięte, POC domknięty — Faza 6 (pomiar) odłożona na później
 
 ---
 
@@ -301,6 +301,19 @@ przyjmuje odpowiedź z powrotem. Importer jest odporny na to, co człowiek napra
 w płotku markdown, JSON po zdaniu wstępnym modelu, opakowanie w obiekt, priorytety po angielsku.
 Nieznany `checklist_ref` podmienia na kod ogólny zamiast odrzucać przypadek — jedna literówka
 modelu nie może kasować wklejonej pracy.
+
+### ⏸️ Faza 6 odłożona — decyzja z 2026-09-08
+
+**Działa, więc zostaje jak jest.** Pomiar do zgłoszenia №00001131 robimy później — najlepiej
+przy pierwszym realnym projekcie z Flow klienta, bo liczby z prawdziwej org broną pomysłu
+mocniej niż te z playgrounda Developer Edition.
+
+⚠️ **Co to znaczy przy prezentowaniu narzędzia:** argument „4 godziny → 2 minuty” jest na razie
+**twierdzeniem, nie pomiarem**. Protokół czeka gotowy w `Dev/walidacja-pomiar.md` — definicje
+ustalone przed pomiarem, zasada „najpierw ręcznie”, tabela i rejestr braków.
+
+**Stan POC: domknięty funkcjonalnie.** Pełna pętla od inwentarza po plik .xlsx, koszt działania
+0 USD, wszystko na produkcji, Fazy 1–5 otagowane.
 
 ### ✅ FAZA 5 ZAMKNIĘTA — 2026-09-08
 
