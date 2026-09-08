@@ -508,6 +508,20 @@ sześciu arkuszy, a edycja przypadku (zmiana tytułu i zapis) działa na żywej 
 
 ## FAZA 6 — Walidacja pomysłu
 
+> **Cała ta faza jest 🔵.** Pomiar robi tester i to jest jej sens — gdyby liczby wychodziły
+> z narzędzia, nie byłyby dowodem. 🟢 przygotowuje wyłącznie instrumenty.
+
+- [x] 🟢 **Protokół pomiaru** — ✅ 2026-09-08, `Dev/walidacja-pomiar.md`. Definicje ustalone
+      **przed** pomiarem, bo definicja dopasowana po zobaczeniu wyników zawsze pasuje do wyników.
+  - [x] Zasada kolejności: **najpierw ręcznie, potem aplikacja** — inaczej pomiar mierzy Twoją
+        zgodność z narzędziem, a nie oszczędność czasu
+  - [x] Rozróżnienie **bezużyteczny** vs **dodatkowy trafny** — mylenie ich to najczęstszy
+        sposób na zaniżenie wyniku narzędzia
+  - [x] **Brakujące** opisane jako liczba najważniejsza, z rejestrem przyczyn: co da się dopisać
+        jako regułę, a czego narzędzie nigdy nie wymyśli
+  - [x] Sekcja „czego ten pomiar **nie** udowodni" — granice wskazane samemu bronią się lepiej
+        niż wytknięte przez kogoś innego
+
 - [ ] 🔵 Uruchom na 3–5 realnych Flow
 - [ ] 🔵 Napisz dla nich testy **także ręcznie**, dla porównania
 - [ ] 🔵 Zmierz: czas ręcznie vs. apka · TC trafione · TC bezużyteczne · **TC brakujące** ← najważniejsze
