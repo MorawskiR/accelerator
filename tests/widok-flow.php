@@ -548,6 +548,8 @@ $oczekiwaneNaLiscie = [
     'data-partia="/flows/metadane/partia"', // adres partii dla skryptu
     'width:67%',                            // pasek odwzorowuje stan kolejki
     'zostało 1',                            // licznik mowi wprost, ile brakuje
+    '3 wysokie',                            // kolumna ryzyk czytelna bez koloru
+    '2 średnie',
     '<noscript>',                           // i co robic, gdy nie ma JavaScriptu
 ];
 

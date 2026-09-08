@@ -154,10 +154,19 @@
               {% elseif r.razem == 0 %}
                 <span class="znacznik ok">czysto</span>
               {% else %}
+                {# Liczba + słowo, nie sam kolor. Do 2026-09-08 były tu gołe cyfry
+                   i znaczenie niósł wyłącznie kolor plakietki — nieczytelne dla
+                   każdego, kto nie zna kodu barw albo go nie rozróżnia. #}
                 <div class="chipy" style="margin:0">
-                  {% if r.ryzyka.wysokie > 0 %}<span class="waga wysokie">{{ r.ryzyka.wysokie }}</span>{% endif %}
-                  {% if r.ryzyka.srednie > 0 %}<span class="waga srednie">{{ r.ryzyka.srednie }}</span>{% endif %}
-                  {% if r.ryzyka.niskie  > 0 %}<span class="waga niskie">{{ r.ryzyka.niskie }}</span>{% endif %}
+                  {% if r.ryzyka.wysokie > 0 %}
+                    <span class="waga wysokie">{{ r.ryzyka.wysokie }} wysokie</span>
+                  {% endif %}
+                  {% if r.ryzyka.srednie > 0 %}
+                    <span class="waga srednie">{{ r.ryzyka.srednie }} średnie</span>
+                  {% endif %}
+                  {% if r.ryzyka.niskie > 0 %}
+                    <span class="waga niskie">{{ r.ryzyka.niskie }} niskie</span>
+                  {% endif %}
                 </div>
               {% endif %}
             </td>
