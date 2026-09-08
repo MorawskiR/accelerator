@@ -215,7 +215,7 @@
   {% endif %}
 
   {% for t in testy %}
-    <div class="karta">
+    <div class="karta{{ t.status == 'odrzucony' ? ' odrzucony' : '' }}" id="tc-{{ t.id }}">
       <div class="rzad">
         <div>
           <span class="mono"><strong>{{ t.tc_code }}</strong></span>
@@ -223,28 +223,130 @@
           {% if t.source != 'reguly' %}
             <span class="znacznik">{{ t.source == 'wklejone' ? 'wklejone' : 'własne' }}</span>
           {% endif %}
+          {% if t.status == 'zaakceptowany' %}
+            <span class="znacznik ok">zaakceptowany</span>
+          {% elseif t.status == 'odrzucony' %}
+            <span class="waga wysokie">odrzucony — poza eksportem</span>
+          {% endif %}
         </div>
         <span class="waga {{ t.priority == 'Kluczowe' ? 'wysokie' : (t.priority == 'Ważne' ? 'srednie' : 'niskie') }}">
           {{ t.priority }}
         </span>
       </div>
 
-      <h3 style="margin:10px 0 0; font-size:1rem">{{ t.title }}</h3>
+      {% if edytuj == t.id %}
+        {# Formularz edycji zamiast tresci - bez JavaScriptu, otwierany adresem. #}
+        <form method="post" action="{{ u.przypadek }}/{{ t.id }}/zapisz" class="edycja">
+          <label for="title-{{ t.id }}">Tytuł</label>
+          <input type="text" id="title-{{ t.id }}" name="title" value="{{ t.title }}" required>
 
-      <dl class="para">
-        {% if t.preconditions %}
-          <dt>Warunki wstępne</dt><dd>{{ t.preconditions }}</dd>
-        {% endif %}
-        <dt>Kroki</dt>
-        <dd>
-          {% for krok in t.steps|split("\n") %}
-            <div>{{ krok }}</div>
-          {% endfor %}
-        </dd>
-        <dt>Oczekiwany wynik</dt><dd>{{ t.expected }}</dd>
-      </dl>
+          <label for="pre-{{ t.id }}">Warunki wstępne</label>
+          <textarea id="pre-{{ t.id }}" name="preconditions" rows="2">{{ t.preconditions }}</textarea>
+
+          <label for="steps-{{ t.id }}">Kroki</label>
+          <textarea id="steps-{{ t.id }}" name="steps" rows="5" required>{{ t.steps }}</textarea>
+
+          <label for="exp-{{ t.id }}">Oczekiwany wynik</label>
+          <textarea id="exp-{{ t.id }}" name="expected" rows="2" required>{{ t.expected }}</textarea>
+
+          <label for="prio-{{ t.id }}">Priorytet</label>
+          <select id="prio-{{ t.id }}" name="priority">
+            {% for p in ['Kluczowe', 'Ważne', 'Standardowe'] %}
+              <option value="{{ p }}" {{ t.priority == p ? 'selected' : '' }}>{{ p }}</option>
+            {% endfor %}
+          </select>
+
+          <div class="akcje" style="margin-top:12px">
+            <button type="submit">Zapisz zmiany</button>
+            <a class="powrot" style="margin:0" href="{{ u.flows }}/{{ flow.id }}#tc-{{ t.id }}">Anuluj</a>
+          </div>
+        </form>
+      {% else %}
+        <h3 style="margin:10px 0 0; font-size:1rem">{{ t.title }}</h3>
+
+        <dl class="para">
+          {% if t.preconditions %}
+            <dt>Warunki wstępne</dt><dd>{{ t.preconditions }}</dd>
+          {% endif %}
+          <dt>Kroki</dt>
+          <dd>
+            {% for krok in t.steps|split("\n") %}
+              <div>{{ krok }}</div>
+            {% endfor %}
+          </dd>
+          <dt>Oczekiwany wynik</dt><dd>{{ t.expected }}</dd>
+        </dl>
+
+        <div class="akcje przy-tc">
+          <a class="powrot" style="margin:0" href="{{ u.flows }}/{{ flow.id }}?edytuj={{ t.id }}#tc-{{ t.id }}">Edytuj</a>
+
+          {% if t.status != 'zaakceptowany' %}
+            <form method="post" action="{{ u.przypadek }}/{{ t.id }}/status" style="margin:0">
+              <input type="hidden" name="status" value="zaakceptowany">
+              <button type="submit" class="cichy">Akceptuj</button>
+            </form>
+          {% endif %}
+
+          {% if t.status != 'odrzucony' %}
+            <form method="post" action="{{ u.przypadek }}/{{ t.id }}/status" style="margin:0">
+              <input type="hidden" name="status" value="odrzucony">
+              <button type="submit" class="cichy">Odrzuć</button>
+            </form>
+          {% else %}
+            <form method="post" action="{{ u.przypadek }}/{{ t.id }}/status" style="margin:0">
+              <input type="hidden" name="status" value="draft">
+              <button type="submit" class="cichy">Przywróć</button>
+            </form>
+          {% endif %}
+
+          <form method="post" action="{{ u.przypadek }}/{{ t.id }}/usun" style="margin:0"
+                onsubmit="return confirm('Usunąć ten przypadek?')">
+            <button type="submit" class="cichy">Usuń</button>
+          </form>
+        </div>
+      {% endif %}
     </div>
   {% endfor %}
+
+  {% if testy is not empty %}
+    <details class="karta most">
+      <summary>Dopisz własny przypadek</summary>
+
+      <p class="przygaszone">Przypadki dopisane ręcznie <strong>przetrwają ponowne generowanie</strong> —
+      nadpisywane są tylko te z reguł.</p>
+
+      <form method="post" action="{{ u.dodaj }}" class="edycja">
+        <label for="nowy-title">Tytuł</label>
+        <input type="text" id="nowy-title" name="title" required
+               placeholder="np. Aktualizacja rekordu bez uprawnień do pola">
+
+        <label for="nowy-ref">Odwołanie do frameworku</label>
+        <input type="text" id="nowy-ref" name="checklist_ref" value="TC-001"
+               placeholder="TC-001 … TC-026 albo RT-001 …">
+
+        <label for="nowy-pre">Warunki wstępne</label>
+        <textarea id="nowy-pre" name="preconditions" rows="2"></textarea>
+
+        <label for="nowy-steps">Kroki</label>
+        <textarea id="nowy-steps" name="steps" rows="4" required
+                  placeholder="1. Pierwszy krok.&#10;2. Drugi krok."></textarea>
+
+        <label for="nowy-exp">Oczekiwany wynik</label>
+        <textarea id="nowy-exp" name="expected" rows="2" required></textarea>
+
+        <label for="nowy-prio">Priorytet</label>
+        <select id="nowy-prio" name="priority">
+          {% for p in ['Kluczowe', 'Ważne', 'Standardowe'] %}
+            <option value="{{ p }}">{{ p }}</option>
+          {% endfor %}
+        </select>
+
+        <div class="akcje" style="margin-top:12px">
+          <button type="submit">Dopisz przypadek</button>
+        </div>
+      </form>
+    </details>
+  {% endif %}
 
   {# ── Struktura ─────────────────────────────────────────────── #}
   <h2>Struktura</h2>

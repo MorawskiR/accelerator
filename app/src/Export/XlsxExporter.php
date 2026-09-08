@@ -276,6 +276,14 @@ final class XlsxExporter
 
         $this->naglowekKolumn($a, 6, ['ID', 'Nazwa testu', 'Kroki', 'Oczekiwany wynik', 'Status', 'Defekt #', 'Uwagi']);
 
+        // Odrzucone nie trafiaja do pliku. Zapytanie w repozytorium juz je
+        // odsiewa, ale ten sam warunek stoi tutaj drugi raz celowo: plik idzie
+        // do klienta i nie moze zalezec od tego, czy wolajacy pamietal o filtrze.
+        $przypadki = array_values(array_filter(
+            $przypadki,
+            static fn (array $tc): bool => (string) ($tc['status'] ?? '') !== 'odrzucony'
+        ));
+
         $w = 7;
         $pierwszy = $w;
 

@@ -442,7 +442,19 @@ wynik o złym formacie daje czytelny błąd.
 
 ## FAZA 5 — Edycja i eksport
 
-- [ ] 🟢 Edycja i akceptacja TC przed eksportem (`source = manual` dla dopisanych ręcznie)
+- [x] 🟢 Edycja i akceptacja TC przed eksportem — ✅ 2026-09-08
+  - [x] Edycja w miejscu: formularz otwierany adresem `?edytuj=ID`, **bez JavaScriptu**
+  - [x] Akceptacja / odrzucenie / przywrócenie — osobny stan przeglądu, nie mylony ze statusem
+        wykonania testu (Pass/Fail), który żyje w wyeksportowanym arkuszu
+  - [x] **Odrzucone nie trafiają do eksportu** — warunek stoi w dwóch miejscach: w zapytaniu
+        `doEksportu()` i w samym eksporterze. Plik idzie do klienta, więc nie może zależeć
+        od tego, czy wołający pamiętał o filtrze
+  - [x] Dopisywanie własnych przypadków (`source = manual`) — numeracja ciągnie się dalej
+        w obrębie wersji, a dopiski **przetrwają ponowne generowanie**
+  - [x] Edycja **nie zmienia źródła**: poprawiony przypadek z reguł nadal jest z reguł i zostanie
+        nadpisany. Inaczej jedna literówka zamrażałaby go na zawsze, a lista przestawałaby
+        odzwierciedlać metadane. Kto chce trwałej wersji — dopisuje własny
+  - [x] Usunięcie wygenerowanego przypadku mówi wprost, że wróci przy następnym generowaniu
 - [x] 🟢 `app/src/Export/XlsxExporter.php` — ✅ 2026-09-07. Sześć arkuszy z emoji w nazwach,
       w kolejności oryginalu. **Układ nie jest wymyślony** — kolory, szerokości kolumn i nagłówki
       odczytane z `SalesforcCloud_FTF.xlsx`: pasek tytułu `1F3864`, nagłówki tabel `2E75B6`,

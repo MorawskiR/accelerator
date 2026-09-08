@@ -427,6 +427,118 @@ final class Routes
             return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
         })->add($auth);
 
+        // ── Edycja przypadkow przed eksportem ──────────────────────
+        // Wygenerowane testy musza przejsc przez czlowieka - inaczej narzedzie
+        // nie jest wiarygodne jako konsultanckie. Stad akceptacja, poprawka
+        // i mozliwosc dopisania wlasnego przypadku.
+
+        $app->post('/flows/{id}/testy/dodaj', function (Request $request, Response $response, array $args) use ($app): Response {
+            $id  = (int) ($args['id'] ?? 0);
+            $uid = (int) $_SESSION['user_id'];
+
+            if (self::flowUzytkownika($id, $uid) === null) {
+                return self::zKomunikatem($response, $app, 'Nie ma takiego Flow.', '/flows');
+            }
+
+            $wersjaId = self::wersjaFlow($id);
+
+            if ($wersjaId === null) {
+                return self::zKomunikatem($response, $app, 'Najpierw pobierz metadane tego Flow.', '/flows/' . $id);
+            }
+
+            $dane = (array) $request->getParsedBody();
+
+            foreach (['title', 'steps', 'expected'] as $wymagane) {
+                if (trim((string) ($dane[$wymagane] ?? '')) === '') {
+                    return self::zKomunikatem($response, $app,
+                        'Wlasny przypadek musi miec tytul, kroki i oczekiwany wynik.', '/flows/' . $id);
+                }
+            }
+
+            try {
+                (new TestCaseRepository())->dodajReczny($wersjaId, $dane, self::prefiksFlow($id));
+            } catch (\Throwable $e) {
+                return self::zKomunikatem($response, $app, $e->getMessage(), '/flows/' . $id);
+            }
+
+            $_SESSION['komunikat_ok'] = 'Dopisano wlasny przypadek testowy.';
+
+            return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
+        })->add($auth);
+
+        $app->post('/flows/{id}/testy/{tc}/zapisz', function (Request $request, Response $response, array $args) use ($app): Response {
+            $id  = (int) ($args['id'] ?? 0);
+            $tc  = (int) ($args['tc'] ?? 0);
+            $uid = (int) $_SESSION['user_id'];
+
+            $repo = self::przypadekUzytkownika($id, $tc, $uid);
+
+            if ($repo === null) {
+                return self::zKomunikatem($response, $app, 'Nie ma takiego przypadku.', '/flows/' . $id);
+            }
+
+            $dane = (array) $request->getParsedBody();
+
+            foreach (['title', 'steps', 'expected'] as $wymagane) {
+                if (trim((string) ($dane[$wymagane] ?? '')) === '') {
+                    return self::zKomunikatem($response, $app,
+                        'Tytul, kroki i oczekiwany wynik nie moga byc puste.', '/flows/' . $id . '?edytuj=' . $tc);
+                }
+            }
+
+            (new TestCaseRepository())->zapiszJeden($tc, $dane);
+            $_SESSION['komunikat_ok'] = 'Zapisano zmiany w przypadku.';
+
+            return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
+        })->add($auth);
+
+        $app->post('/flows/{id}/testy/{tc}/status', function (Request $request, Response $response, array $args) use ($app): Response {
+            $id  = (int) ($args['id'] ?? 0);
+            $tc  = (int) ($args['tc'] ?? 0);
+            $uid = (int) $_SESSION['user_id'];
+
+            if (self::przypadekUzytkownika($id, $tc, $uid) === null) {
+                return self::zKomunikatem($response, $app, 'Nie ma takiego przypadku.', '/flows/' . $id);
+            }
+
+            $dane   = (array) $request->getParsedBody();
+            $status = (string) ($dane['status'] ?? '');
+
+            try {
+                (new TestCaseRepository())->zmienStatus($tc, $status);
+            } catch (\Throwable $e) {
+                return self::zKomunikatem($response, $app, $e->getMessage(), '/flows/' . $id);
+            }
+
+            $_SESSION['komunikat_ok'] = $status === TestCaseRepository::STATUS_ODRZUCONY
+                ? 'Przypadek odrzucony - nie trafi do eksportu.'
+                : 'Przypadek zaakceptowany.';
+
+            return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
+        })->add($auth);
+
+        $app->post('/flows/{id}/testy/{tc}/usun', function (Request $request, Response $response, array $args) use ($app): Response {
+            $id  = (int) ($args['id'] ?? 0);
+            $tc  = (int) ($args['tc'] ?? 0);
+            $uid = (int) $_SESSION['user_id'];
+
+            $przypadek = self::przypadekUzytkownika($id, $tc, $uid);
+
+            if ($przypadek === null) {
+                return self::zKomunikatem($response, $app, 'Nie ma takiego przypadku.', '/flows/' . $id);
+            }
+
+            (new TestCaseRepository())->usun($tc);
+
+            // Wygenerowany przypadek wroci przy nastepnym generowaniu - warto
+            // to powiedziec od razu, zeby usuniecie nie wygladalo na nieskuteczne.
+            $_SESSION['komunikat_ok'] = (string) ($przypadek['source'] ?? '') === TestCaseRepository::ZRODLO_RECZNE
+                ? 'Wlasny przypadek usuniety.'
+                : 'Przypadek usuniety. Uwaga: wroci przy ponownym generowaniu - jesli ma zniknac na stale, odrzuc go zamiast kasowac.';
+
+            return $response->withHeader('Location', self::url($app, '/flows/' . $id))->withStatus(302);
+        })->add($auth);
+
         // Eksport do .xlsx w ukladzie frameworku - domkniecie petli narzedzia.
         $app->get('/flows/{id}/eksport', function (Request $request, Response $response, array $args) use ($app): Response {
             $id   = (int) ($args['id'] ?? 0);
@@ -447,7 +559,8 @@ final class Routes
             $wersjaId  = (int) ($analiza['wersja']['id'] ?? 0);
 
             if ($wersjaId > 0) {
-                $przypadki = (new TestCaseRepository())->dla($wersjaId);
+                // Odrzucone nie trafiaja do pliku oddawanego klientowi.
+                $przypadki = (new TestCaseRepository())->doEksportu($wersjaId);
             }
 
             $pol = (new OAuthService())->connection($uid);
@@ -497,7 +610,8 @@ final class Routes
                 return self::zKomunikatem($response, $app, 'Nie ma takiego Flow.', '/flows');
             }
 
-            $blad = self::pobierzKomunikat();
+            $blad    = self::pobierzKomunikat();
+            $edytuj  = (int) ($request->getQueryParams()['edytuj'] ?? 0);
 
             try {
                 $analiza = (new FlowAnalyzer())->analiza($id);
@@ -538,6 +652,8 @@ final class Routes
                 'testy'        => $testy,
                 'zrodla'       => $zrodla,
                 'stanTestow'   => $stanTest,
+                'edytuj'       => $edytuj,
+                'statusy'      => TestCaseRepository::STATUSY,
                 'prompt'       => $prompt,
                 'polaczona'    => (new OAuthService())->connection($uid) !== null,
                 'blad'         => $blad,
@@ -547,6 +663,8 @@ final class Routes
                     'metadane' => self::url($app, '/flows/' . $id . '/metadane'),
                     'testy'    => self::url($app, '/flows/' . $id . '/testy'),
                     'eksport'  => self::url($app, '/flows/' . $id . '/eksport'),
+                    'dodaj'    => self::url($app, '/flows/' . $id . '/testy/dodaj'),
+                    'przypadek' => self::url($app, '/flows/' . $id . '/testy'),
                     'wklej'    => self::url($app, '/flows/' . $id . '/testy/wklej'),
                     'connect'  => self::url($app, '/org/connect'),
                     'wyloguj'  => self::url($app, '/logout'),
@@ -573,6 +691,60 @@ final class Routes
         $base = rtrim($app->getBasePath(), '/');
 
         return $base . $sciezka;
+    }
+
+    /**
+     * Identyfikator najnowszej wersji Flow z pobranymi metadanymi.
+     *
+     * Ten sam wybor, co w FlowAnalyzer - ale bez liczenia digestu, bo przy
+     * edycji przypadku struktura nie jest do niczego potrzebna.
+     */
+    private static function wersjaFlow(int $flowId): ?int
+    {
+        $w = Db::one(
+            'SELECT id FROM flow_versions
+              WHERE flow_id = ? AND metadata_json IS NOT NULL
+              ORDER BY version_number DESC
+              LIMIT 1',
+            [$flowId]
+        );
+
+        return $w === null ? null : (int) $w['id'];
+    }
+
+    /**
+     * Przypadek testowy wraz z pelnym sprawdzeniem wlascicielstwa.
+     *
+     * Sprawdzamy oba ogniwa: czy Flow nalezy do uzytkownika i czy przypadek
+     * nalezy do wersji tego Flow. Same id przychodza z adresu URL.
+     *
+     * @return array<string,mixed>|null
+     */
+    private static function przypadekUzytkownika(int $flowId, int $tcId, int $userId): ?array
+    {
+        if (self::flowUzytkownika($flowId, $userId) === null) {
+            return null;
+        }
+
+        $wersjaId = self::wersjaFlow($flowId);
+
+        if ($wersjaId === null) {
+            return null;
+        }
+
+        return (new TestCaseRepository())->jeden($tcId, $wersjaId);
+    }
+
+    /** Prefiks kodow przypadkow dla tego Flow - wg typu, jak w arkuszu. */
+    private static function prefiksFlow(int $flowId): string
+    {
+        try {
+            $analiza = (new FlowAnalyzer())->analiza($flowId);
+        } catch (\Throwable) {
+            return 'TC';
+        }
+
+        return $analiza === null ? 'TC' : \Flownatic\Generator\Framework::typFlow($analiza['digest']);
     }
 
     /**

@@ -99,13 +99,15 @@ function renderuj(Environment $twig, string $plik): array
         'testy'        => $GLOBALS['testy'] ?? [],
         'zrodla'       => $GLOBALS['zrodla'] ?? [],
         'stanTestow'   => $GLOBALS['stanTestow'] ?? ['nieaktualne' => false, 'wygenerowano' => null],
+        'edytuj'       => $GLOBALS['edytuj'] ?? 0,
         'prompt'       => $GLOBALS['prompt'] ?? null,
         'polaczona'    => true,
         'blad'         => null,
         'ok'           => null,
         'u'            => ['flows' => '/flows', 'metadane' => '/flows/1/metadane',
                            'testy' => '/flows/1/testy', 'wklej' => '/flows/1/testy/wklej',
-                           'eksport' => '/flows/1/eksport',
+                           'eksport' => '/flows/1/eksport', 'dodaj' => '/flows/1/testy/dodaj',
+                           'przypadek' => '/flows/1/testy',
                            'connect' => '/org/connect', 'wyloguj' => '/logout'],
     ]);
 
@@ -206,6 +208,8 @@ $ryzykaBad = (new RiskScanner())->scan($digestBad);
 $GLOBALS['testy'] = array_map(
     static function (array $t): array {
         // Wiersz z bazy ma jeszcze source i status - dokladamy je jak repozytorium.
+        static $nr = 0;
+        $t['id']     = ++$nr;
         $t['source'] = 'reguly';
         $t['status'] = 'draft';
 
@@ -226,6 +230,10 @@ foreach ([
     'Generuj ponownie',              // sa juz przypadki, wiec przycisk zmienia napis
     'RT-001',                        // kod pierwszego przypadku
     'href="/flows/1/eksport"',       // pobranie .xlsx pojawia sie razem z przypadkami
+    'Akceptuj',                      // akceptacja przed eksportem
+    'Odrzuć',
+    '?edytuj=1',                     // wejscie w edycje bez JavaScriptu
+    'Dopisz własny przypadek',
     'Oczekiwany wynik',
     'dopiski własne zostają nietknięte',
 ] as $tekst) {
@@ -270,6 +278,43 @@ if (str_contains($swieze['html'], 'opisują poprzednią wersję Flow')) {
 
 $bledy += $lokalne;
 printf('%-20s %s' . PHP_EOL, 'flow.twig/nieakt.', $lokalne === 0 ? '[OK] ' : '[BLAD]');
+
+// ── Edycja przypadku ─────────────────────────────────────────────
+// Formularz otwiera sie adresem (?edytuj=ID), bez JavaScriptu - wiec da sie
+// go sprawdzic tym samym testem, co reszte widoku.
+$GLOBALS['edytuj'] = 1;
+$wEdycji = renderuj($twig, __DIR__ . '/fixtures/bad-example.json');
+file_put_contents($wyjscie . '/bad-example-edycja.html', $wEdycji['html']);
+
+$lokalne = 0;
+
+foreach ([
+    'action="/flows/1/testy/1/zapisz"',
+    'name="steps"',
+    'Zapisz zmiany',
+    'Anuluj',
+] as $tekst) {
+    if (!str_contains($wEdycji['html'], $tekst)) {
+        echo '[BLAD] edycja - brak: ' . $tekst . PHP_EOL;
+        $lokalne++;
+    }
+}
+
+// Formularz ma ZASTAPIC tresc przypadku, a nie pojawic sie obok niej.
+// Porownujemy z widokiem bez edycji: jedna etykieta "Oczekiwany wynik"
+// mniej, bo dokladnie jedna karta pokazuje teraz formularz.
+$bezEdycji = substr_count($zTestami['html'], '<dt>Oczekiwany wynik</dt>');
+$zEdycja   = substr_count($wEdycji['html'], '<dt>Oczekiwany wynik</dt>');
+
+if ($zEdycja !== $bezEdycji - 1) {
+    echo '[BLAD] edycja - kart z trescia: ' . $zEdycja . ', oczekiwano ' . ($bezEdycji - 1) . PHP_EOL;
+    $lokalne++;
+}
+
+$GLOBALS['edytuj'] = 0;
+
+$bledy += $lokalne;
+printf('%-20s %s' . PHP_EOL, 'flow.twig/edycja', $lokalne === 0 ? '[OK] ' : '[BLAD]');
 
 // ── Most przez schowek w widoku ──────────────────────────────────
 require_once __DIR__ . '/../app/src/Generator/PromptBuilder.php';
@@ -427,6 +472,10 @@ $rozstrzygniecia = [
     'POST /flows/7/testy'           => '/flows/{id}/testy',
     'POST /flows/7/testy/wklej'     => '/flows/{id}/testy/wklej',
     'GET /flows/7/eksport'          => '/flows/{id}/eksport',
+    'POST /flows/7/testy/dodaj'     => '/flows/{id}/testy/dodaj',
+    'POST /flows/7/testy/12/zapisz' => '/flows/{id}/testy/{tc}/zapisz',
+    'POST /flows/7/testy/12/status' => '/flows/{id}/testy/{tc}/status',
+    'POST /flows/7/testy/12/usun'   => '/flows/{id}/testy/{tc}/usun',
     'POST /flows/sync'              => '/flows/sync',
 ];
 

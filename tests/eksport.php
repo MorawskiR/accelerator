@@ -292,6 +292,43 @@ if ((int) ($post?->getCell('C13')->getValue() ?? 0) !== count($przypadki)) {
 printf("%-24s %s\n", 'Progress Tracker', $lokalne === 0 ? '[OK] ' : '[BLAD]');
 $bledy += $lokalne;
 
+// ── Odrzucone poza eksportem ─────────────────────────────────────
+// Akceptacja ma znaczyc cos w pliku oddawanym klientowi, a nie tylko
+// na ekranie - inaczej przycisk "Odrzuc" jest ozdobnikiem.
+$lokalne = 0;
+
+$zOdrzuconym = $przypadki;
+$zOdrzuconym[0]['status'] = 'odrzucony';
+$kodOdrzucony = (string) $zOdrzuconym[0]['tc_code'];
+
+$eksporter2 = new XlsxExporter();
+$sciezka2   = $eksporter2->doPliku(
+    $eksporter2->zbuduj($flow, $digest, $zOdrzuconym, $inwentarz, null)
+);
+
+$drugi      = IOFactory::load($sciezka2);
+$tekstDrugi = implode(' ', array_map(
+    static fn (array $w): string => implode(' ', array_map('strval', $w)),
+    $drugi->getSheetByName('🧪 Test Cases')?->toArray(null, true, false, false) ?? []
+));
+
+$drugi->disconnectWorksheets();
+unlink($sciezka2);
+
+if (str_contains($tekstDrugi, $kodOdrzucony)) {
+    echo '[BLAD] odrzucony przypadek ' . $kodOdrzucony . ' trafil do pliku' . PHP_EOL;
+    $lokalne++;
+}
+
+// Filtr nie moze wyciac za duzo - reszta zostaje.
+if (!str_contains($tekstDrugi, (string) $przypadki[1]['tc_code'])) {
+    echo '[BLAD] filtr wyciol takze nieodrzucone przypadki' . PHP_EOL;
+    $lokalne++;
+}
+
+$bledy += $lokalne;
+printf("%-24s %s\n", 'odrzucone poza plikiem', $lokalne === 0 ? '[OK] ' : '[BLAD]');
+
 echo PHP_EOL . ($bledy === 0
     ? 'Wszystko sie zgadza. Plik do obejrzenia: tests/out/' . basename($docelowy) . PHP_EOL
     : $bledy . ' problemow.' . PHP_EOL);

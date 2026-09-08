@@ -118,6 +118,17 @@ a.cichy:hover{text-decoration:underline}
 .chipy{display:flex; flex-wrap:wrap; gap:7px; margin:10px 0 0}
 .pusto{color:var(--przygaszony); font-size:.9rem; margin:0}
 
+/* ── Edycja przypadków ──────────────────────────────────── */
+.edycja{margin-top:14px; display:flex; flex-direction:column; gap:4px}
+.edycja label{margin-top:8px}
+.edycja input[type=text]{width:100%; padding:10px 12px; font:inherit; color:var(--tekst);
+  background:var(--tlo); border:1px solid var(--linia); border-radius:7px}
+.edycja select{font:inherit; padding:9px 11px; border-radius:7px; border:1px solid var(--linia);
+  background:var(--plyta); color:var(--tekst); align-self:flex-start}
+.akcje.przy-tc{margin-top:14px; padding-top:12px; border-top:1px solid var(--linia); flex-wrap:wrap}
+.karta.odrzucony{opacity:.62}
+.karta.odrzucony h3{text-decoration:line-through}
+
 /* ── Most przez schowek ─────────────────────────────────── */
 textarea{width:100%; padding:11px 13px; font:13px/1.5 ui-monospace,"Cascadia Code",monospace;
   color:var(--tekst); background:var(--tlo); border:1px solid var(--linia); border-radius:7px;

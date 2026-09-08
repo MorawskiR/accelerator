@@ -26,6 +26,20 @@ final class TestCaseRepository
     public const ZRODLO_RECZNE   = 'manual';
 
     /**
+     * Stan przegladu przypadku - nie mylic ze statusem wykonania testu.
+     *
+     * Ten tutaj mowi, czy tester zaakceptowal przypadek do wykonania.
+     * Status wykonania (Pass/Fail/Blocked) zyje w wyeksportowanym arkuszu,
+     * bo to tam tester pracuje.
+     */
+    public const STATUS_ROBOCZY     = 'draft';
+    public const STATUS_ZAAKCEPTOWANY = 'zaakceptowany';
+    public const STATUS_ODRZUCONY   = 'odrzucony';
+
+    /** @var list<string> */
+    public const STATUSY = [self::STATUS_ROBOCZY, self::STATUS_ZAAKCEPTOWANY, self::STATUS_ODRZUCONY];
+
+    /**
      * Podmienia przypadki z danego zrodla na nowy komplet.
      *
      * @param list<array<string,mixed>> $przypadki
@@ -108,6 +122,152 @@ final class TestCaseRepository
         }
 
         return $wynik;
+    }
+
+    /**
+     * Jeden przypadek wraz ze sprawdzeniem, czy nalezy do tej wersji Flow.
+     *
+     * Identyfikator przychodzi z adresu URL, wiec sama zgodnosc id nie
+     * wystarcza - inaczej podmiana numeru pozwalalaby edytowac cudzy wpis.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function jeden(int $id, int $flowVersionId): ?array
+    {
+        return Db::one(
+            'SELECT * FROM test_cases WHERE id = ? AND flow_version_id = ?',
+            [$id, $flowVersionId]
+        );
+    }
+
+    /**
+     * Zapisuje zmiany wprowadzone recznie przez testera.
+     *
+     * Zmienione pola zostaja przy swoim zrodle - przypadek wygenerowany
+     * z regul i poprawiony recznie **nadal jest z regul**, wiec ponowne
+     * generowanie go nadpisze. To jest zamierzone: gdyby edycja zmieniala
+     * zrodlo na manual, jedna literowka zamrazalaby przypadek na zawsze
+     * i lista przestalaby odzwierciedlac metadane. Kto chce trwalej wersji,
+     * dopisuje wlasny przypadek.
+     *
+     * @param array<string,mixed> $pola
+     */
+    public function zapiszJeden(int $id, array $pola): void
+    {
+        Db::query(
+            'UPDATE test_cases
+                SET title = ?, preconditions = ?, steps = ?, expected = ?, priority = ?, updated_at = NOW()
+              WHERE id = ?',
+            [
+                trim((string) ($pola['title'] ?? '')),
+                trim((string) ($pola['preconditions'] ?? '')) !== '' ? trim((string) $pola['preconditions']) : null,
+                trim((string) ($pola['steps'] ?? '')),
+                trim((string) ($pola['expected'] ?? '')),
+                (string) ($pola['priority'] ?? Framework::PRIORYTET_KLUCZOWY),
+                $id,
+            ]
+        );
+    }
+
+    public function zmienStatus(int $id, string $status): void
+    {
+        if (!in_array($status, self::STATUSY, true)) {
+            throw new \InvalidArgumentException('Nieznany status przypadku: ' . $status);
+        }
+
+        Db::query('UPDATE test_cases SET status = ?, updated_at = NOW() WHERE id = ?', [$status, $id]);
+    }
+
+    public function usun(int $id): void
+    {
+        Db::query('DELETE FROM test_cases WHERE id = ?', [$id]);
+    }
+
+    /**
+     * Dopisuje wlasny przypadek testera.
+     *
+     * Kod nadajemy dalej rosnaco w obrebie wersji, zeby lista czytala sie
+     * jak jedna calosc, a nie dwie osobne numeracje.
+     *
+     * @param array<string,mixed> $pola
+     */
+    public function dodajReczny(int $flowVersionId, array $pola, string $prefiks): int
+    {
+        $kod = $prefiks . '-' . str_pad((string) $this->nastepnyNumer($flowVersionId, $prefiks), 3, '0', STR_PAD_LEFT);
+        $ref = (string) ($pola['checklist_ref'] ?? '');
+
+        if (!Framework::znany($ref)) {
+            $ref = 'TC-001';
+        }
+
+        Db::query(
+            'INSERT INTO test_cases
+                (flow_version_id, tc_code, checklist_ref, category, title,
+                 preconditions, steps, expected, priority, source, status, sort_order)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                $flowVersionId,
+                $kod,
+                $ref,
+                Framework::kategoria($ref) ?? 'Przypadki per typ Flow',
+                trim((string) ($pola['title'] ?? '')),
+                trim((string) ($pola['preconditions'] ?? '')) !== '' ? trim((string) $pola['preconditions']) : null,
+                trim((string) ($pola['steps'] ?? '')),
+                trim((string) ($pola['expected'] ?? '')),
+                (string) ($pola['priority'] ?? Framework::PRIORYTET_KLUCZOWY),
+                self::ZRODLO_RECZNE,
+                self::STATUS_ZAAKCEPTOWANY,   // wlasny przypadek nie wymaga akceptacji
+                $this->nastepnaKolejnosc($flowVersionId),
+            ]
+        );
+
+        return (int) Db::conn()->lastInsertId();
+    }
+
+    /** Najwyzszy uzyty numer w kodach o tym prefiksie, powiekszony o jeden. */
+    private function nastepnyNumer(int $flowVersionId, string $prefiks): int
+    {
+        $kody = Db::all(
+            'SELECT tc_code FROM test_cases WHERE flow_version_id = ? AND tc_code LIKE ?',
+            [$flowVersionId, $prefiks . '-%']
+        );
+
+        $max = 0;
+
+        foreach ($kody as $w) {
+            if (preg_match('/-(\d+)$/', (string) $w['tc_code'], $m) === 1) {
+                $max = max($max, (int) $m[1]);
+            }
+        }
+
+        return $max + 1;
+    }
+
+    private function nastepnaKolejnosc(int $flowVersionId): int
+    {
+        return (int) (Db::one(
+            'SELECT COALESCE(MAX(sort_order), 0) + 1 AS nastepna FROM test_cases WHERE flow_version_id = ?',
+            [$flowVersionId]
+        )['nastepna'] ?? 1);
+    }
+
+    /**
+     * Przypadki do eksportu - **bez odrzuconych**.
+     *
+     * To jest cala roznica miedzy akceptacja, ktora cos znaczy, a przyciskiem
+     * bez konsekwencji: odrzucony przypadek zostaje na ekranie, zeby bylo
+     * widac decyzje, ale nie trafia do pliku oddawanego klientowi.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function doEksportu(int $flowVersionId): array
+    {
+        return Db::all(
+            'SELECT * FROM test_cases
+              WHERE flow_version_id = ? AND status <> ?
+              ORDER BY sort_order, id',
+            [$flowVersionId, self::STATUS_ODRZUCONY]
+        );
     }
 
     /**
