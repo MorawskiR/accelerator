@@ -447,6 +447,50 @@ Test akceptacyjny całości, do przejścia po Fazie 5:
 
 ---
 
+## Co zostało z oryginalnego `Plan projektu.odt`
+
+Przejrzany **2026-09-08**. Dokument powstał przed pivotem i w większości jest świadomie
+nieaktualny: zakładał **Node.js + Express**, frontend na Alpine.js, MVP **bez integracji
+z Salesforce** i AI przez płatne Anthropic API. Każdą z tych rzeczy zmieniliśmy z powodem,
+który jest opisany wyżej w tym pliku — nie ma do czego wracać.
+
+Cztery rzeczy z tamtego dokumentu **nie miały jednak odpowiednika w tym planie** i warto,
+żeby nie zginęły:
+
+### 1. Regression Checklist per Flow — funkcja, której nie zbudowaliśmy
+
+Oryginał przewidywał „listę kontrolną po zmianie Flow": co przetestować ponownie, gdy Flow
+zostanie zmodyfikowany. Mamy dziś coś **sąsiedniego, ale nie to samo** — baner „te przypadki
+opisują poprzednią wersję Flow" (Faza 5) mówi, że coś się zmieniło, ale nie mówi **co** ani
+nie zawęża testów do zmienionego fragmentu.
+
+To jest naturalne rozwinięcie: mamy `metadata_hash` i dwa digesty, więc **da się policzyć różnicę
+strukturalną** między wersjami i wygenerować przypadki tylko dla tego, co się zmieniło.
+
+### 2. Rejestr defektów w aplikacji
+
+Oryginał chciał formularza zgłoszenia błędu i dashboardu z licznikiem defektów. Świadomie tego
+nie budujemy — MVP kończy się na wygenerowaniu przypadków. Eksport tworzy **pusty arkusz
+Defect Log z listami wyboru**, więc defekty żyją w pliku, a nie w bazie. Do rozważenia dopiero,
+gdyby narzędzie miało zastąpić Jirę, a nie ją zasilać.
+
+### 3. Dwie otwarte decyzje, których nie było w tym planie
+
+- **Model danych wielu klientów:** jedna baza z `org_id` w każdej tabeli czy osobna baza per klient?
+  Ten plan mówi tylko „multi-tenant" jako kierunek, bez rozstrzygnięcia tej konkretnej alternatywy.
+- **Czy checklisty mają być edytowalne przez użytkownika**, czy stałe. Dziś są stałe —
+  `Generator\Framework` przepisuje arkusz do kodu. Konfigurowalność oznaczałaby przeniesienie
+  ich do bazy i wersjonowanie, co jest osobnym projektem.
+
+### 4. Kontekst, który ma znaczenie dla prywatności repozytorium
+
+Oryginał wprost mówi, że aplikacja ma pomagać **na projektach klientów EPAM**. Ta nazwa nie pada
+nigdzie indziej w dokumentacji, a repozytorium jest **publiczne** — to konkretny argument
+w otwartym zadaniu „rozważyć zmianę repo na prywatne".
+
+
+---
+
 ## Materiały źródłowe
 
 | Plik | Rola |

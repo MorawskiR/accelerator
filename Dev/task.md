@@ -542,7 +542,16 @@ sześciu arkuszy, a edycja przypadku (zmiana tytułu i zapis) działa na żywej 
 
 > Żadne z nich **nie zależy od Fazy 6** ani jej nie odblokowuje. Sprawdzone 2026-09-08.
 
-- [ ] 🟢 Przejrzeć `Plan projektu.odt` — czy zawiera coś, czego nie ma w `plan.md`
+- [x] 🟢 Przejrzeć `Plan projektu.odt` — ✅ 2026-09-08. W większości świadomie nieaktualny
+      (zakładał Node.js, Alpine.js, MVP bez Salesforce i płatne API). **Cztery rzeczy nie miały
+      odpowiednika** i trafiły do `plan.md`, sekcja „Co zostało z oryginalnego Plan projektu.odt”:
+  - [x] **Regression Checklist per Flow** — funkcja niezbudowana; mamy baner o nieaktualności,
+        ale nie różnicę strukturalną między wersjami. Da się dodać, bo mamy dwa digesty i hash
+  - [x] **Rejestr defektów w aplikacji** — świadomie poza zakresem; defekty żyją w arkuszu
+  - [x] **Dwie otwarte decyzje**: `org_id` vs osobne bazy per klient; czy checklisty mają być
+        edytowalne przez użytkownika
+  - [x] ⚠️ **Nazwa klienta (EPAM) pada w tym dokumencie** — konkretny argument w otwartym
+        zadaniu o zmianie repozytorium na prywatne
 - [ ] 🟢 Usunąć `<meta name="robots" content="noindex">` ze strony przed prawdziwym startem
       — jest w `site/index.html`, linia 8. Decyzja zależy od tego, kiedy strona ma być indeksowana,
       a nie od stanu aplikacji
