@@ -42,6 +42,10 @@ body{
   -webkit-background-clip:text; background-clip:text; color:transparent;}
 .kto{font-size:.85rem; color:var(--przygaszony); display:flex; align-items:center; gap:12px}
 .tresc{max-width:900px; margin:0 auto; padding:32px 22px 64px}
+/* Strony z tabelami dostaja wiecej miejsca. Tekst ciagly zostaje waski:
+   kroki i oczekiwane wyniki na widoku Flow czyta sie lepiej w kolumnie
+   okolo 90 znakow niz rozciagniete na cala szerokosc monitora. */
+.tresc.szeroka{max-width:1360px}
 h1{font-size:1.5rem; letter-spacing:-.02em; margin:0 0 6px; text-wrap:balance}
 h2{font-size:1.05rem; margin:28px 0 10px}
 p{color:var(--tekst2); max-width:65ch}
@@ -166,7 +170,7 @@ details.most[open] summary{margin-bottom:10px}
 </head>
 <body>
 {% block pasek %}{% endblock %}
-<main class="tresc">
+<main class="tresc {% block szerokosc %}{% endblock %}">
 {% block tresc %}{% endblock %}
 </main>
 </body>

@@ -245,6 +245,11 @@ foreach ([
 }
 
 $bledy += $lokalne;
+if (str_contains($zTestami['html'], 'class="tresc szeroka"')) {
+    echo '[BLAD] widok Flow rozszerzony - tekst ciagly ma zostac waski' . PHP_EOL;
+    $lokalne++;
+}
+
 printf('%-20s %s  przypadkow: %d' . PHP_EOL, 'flow.twig/testy',
     $lokalne === 0 ? '[OK] ' : '[BLAD]', count($GLOBALS['testy']));
 
@@ -548,6 +553,7 @@ $oczekiwaneNaLiscie = [
     'data-partia="/flows/metadane/partia"', // adres partii dla skryptu
     'width:67%',                            // pasek odwzorowuje stan kolejki
     'zostało 1',                            // licznik mowi wprost, ile brakuje
+    'class="tresc szeroka"',                // lista dostaje wiecej miejsca na tabele
     '3 wysokie',                            // kolumna ryzyk czytelna bez koloru
     '2 średnie',
     '<noscript>',                           // i co robic, gdy nie ma JavaScriptu
